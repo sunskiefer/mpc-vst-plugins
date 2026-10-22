@@ -149,3 +149,62 @@ func TestAGen2DeviceRefusesACatalogPluginWithNoGen2Build(t *testing.T) {
 		t.Error("MPC must not be touched")
 	}
 }
+
+// On a Gen2 device (the Live III, MPC OS 3.9.1 aarch64) /sdcard isn't mounted, so the writable internal drive is
+// /nvme/Synths. When SynthsDir is absent but SynthsAlt is found, SynthsAlt becomes the primary "Internal drive".
+func TestGen2InternalDriveIsNvmeWhenSdcardAbsent(t *testing.T) {
+	fd := newFakeDevice(t)
+	nvme := filepath.Join(fd.dir, "nvme", "Synths")
+	if err := os.MkdirAll(nvme, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfg := fd.cfg()
+	cfg.SynthsDir = filepath.Join(fd.dir, "sdcard", "Synths") // never created: like /sdcard unmounted on Gen2
+	cfg.SynthsAlt = nvme                                      // stands in for /nvme/Synths
+	cfg.RootGlobs = shQuote(cfg.SynthsDir) + " " + shQuote(nvme)
+
+	d, err := Dial("127.0.0.1", "secret", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+
+	if len(d.Info.Roots) != 1 {
+		t.Fatalf("only /nvme/Synths should be offered (not the absent /sdcard): %+v", d.Info.Roots)
+	}
+	r := d.Info.Roots[0]
+	if r.Path != nvme || !r.Primary || r.Label != "Internal drive" {
+		t.Errorf("the nvme drive must be the primary internal drive: %+v", r)
+	}
+	if d.Info.Synths != nvme {
+		t.Errorf("DeviceInfo.Synths should be the nvme drive, got %q", d.Info.Synths)
+	}
+}
+
+// When SynthsDir itself is present (Gen1/Force), SynthsAlt is ignored even if it also exists.
+func TestSynthsAltIsIgnoredWhenTheConfiguredPrimaryExists(t *testing.T) {
+	fd := newFakeDevice(t)
+	nvme := filepath.Join(fd.dir, "nvme", "Synths")
+	os.MkdirAll(nvme, 0o755)
+	cfg := fd.cfg() // SynthsDir = <dir>/Synths, which exists
+	cfg.SynthsAlt = nvme
+	cfg.RootGlobs = shQuote(cfg.SynthsDir) + " " + shQuote(nvme)
+
+	d, err := Dial("127.0.0.1", "secret", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if d.Info.Synths != cfg.SynthsDir {
+		t.Errorf("the configured primary must win when present: got %q", d.Info.Synths)
+	}
+	var p Root
+	for _, r := range d.Info.Roots {
+		if r.Primary {
+			p = r
+		}
+	}
+	if p.Path != cfg.SynthsDir {
+		t.Errorf("primary should be the configured SynthsDir, got %+v", p)
+	}
+}

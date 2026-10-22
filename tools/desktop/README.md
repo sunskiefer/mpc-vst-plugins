@@ -14,7 +14,7 @@ one MPC stop and start around the whole batch when the installers allow it.
 1. **Connect:** SSH as root with your password, a key in `~/.ssh` (no passphrase), or neither on a device whose root has no password. It reads the device (32-bit ARM or Gen2 aarch64: Gen2 gets the catalog's aarch64 zips; `tar`?
    `systemctl`? where is `MPC.settings`?) and refuses one that is not an MPC OS device. The device's key fingerprint is shown; nothing
    about the device is saved.
-   The device scan lists every writable `Synths` location (the internal drive, and `/media/*/Synths` for cards and drives; read-only mounts such as
+   The device scan lists every writable `Synths` location (the internal drive — `/sdcard/Synths` on Gen1/Force, `/nvme/Synths` on Gen2 such as the Live III where `/sdcard` isn't mounted — and `/media/*/Synths` for cards and drives; read-only mounts such as
    MPC's own content folder are skipped, and the same storage reached by two paths is listed once; the internal drive's `Synths` folder is created at connect when it is missing, 2026-10-11). Step 3 lets you pick where to install, the
    internal drive by default, and warns when MPC does not list the folder as a content location. A writable drive under `/media` (its own
    mount point, not MPC OS's `az01-*`/`acvs-*`) that has no `Synths` folder gets a **Create Synths folder** button in that box
@@ -31,7 +31,9 @@ one MPC stop and start around the whole batch when the installers allow it.
    If the SSH connection drops during a copy (a laptop waking from sleep, a Wi-Fi or VPN change), the app reconnects once, after
    checking that the device presents the same key, and copies that package again; MPC is not stopped and nothing is installed
    until every copy is done, so this is safe. A second drop stops with "Nothing was installed and MPC was not stopped"
-   (`TestACopyThatLosesTheConnectionIsRetriedOnce`, offline, 2026-10-14).
+   (`TestACopyThatLosesTheConnectionIsRetriedOnce`, offline, 2026-10-14). A connection that silently stalls (a weak Wi-Fi
+   link, not a clean drop) is caught by SSH keepalives: the app pings the device every 15 s and, after a couple of missed
+   replies, closes the dead connection so a command returns an error you can retry instead of hanging (2026-10-23).
    **Register every plugin folder** (ticked by default, under Install to; `InstallOpts.Register`): after the packages are in
    place, and while MPC is still stopped for the batch, the app runs its own embedded `sync.sh` with every plugin location, so
    folders you copied in by hand or that MPC forgot also get into MPC's plugin list, `MPC.settings` is backed up first, and MPC

@@ -5,13 +5,20 @@ Gen2 MPC devices (MPC Live III and kin, RK3588) run a 64-bit userland: `/usr/bin
 (analysed 2026-10-06 from the 3.9.1 Gen2 update image, offline; see `docs/FIRMWARE_BUILDER.md`). A plugin needs a second, aarch64 build.
 
 **Status (2026-10-11): two Gen2 device confirmations, pilot phase done.** Crate Digger 1.1.9 and Profit-08 0.1.1's aarch64 builds
-both installed on a real MPC Live III (MPC OS 5.0.18), registered, showed up in MPC's plugin browser and ran (Crate Digger's skin
+both installed on a real MPC Live III (MPC OS 3.9.1, the official user-facing version; the "5.0.18 (scarthgap)" read on the
+device is the underlying az01/buildroot base, not the MPC OS version), registered, showed up in MPC's plugin browser and ran (Crate Digger's skin
 and open/close were checked in detail; Profit-08 was reported "working well" by the same tester, not yet broken down feature by
 feature on our side). Both plugins' `tested.json` carry the device. This settles the open questions from the first pilot:
 - **`pluginList-arm-64bit` is confirmed correct** for registering an aarch64 package (the earlier third-party tester report was
   right; `plugin_list.awk -v listkey=...` and `install.sh`/`sync.sh`'s arch-based choice need no further change).
 - Install target: on this device `-t` had to point at a removable Synths folder (`/media/<label>/Synths`); `/sdcard` wasn't mounted
   and `/synths/Synths` was mounted read-only (see NOTES.md 2026-10-10). No Gen2-specific install default was needed.
+- **Second Gen2 unit, MPC OS 3.9.1 (2026-10-22): the writable internal drive is `/nvme`.** On a user's MPC Live III (aarch64,
+  glibc 2.39) the rootfs is dm-verity read-only, `/sdcard` isn't mounted, `/synths` is read-only, and the only `/media` drive was
+  mounted `noexec` (unusable for a `.so`). The one writable+exec location is **`/nvme/Synths`** (`/dev/nvme0n1p2`, exfat); settings
+  are at `/data/Settings/MPC/MPC.settings`. JV-880 1.0.8 aarch64 installed there (`install.sh -t /nvme/Synths`) loads, draws its
+  skin, browses expansions and makes sound — `pluginList-arm-64bit` confirmed again. The installer now handles this: `mpc-store.sh`
+  defaults to `/nvme/Synths` when `/sdcard` is absent, and `tools/desktop` scans `/nvme/Synths` and makes it the "internal drive".
 - `vst.json` `targets: ["armv7", "aarch64"]` + `tools/build_port.sh ... all` is now proven end to end on a second, ordinary port
   (Profit-08: no custom build script, just the generic path) — any future port can follow the same checklist (docs/PORTING.md).
 
@@ -75,5 +82,5 @@ Done (offline, 2026-10-09; checked with the `poc/inputprobe` port: armv7 and aar
 
 Still to do:
 1. A port template repo with both builds in its `build.sh`.
-2. `bench.c` for aarch64, once a Gen2 device is reachable.
+2. ~~`bench.c` for aarch64~~: done, `tools/bench.sh` picks the build from the device (docs/BENCH.md).
 3. Pilot with one real port. The glibc ceiling for aarch64 is 2.39 (MPC OS 3.x; Gen2 never runs 2.x); checked 2026-10-09 (offline, from `MPC-3.9.1-Gen2-update.img`'s main rootfs): `/usr/lib/libc.so.6` is aarch64 GNU libc 2.39, so the ceiling matches. libstdc++ was not inspected.

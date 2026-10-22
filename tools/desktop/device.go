@@ -22,6 +22,7 @@ type Config struct {
 	User         string // "root"
 	RemoteTmp    string // where packages are unpacked on the device, "/tmp"
 	SynthsDir    string // "/sdcard/Synths": the internal drive, the default place to install
+	SynthsAlt    string // the internal drive on a device where SynthsDir is absent (Gen2/Live III: "/nvme/Synths"); promoted to primary when found and SynthsDir is not
 	DriveGlob    string // drives that can be given a Synths folder (so RootGlobs finds them): "/media/*"
 	RootGlobs    string // where to look for plugin locations, shell words (globs allowed): "/sdcard/Synths /media/*/Synths"
 	SettingsGlob string // where MPC.settings is
@@ -31,7 +32,10 @@ type Config struct {
 }
 
 func defaultConfig() Config {
-	return Config{Port: "22", User: "root", RemoteTmp: "/tmp", SynthsDir: "/sdcard/Synths", RootGlobs: "/sdcard/Synths /media/*/Synths", DriveGlob: "/media/*", MountsFile: "/proc/mounts", SettingsGlob: "/media/az01-internal/Settings/*/MPC.settings /data/Settings/*/MPC.settings", AddinsDir: "/data/mpc-addins",
+	// Gen2 (aarch64, MPC OS 3.x; e.g. the Live III): /sdcard isn't mounted and /synths is read-only, so the writable
+	// internal drive is /nvme/Synths. The extra /nvme entries are harmless on Gen1/Force (no /nvme); SettingsGlob already
+	// finds /data. SynthsAlt (/nvme/Synths) is promoted to the primary "internal drive" when /sdcard is absent (see readInfo).
+	return Config{Port: "22", User: "root", RemoteTmp: "/tmp", SynthsDir: "/sdcard/Synths", SynthsAlt: "/nvme/Synths", RootGlobs: "/sdcard/Synths /nvme/Synths /media/*/Synths", DriveGlob: "/media/* /nvme", MountsFile: "/proc/mounts", SettingsGlob: "/media/az01-internal/Settings/*/MPC.settings /data/Settings/*/MPC.settings", AddinsDir: "/data/mpc-addins",
 		LibcPaths: "/lib/libc.so.6 /lib/arm-linux-gnueabihf/libc.so.6 /usr/lib/libc.so.6 /lib/libc-*.so /usr/lib/libc-*.so"}
 }
 
@@ -140,6 +144,55 @@ type Device struct {
 	Info   DeviceInfo
 	// for reconnect: kept in memory for this connection only, never written anywhere
 	host, password, fp string
+	done               chan struct{} // closed by Close() to stop the keepalive goroutine
+	closeOnce          sync.Once
+}
+
+// Keepalive timing. SSH command execution (Run) has no deadline, so a transport that silently stalls (common on flaky
+// Wi-Fi) would otherwise block a command forever. The keepalive goroutine pings the current connection; after a few
+// missed pings it closes the connection, which unblocks any in-flight Run with an error instead of hanging. Vars, not
+// consts, so a test can shorten them.
+var (
+	keepaliveInterval = 15 * time.Second
+	keepaliveTimeout  = 8 * time.Second
+	keepaliveMaxFails = 2
+)
+
+// keepalive runs until Close(). Each tick it asks the current connection for a reply; if several pings in a row get no
+// reply, the transport is treated as dead and closed so a stuck Run returns (the next Run reconnects on its own).
+func (d *Device) keepalive() {
+	t := time.NewTicker(keepaliveInterval)
+	defer t.Stop()
+	fails := 0
+	for {
+		select {
+		case <-d.done:
+			return
+		case <-t.C:
+			c := d.conn()
+			if c == nil {
+				continue
+			}
+			res := make(chan error, 1)
+			go func() { _, _, err := c.SendRequest("keepalive@openssh.com", true, nil); res <- err }()
+			var err error
+			select {
+			case err = <-res:
+			case <-time.After(keepaliveTimeout):
+				err = errors.New("keepalive timed out")
+			case <-d.done:
+				return
+			}
+			if err != nil {
+				if fails++; fails >= keepaliveMaxFails {
+					c.Close() // unblocks any in-flight Run on this client; its next Run reconnects
+					fails = 0
+				}
+			} else {
+				fails = 0
+			}
+		}
+	}
 }
 
 var hostRe = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$`)
@@ -197,15 +250,19 @@ func Dial(host, password string, cfg Config) (*Device, error) {
 		}
 		return nil, fmt.Errorf("cannot log in to %s: %w", host, err)
 	}
-	d := &Device{client: c, cfg: cfg, host: host, password: password, fp: fp}
+	d := &Device{client: c, cfg: cfg, host: host, password: password, fp: fp, done: make(chan struct{})}
 	if err := d.readInfo(host, fp); err != nil {
 		c.Close()
 		return nil, err
 	}
+	go d.keepalive()
 	return d, nil
 }
 
 func (d *Device) Close() {
+	if d.done != nil {
+		d.closeOnce.Do(func() { close(d.done) })
+	}
 	if c := d.conn(); c != nil {
 		c.Close()
 	}
@@ -447,6 +504,25 @@ true`, shQuote(d.cfg.SynthsDir), d.cfg.SettingsGlob, shQuote(d.cfg.RemoteTmp), d
 			}
 		}
 	}
+	// Which location is the "internal drive": SynthsDir (/sdcard/Synths) on Gen1/Force. On a Gen2 unit (the Live III)
+	// /sdcard isn't mounted, so when SynthsDir isn't among the found roots but SynthsAlt (/nvme/Synths) is, that is the
+	// fixed internal drive and becomes primary.
+	primary := d.cfg.SynthsDir
+	if d.cfg.SynthsAlt != "" {
+		hasPrimary, hasAlt := false, false
+		for _, r := range cands {
+			switch r.Path {
+			case primary:
+				hasPrimary = true
+			case d.cfg.SynthsAlt:
+				hasAlt = true
+			}
+		}
+		if !hasPrimary && hasAlt {
+			primary = d.cfg.SynthsAlt
+			info.Synths = primary
+		}
+	}
 	// the same storage through two paths is one location; the first path wins (the internal drive is listed first)
 	seen := map[string]bool{}
 	keep := map[string]bool{}
@@ -455,8 +531,8 @@ true`, shQuote(d.cfg.SynthsDir), d.cfg.SettingsGlob, shQuote(d.cfg.RemoteTmp), d
 			continue
 		}
 		seen[r.ID] = true
-		r.Primary = r.Path == d.cfg.SynthsDir
-		r.Label = rootLabel(r.Path, d.cfg.SynthsDir)
+		r.Primary = r.Path == primary
+		r.Label = rootLabel(r.Path, primary)
 		r.NoSymlinks = noSymlinkFS(r.FS)
 		for _, loc := range locs {
 			if loc == r.Path {
@@ -489,7 +565,7 @@ true`, shQuote(d.cfg.SynthsDir), d.cfg.SettingsGlob, shQuote(d.cfg.RemoteTmp), d
 			delete(info.Stores, root)
 		}
 	}
-	if st, ok := info.Stores[d.cfg.SynthsDir]; ok {
+	if st, ok := info.Stores[primary]; ok {
 		info.Store = st
 	}
 	d.Info = info
