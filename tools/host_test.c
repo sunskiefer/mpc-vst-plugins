@@ -397,10 +397,14 @@ int main(void) {
         /* a host write (automation, a Q-Link) asks for no UpdateDisplay of its own: MPC rebuilds its parameter screen on
          * each one (docs/NOTES.md, 2026-10-21). Polled readouts that show the value may still ask, at most every 100 ms. */
         if (!PARAMS[cont].refresh_display) {
-            run(a, 40); updates = 0;
-            for (int k = 0; k < 32; k++) { a->setP(a, cont, (k & 1) ? 0.3f : 0.7f); run(a, 1); }
+            /* on an instance of its own: these 72 blocks must not move instance a's clock before the option and Q-Link tick
+             * checks below, which a port's engine may time (e.g. "an option list moves at most one step per 0.2 s") */
+            AEffect *c = VSTPluginMain(host);
+            run(c, 40); updates = 0;
+            for (int k = 0; k < 32; k++) { c->setP(c, cont, (k & 1) ? 0.3f : 0.7f); run(c, 1); }
             CHECK(updates <= 2, "32 host writes of %s over 4096 frames: %d UpdateDisplay(s) (want at most the 100 ms poll's)",
                   PARAMS[cont].key, updates);
+            c->d(c, 1, 0, 0, 0, 0);
         }
     }
     if (en >= 0) {
