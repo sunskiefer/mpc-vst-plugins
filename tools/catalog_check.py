@@ -391,7 +391,9 @@ def check(zpath, catalog=False, expect_id=None, expect_repo=None, require_portab
         tpl = os.path.join(HERE, "release", "addin" if addin else "", script)
         if os.path.exists(tpl) and script in files:
             text = open(tpl).read()
-            for k, v in sub.items():
+            for k, v in sub.items():   # same escaping as release.py: inside '...' L'Cronx is written L'\''Cronx
+                if k != "@EXTRAS@":
+                    text = text.replace("'%s'" % k, "'%s'" % v.replace("'", "'\\''"))
                 text = text.replace(k, v)
             if text.encode() != files[script]:
                 warn("%s differs from this repo's current template (older release tool, or modified): review it" % script)
