@@ -47,9 +47,14 @@ async function load() {
   try {
     const t = await (await fetch('/api/state', {cache: 'no-store'})).text();
     if (t == load.last) return;   // unchanged: keep the page as it is (an open file picker, a half-typed search)
-    load.last = t; S = JSON.parse(t); draw();
+    load.last = t; S = JSON.parse(t); if (!S.busy && !S.queued) load.restart = false; draw();
   }
-  catch (e) { $('st').textContent = 'The MPC is not answering (restarting?). Retrying…'; }
+  catch (e) {
+    $('st').className = 'e';
+    $('st').textContent = load.restart ? 'MPC is restarting to apply. This page reconnects by itself once the Plugin Manager is open on a track again.'
+      : 'The MPC is not answering. Open the Plugin Manager on a track (or check the Wi-Fi); this page keeps trying.';
+    $('bar').hidden = true;
+  }
 }
 
 const L = {install: ['Install', 'p', 'install'], update: ['Update', 'p', 'install'], q_install: ['Queued: cancel', 'q', 'cancel'],
@@ -166,6 +171,7 @@ async function del(id, k, name) {
 
 $('ap').onclick = () => {
   if (S.ready && !confirm('MPC will stop, apply the changes and start again. Save your project first. Continue?')) return;
+  load.restart = S.ready;
   api('/api/apply');
 };
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
