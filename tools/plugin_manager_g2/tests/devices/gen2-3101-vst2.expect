@@ -1,0 +1,7 @@
+location: /nvme/Synths  (usable)
+install target: /nvme/Synths  (from SynthContentLocations)
+vst2: on  /nvme/VST2 Plugins
+vst2 to move: 1
+problem: none
+vst2 drive: /nvme/VST2 Plugins  (Internal)
+vst2 drive: /media/STICK/VST2 Plugins  (STICK)

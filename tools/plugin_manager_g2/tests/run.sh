@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Offline tests in the gcc:12 Docker image (needs network: they read the live catalog and download one zip).
-#   ONLY=<section> tests/run.sh   one section (devices addins links pick theme safety arch) in a minute or two; no ONLY: everything (about 9 minutes)
+#   ONLY=<section> tests/run.sh   one section (devices addins links vst2 pick theme safety arch) in a minute or two; no ONLY: everything (about 9 minutes)
 #   tests/run.sh            the wrapper host test, each fake device in tests/devices/, then the addin flow against
 #                           an offline fixture (tests/fixture.py: three addin packages and a file:// catalog)
 # A fake device is a shell script that builds the device's files inside the container: MPC.settings (the real format,
@@ -70,6 +70,36 @@ grep -q "apply_state 3" /tmp/links-yes.out
 grep -q "/linky.*install.sh\|Linky-1.0.0/install.sh" /tmp/openmpc-pm/apply.sh
 echo "links OK"
 fi # links
+if want vst2; then
+echo "== vst2 (offline fixture): MPC OS 3.10.1, VST2 Support on: move the old installs, install into VST2 Plugins with a plugin.json"
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/gen2-3101-vst2.sh
+/tmp/drive_addins links > /tmp/vst2.out
+grep -q "apply_state 3" /tmp/vst2.out
+grep -qF "APPLY copies your 1 installed plugin there" /tmp/vst2.out
+A=/tmp/openmpc-pm/apply.sh
+grep -qF "echo '"'"'-- move to VST2 Plugins'"'"'" $A
+[ "$(grep -n "move to VST2" $A | cut -d: -f1)" -lt "$(grep -n "^item " $A | head -n 1 | cut -d: -f1)" ]   # the move runs before any install
+grep -qF -- "-t '"'"'/nvme/VST2 Plugins'"'"'" $A
+grep -qF -- "--json '"'"'/nvme/VST2 Plugins/" $A
+# run the move for real (MPC "stopped": systemctl is a stub) and check what MPC 3.10.1 would see
+ARCH=aarch64 sh /tmp/openmpc-pm/vst2.sh --apply   # the container is x86_64; this fake device is a Gen2 (pluginList-arm-64bit)
+test -f "/nvme/VST2 Plugins/acme - VST - Oldie/plugin.json" && test -f "/nvme/VST2 Plugins/acme - VST - Oldie/roms/user.bin"
+test -f "/nvme/Synths/acme - VST - Oldie/oldie.so"   # the old copy stays: saved projects load it
+! test -e "/nvme/VST2 Plugins/acme - VST - RomsOnly"
+grep -qF "\"uid\": \"0x4f6c6469\"" "/nvme/VST2 Plugins/acme - VST - Oldie/plugin.json"
+grep -qF "\"file64\": \"oldie.so\"" "/nvme/VST2 Plugins/acme - VST - Oldie/plugin.json"
+# the drive menu: two drives (internal + the stick; the Akai mounts are not offered), a pick is the target and is remembered
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/gen2-3101-vst2.sh
+/tmp/drive_addins drives > /tmp/drives.out
+grep -qF "readout: |Internal" /tmp/drives.out
+grep -qF "menu: open=1 hl=1 |Internal  ·  " /tmp/drives.out && grep -qF "|STICK  ·  " /tmp/drives.out && grep -qF "| |" /tmp/drives.out
+grep -qF "after pick: open=0 readout: |STICK" /tmp/drives.out
+grep -qF "prompt: |Install to: /media/STICK/VST2 Plugins  (2 of 2)|" /tmp/drives.out || { cat /tmp/drives.out; exit 1; }
+grep -qxF "/media/STICK/VST2 Plugins" /data/.openmpcpm-target
+echo "vst2 OK"
+fi # vst2
 if want pick; then
 echo "== pick (offline fixture): two usable locations, CHANGE on the restart prompt"
 rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts
@@ -87,7 +117,7 @@ printf "x /sdcard ext4 rw,relatime 0 0\n" > /tmp/pm-mounts   # the card is gone
 rm -rf /tmp/openmpc-pm; /tmp/drive_addins pickshow > /tmp/pickgone.out
 grep -qF "/sdcard/Synths" /tmp/openmpc-pm/apply.sh && ! grep -qF "/media/CARD" /tmp/openmpc-pm/apply.sh || { cat /tmp/pickgone.out; exit 1; }
 grep -qx "/media/CARD/Synths" /media/az01-internal/.openmpcpm-target
-# the same choice from the storage readout (a drive menu; the usable Synths folders)
+# the same choice from the storage readout (a drive menu; firmware before 3.10.1: the usable Synths folders)
 rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
 sh tests/devices/two-targets.sh
 /tmp/drive_addins drives > /tmp/drives-old.out

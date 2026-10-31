@@ -32,6 +32,7 @@
 #include <sys/utsname.h>
 #include <gnu/libc-version.h>
 #include "plugin_list_awk.h"
+#include "vst2_migrate_sh.h"
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
@@ -118,6 +119,7 @@ typedef struct {
     unsigned rev;   /* bumped whenever the worker changes text, polled by the wrapper as "display_rev" */
     char status[160];
     device_t *dev;   /* probed by the worker on each refresh */
+    int migrate, migrate_seen;   /* MPC OS 3.10.1: "move to VST2 Plugins" is queued; it was offered once this session (cleared, it stays off) */
 } mgr_t;
 
 /* ---- small helpers ---- */
@@ -687,6 +689,11 @@ struct device {
     struct { char folder[300], name[64], uid[16], file[320], entry[1500]; int inst; } orphan[8];   /* folders with a plugin-meta.xml and no entry */
     int norphan;
     addin_t addin[32];
+    int vst2;              /* MPC OS 3.10.1+: 0 no VST2 Support setting (older OS), 1 off, 2 on (Enhancements.VST2Support in MPC.settings) */
+    char vst2dir[220];     /* "<drive of the target>/VST2 Plugins": where 3.10.1 looks for plugins (and where installs go while vst2 == 2) */
+    int nmove;             /* plugin folders in a usable Synths location with no copy in vst2dir yet */
+    char vdrv[4][220], vname[4][32];   /* 3.10.1 with VST2 Support on: "<drive>/VST2 Plugins" on each writable drive (internal first), its name */
+    int nvdrv;
 };
 
 static int on_path(const char *tool) {
@@ -858,10 +865,10 @@ static void theme_save(const mgr_t *m) {   /* tmp, then rename */
 }
 
 /* where a new install goes: the location picked on the restart prompt, else the first usable one */
-/* the places a new install can go (the usable Synths folders) and their names in the drive menu */
-static int ntargets(const mgr_t *m) { return m->dev->nusable; }
-static const char *target_at(const mgr_t *m, int k) { return m->dev->usable[k]; }
-static const char *target_name(const mgr_t *m, int k) { return m->dev->uname[k]; }
+/* the places a new install can go: "<drive>/VST2 Plugins" on 3.10.1 with VST2 Support on (every writable drive), else the usable Synths folders */
+static int ntargets(const mgr_t *m) { return m->dev->vst2 == 2 && m->dev->nvdrv ? m->dev->nvdrv : m->dev->nusable; }
+static const char *target_at(const mgr_t *m, int k) { return m->dev->vst2 == 2 && m->dev->nvdrv ? m->dev->vdrv[k] : m->dev->usable[k]; }
+static const char *target_name(const mgr_t *m, int k) { return m->dev->vst2 == 2 && m->dev->nvdrv ? m->dev->vname[k] : m->dev->uname[k]; }
 static const char *dest(const mgr_t *m) {
     return ntargets(m) ? target_at(m, m->tsel % ntargets(m)) : m->dev->target;
 }
@@ -970,6 +977,7 @@ static void probe_device(device_t *d) {
             attr(p, q, "uid", en->uid, sizeof en->uid);
             attr(p, q, "file", en->file, sizeof en->file);
         }
+        d->vst2 = strstr(x, "Enhancements.VST2Support\" val=\"1\"") ? 2 : strstr(x, "Enhancements.VST2Support") ? 1 : 0;
         free(x);
     }
     /* internal storage first (One: /media/az01-internal, Force: /sdcard = /media/az01-internal-sd, Gen2: /nvme, One Gen2: /storage on a loop
@@ -997,6 +1005,56 @@ static void probe_device(device_t *d) {
      * so a folder that is not on the list would install a plugin that loads with no skin. With nothing usable listed the
      * manager says so (problem "No install location", every location and its reason in device.txt) and installs nothing. */
     for (size_t l = strlen(d->target); l > 1 && d->target[l - 1] == '/'; ) d->target[--l] = 0;
+    /* MPC OS 3.10.1 lists only plugins in "<drive>/VST2 Plugins/<Mfr> - VST - <Name>/" with a plugin.json (MPC.settings entries are no longer
+     * shown, though saved projects still load them; device-tested on a Live III, 2026-10-31). The folder goes on the target's drive. */
+    if (d->vst2 && d->target[0]) {
+        char drive[200];
+        snprintf(drive, sizeof drive, "%s", d->target);
+        char *sl = strrchr(drive, '/');
+        if (sl && sl != drive) *sl = 0;
+        snprintf(d->vst2dir, sizeof d->vst2dir, "%s/VST2 Plugins", drive);
+        for (int k = 0; k < d->nusable; k++) {
+            DIR *sd = opendir(d->usable[k]);
+            while (sd && (e = readdir(sd))) {
+                char pj[520], pd[460];
+                if (e->d_name[0] == '.' || !strstr(e->d_name, " - VST - ")) continue;
+                snprintf(pd, sizeof pd, "%s/%s", d->usable[k], e->d_name);
+                snprintf(pj, sizeof pj, "%s/%s/plugin.json", d->vst2dir, e->d_name);
+                if (!is_dir(pd) || is_file(pj)) continue;
+                DIR *pdd = opendir(pd);   /* a folder with a .so: a plugin, not just its user files */
+                struct dirent *f;
+                int so = 0;
+                while (pdd && !so && (f = readdir(pdd))) { size_t l = strlen(f->d_name); so = l > 3 && !strcmp(f->d_name + l - 3, ".so"); }
+                if (pdd) closedir(pdd);
+                d->nmove += so;
+            }
+            if (sd) closedir(sd);
+        }
+    }
+    /* 3.10.1 scans "VST2 Plugins" at the root of every drive and draws the skin from the plugin's own folder, so (unlike Synths) any writable
+     * drive works: the internal one, then each /media/<label> mount (an SD card, a USB drive). Akai's own mounts are left out. A noexec drive
+     * is offered: MPC remounts it with exec for VST2 plugins (firmware strings, 2026-10-31; not yet seen on a device). */
+    if (d->vst2 == 2 && d->vst2dir[0]) {
+        snprintf(d->vdrv[0], sizeof d->vdrv[0], "%s", d->vst2dir);
+        snprintf(d->vname[0], sizeof d->vname[0], "Internal");
+        d->nvdrv = 1;
+#ifdef FS_ANY
+        FILE *mf = fopen(!access("/tmp/pm-mounts", R_OK) ? "/tmp/pm-mounts" : "/proc/mounts", "r");
+#else
+        FILE *mf = fopen("/proc/mounts", "r");
+#endif
+        char dv[128], mnt[256], ty[32], op[512];
+        while (mf && d->nvdrv < 4 && fscanf(mf, "%127s %255s %31s %511s %*d %*d", dv, mnt, ty, op) == 4) {
+            const char *lab = mnt + 7;
+            if (strncmp(mnt, "/media/", 7) || !*lab || strchr(lab, '/') || !strncmp(lab, "az01-internal", 13) || !strncmp(lab, "acvs-", 5)) continue;
+            if (strncmp(op, "rw", 2) || (op[2] && op[2] != ',') || !strcmp(ty, "tmpfs") || !strcmp(ty, "ramfs") || !strcmp(ty, "squashfs")) continue;
+            if (!safe(mnt) || strstr(d->vst2dir, mnt) == d->vst2dir || !is_dir(mnt)) continue;   /* the internal drive is already first */
+            snprintf(d->vdrv[d->nvdrv], sizeof d->vdrv[0], "%s/VST2 Plugins", mnt);
+            snprintf(d->vname[d->nvdrv], sizeof d->vname[0], "%.20s", lab);
+            d->nvdrv++;
+        }
+        if (mf) fclose(mf);
+    }
     /* the manager's own record of versions it installed, next to the Settings folder */
     snprintf(d->base, sizeof d->base, "%s", d->settings);
     char *cut = strstr(d->base, "/Settings/");
@@ -1091,6 +1149,9 @@ static void write_report(const device_t *d) {
     own_synths(own, sizeof own);
     fprintf(f, "manager folder: %s\ninstall target: %s%s%s%s\n", own[0] ? own : "(unknown)", d->target[0] ? d->target : "(none)",
             d->via[0] ? "  (from " : "", d->via, d->via[0] ? ")" : "");
+    fprintf(f, "vst2: %s%s%s\n", d->vst2 == 2 ? "on" : d->vst2 == 1 ? "off" : "none (MPC OS before 3.10.1)", d->vst2dir[0] ? "  " : "", d->vst2dir);
+    if (d->vst2) fprintf(f, "vst2 to move: %d\n", d->nmove);
+    for (int i = 0; i < d->nvdrv; i++) fprintf(f, "vst2 drive: %s  (%s)\n", d->vdrv[i], d->vname[i]);
     fprintf(f, "addins: %s\n", d->addins[0] ? d->addins : "(" ADDINS_DIR " not usable)");
     for (int i = 0; i < d->naddin; i++)
         fprintf(f, "addin: %s %s %s%s\n", d->addin[i].id, d->addin[i].version, d->addin[i].folder, d->addin[i].removable ? "" : "  (no uninstall.sh)");
@@ -1466,7 +1527,9 @@ static void do_refresh(mgr_t *m) {
     detect_orphans(m->dev);
     l.n = add_orphans(m->dev, tmp, l.n);
     struct statvfs sv;   /* the header's storage readout: the drive plugins go to */
-    const char *disk = dest(m)[0] ? dest(m) : "/media/az01-internal";
+    char disk[220];
+    snprintf(disk, sizeof disk, "%s", dest(m)[0] ? dest(m) : "/media/az01-internal");
+    if (!is_dir(disk) && strrchr(disk, '/') && strrchr(disk, '/') != disk) *strrchr(disk, '/') = 0;   /* "VST2 Plugins" not made yet: its drive */
     float used = 0;
     char freebuf[32] = "";
     if (statvfs(disk, &sv) == 0 && sv.f_blocks) {
@@ -1501,6 +1564,13 @@ static void do_refresh(mgr_t *m) {
                    offline == 2 ? "The plugin catalog could not be read" : "Can't reach the plugin catalog", local);
     }
     else { m->sticky = 0; m->rev++; }
+    if (m->dev->vst2 == 2 && m->dev->nmove && !m->migrate_seen) m->migrate = m->migrate_seen = 1;
+    if (!(m->dev->vst2 == 2 && m->dev->nmove)) m->migrate = 0;
+    if (!m->dev->problem[0] && m->dev->vst2 == 1)
+        say_locked(m, WARN, "MPC OS 3.10.1: turn on VST2 Support (Preferences > Enhancements) and restart MPC; until then it lists no plugins");
+    else if (!m->dev->problem[0] && m->migrate)
+        say_locked(m, WARN, "MPC OS 3.10.1 lists only plugins in VST2 Plugins: APPLY copies your %d installed plugin%s there (MPC restarts)",
+                   m->dev->nmove, m->dev->nmove == 1 ? "" : "s");
     show_result(m, m->pkg, m->npkg);
     int cp = cache_used_pct();
     if (cp >= 85 && !m->dev->problem[0] && m->status_kind != ERR)
@@ -1656,6 +1726,14 @@ static void prepare(mgr_t *m, pkg_t *q) {
                    "  [ -f \"$SNAP/$id.settings\" ] && cp -p \"$SNAP/$id.settings\" \"$SETTINGS\"\n"
                    "  echo \"$id|fail|$(echo \"$out\" | tail -n 1 | tr '|' ' ')\" >> \"$RES\"; echo \"-- $id failed: rolled back\"; return 1\n}\n",
                 m->dev->state, m->dev->settings);
+        if (m->dev->vst2) {   /* MPC OS 3.10.1: the folder copier / plugin.json writer (tools/vst2_migrate.sh), run while MPC is stopped */
+            FILE *v = fopen(WORK "/vst2.sh", "w");
+            if (v) { fputs(VST2_MIGRATE_SH, v); fclose(v); }
+            else err = "vst2.sh could not be written";
+        }
+        if (!err && m->migrate)   /* first, so an update below finds (and upgrades) the VST2 copy with the user's files in it */
+            fprintf(f, "echo '-- move to VST2 Plugins'\nif sh '" WORK "/vst2.sh' --apply; then echo 'move-to-vst2|ok|move' >> \"$RES\"; "
+                       "else echo 'move-to-vst2|fail|not every plugin could be copied to VST2 Plugins (" WORK "/apply.log)' >> \"$RES\"; fi\n");
         for (i = 0; i < nq && !err; i++) {
             pkg_t *p = &q[i];
             /* a remove goes where it is; an update stays where it is if that folder can hold a plugin, else it (and a new
@@ -1680,8 +1758,9 @@ static void prepare(mgr_t *m, pkg_t *q) {
             if (is_addin(p) && p->queued == Q_REMOVE) snprintf(target, sizeof target, "%s", p->synths);
             else if (is_addin(p)) snprintf(target, sizeof target, "%s/%s", m->dev->addins, p->id);
             else snprintf(target, sizeof target, "%s", p->queued == Q_REMOVE ? p->synths
+                          : m->dev->vst2 == 2 ? dest(m)   /* 3.10.1: installs and updates go to VST2 Plugins (install.sh keeps user files on an update) */
                           : p->synths[0] && good_target(p->synths) ? p->synths : dest(m));
-            if (!is_addin(p) && p->queued == Q_INSTALL && !p->synths[0]) {
+            if (m->dev->vst2 != 2 && !is_addin(p) && p->queued == Q_INSTALL && !p->synths[0]) {   /* (3.10.1: the move to VST2 Plugins runs first) */
                 /* installed before by something that left no mpc-plugin.json (older installers): the catalog name and the entry's name differ,
                  * so it did not read as installed. An entry already pointing into a folder of this package's name is that install: update it in
                  * place instead of making a second copy on the picked drive (Force, 2026-10-31: AW Ambience in /sdcard and on the SSD) */
@@ -1699,10 +1778,19 @@ static void prepare(mgr_t *m, pkg_t *q) {
                     if (good_target(fd)) { snprintf(target, sizeof target, "%s", fd); break; }
                 }
             }
+            if (m->dev->vst2 == 2 && !is_addin(p) && p->queued == Q_INSTALL) {   /* an update stays on the drive it is on (no second copy) */
+                char f0[200] = "", fd[480];
+                if (manifest_str(p->dir, "folder", f0, sizeof f0), !f0[0]) manifest_str(p->dir, "skin", f0, sizeof f0);
+                const char *bn = strrchr(f0, '/') ? strrchr(f0, '/') + 1 : f0;
+                for (int k = 0; bn[0] && k < m->dev->nvdrv; k++) {
+                    snprintf(fd, sizeof fd, "%s/%s", m->dev->vdrv[k], bn);
+                    if (is_dir(fd)) { snprintf(target, sizeof target, "%s", m->dev->vdrv[k]); break; }
+                }
+            }
             const char *synths = target;
             char fo[200] = "", dirp[560] = "";   /* the folder the installer writes (the package's "folder"), snapshotted for a rollback */
             if (is_addin(p)) snprintf(dirp, sizeof dirp, "%s", target);
-            else if (manifest_str(p->dir, "folder", fo, sizeof fo), fo[0] && safe(fo))
+            else if (manifest_str(p->dir, "folder", fo, sizeof fo), (fo[0] || (manifest_str(p->dir, "skin", fo, sizeof fo), fo[0])) && safe(fo))
                 snprintf(dirp, sizeof dirp, "%s/%s", target, strrchr(fo, '/') ? strrchr(fo, '/') + 1 : fo);
             if (!synths[0] || !safe(synths) || (is_addin(p) && !m->dev->addins[0])) { err = "has no install location"; break; }
             if (is_addin(p) && p->queued == Q_INSTALL)
@@ -1710,12 +1798,20 @@ static void prepare(mgr_t *m, pkg_t *q) {
                         p->id, p->latest, p->id, dirp, p->latest, p->dir, synths, p->id, p->id);
             else if (is_addin(p))
                 fprintf(f, "echo '-- remove %s'\nitem '%s' '%s' remove '' sh '%s/uninstall.sh' -y -n -t '%s'\n", p->id, p->id, dirp, synths, synths);
-            else if (p->queued == Q_INSTALL)
+            else if (p->queued == Q_INSTALL) {
                 fprintf(f, "echo '-- install %s %s'\nitem '%s' '%s' install '%s' sh '%s/install.sh' -y $(batch '%s/install.sh') -t '%s' && setstate '%s' '%s' && rm -rf '" WORK "/%s' '" WORK "/%s.zip'\n",
                         p->id, p->latest, p->id, dirp, p->latest, p->dir, p->dir, synths, p->id, p->latest, p->id, p->id);
-            else
+                if (m->dev->vst2 == 2 && dirp[0])   /* the installer writes plugin-meta.xml; MPC 3.10.1 needs plugin.json beside it */
+                    fprintf(f, "[ -d '%s' ] && sh '" WORK "/vst2.sh' --json '%s'\n", dirp, dirp);
+            } else {
                 fprintf(f, "echo '-- remove %s'\nitem '%s' '%s' remove '' sh '%s/uninstall.sh' -y $(batch '%s/uninstall.sh') -t '%s' && setstate '%s' '' && rm -rf '" WORK "/%s' '" WORK "/%s.zip'\n",
                         p->id, p->id, dirp, p->dir, p->dir, synths, p->id, p->id, p->id);
+                const char *fb = strrchr(dirp, '/');   /* removed from Synths: its copy in VST2 Plugins goes too, or MPC 3.10.1 keeps listing it */
+                if (m->dev->vst2 && m->dev->vst2dir[0] && fb && strcmp(synths, m->dev->vst2dir) && safe(m->dev->vst2dir))
+                    fprintf(f, "rm -rf '%s%s'\n", m->dev->vst2dir, fb);
+                for (int k = 1; fb && k < m->dev->nvdrv; k++)   /* and on any other drive */
+                    if (strcmp(synths, m->dev->vdrv[k]) && safe(m->dev->vdrv[k])) fprintf(f, "rm -rf '%s%s'\n", m->dev->vdrv[k], fb);
+            }
         }
         if (theme_dirty(m)) {   /* MPC is stopped: copy the wanted skin over "Plugin Skins" (staged, then swapped; the old one goes last) */
             const char *w = m->theme ? "light" : "dark";
@@ -1905,7 +2001,7 @@ static int count_updates(const mgr_t *m) {
 }
 
 static int count_queued(const mgr_t *m) {
-    int n = theme_dirty(m);   /* a theme change is applied like an install: stop MPC, swap the skin, start MPC */
+    int n = theme_dirty(m) + m->migrate;   /* a theme change (or the move to VST2 Plugins) is applied like an install: stop MPC, ..., start MPC */
     for (int i = 0; i < m->npkg; i++) n += m->pkg[i].queued != 0;
     return n;
 }
@@ -1921,7 +2017,8 @@ static void changes_text(const mgr_t *m, char *b, int n) {   /* the restart prom
             k += snprintf(b + k, n - k, "%s%s %s > %s", sep, p->name, p->installed, p->latest);
         else if (p->queued) k += snprintf(b + k, n - k, "%s+ %s %s", sep, p->name, p->latest);
     }
-    if (theme_dirty(m) && k < n) snprintf(b + k, n - k, "%sTheme: %s", k ? "\xc2\xa0\xc2\xb7  " : "", m->theme ? "light" : "dark");
+    if (theme_dirty(m) && k < n) k += snprintf(b + k, n - k, "%sTheme: %s", k ? "\xc2\xa0\xc2\xb7  " : "", m->theme ? "light" : "dark");
+    if (m->migrate && k < n) snprintf(b + k, n - k, "%sMove %d plugin%s to VST2 Plugins", k ? "\xc2\xa0\xc2\xb7  " : "", m->dev->nmove, m->dev->nmove == 1 ? "" : "s");
 }
 
 static void queue_text(const mgr_t *m, char *b, int n) {
@@ -1931,7 +2028,8 @@ static void queue_text(const mgr_t *m, char *b, int n) {
     for (int i = 0; i < m->npkg && k < n; i++)
         if (m->pkg[i].queued)
             k += snprintf(b + k, n - k, "  %s%s", m->pkg[i].queued == Q_REMOVE ? "\xe2\x88\x92" : "+", m->pkg[i].name);
-    if (theme_dirty(m) && k < n) snprintf(b + k, n - k, "  Theme: %s", m->theme ? "light" : "dark");
+    if (theme_dirty(m) && k < n) k += snprintf(b + k, n - k, "  Theme: %s", m->theme ? "light" : "dark");
+    if (m->migrate && k < n) snprintf(b + k, n - k, "  Move %d to VST2 Plugins", m->dev->nmove);
 }
 
 static void initials(const char *name, char *b) {   /* first letters of the first two words that start with a letter */
@@ -2224,7 +2322,7 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
         if (k < ntargets(m) && k != m->tsel % ntargets(m)) {
             m->tsel = k;
             target_save(m);   /* remembered, as a pick on the restart prompt is */
-            m->ready = 0;     /* a prepared apply.sh names the old place */
+            m->ready = 0;     /* a prepared apply.sh names the old drive */
             post(m, J_REFRESH);   /* the readout shows the new drive's free space */
         }
     } else if (!strcmp(key, "d_back")) { m->detail[0] = 0; m->menu = -1; }
@@ -2293,7 +2391,11 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
         int k = key[3] - '1';
         if (k < ntargets(m)) {
             struct statvfs dv;
-            if (statvfs(target_at(m, k), &dv) == 0) snprintf(b, n, "%s  \xc2\xb7  %.1f GB free", target_name(m, k), (double)dv.f_bavail * dv.f_frsize / 1e9);
+            char r[220];
+            snprintf(r, sizeof r, "%s", target_at(m, k));
+            char *sl = strrchr(r, '/');
+            if (!is_dir(r) && sl && sl != r) *sl = 0;   /* "VST2 Plugins" not made yet: its drive */
+            if (statvfs(r, &dv) == 0) snprintf(b, n, "%s  \xc2\xb7  %.1f GB free", target_name(m, k), (double)dv.f_bavail * dv.f_frsize / 1e9);
             else snprintf(b, n, "%s", target_name(m, k));
         } else snprintf(b, n, " ");
     }
