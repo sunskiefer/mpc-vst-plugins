@@ -43,6 +43,17 @@ None of this needs the device's own SSH yet. Both the firmware path and the outp
 instead of typing one, and the output folder step also lists this computer's mounted drives (`/api/drives`; Linux, macOS and
 Windows): pick a mounted USB stick there and Build writes the stick straight onto it, with nothing left to copy by hand.
 
+## MPC OS 3.10.1 and later: plugin stick
+
+MPC OS 3.10.1 loads plugins from a `VST2 Plugins` folder at the root of any drive (Preferences, Enhancements: Enable Enhancements and
+VST2 Support). The **USB stick** tab's first section writes the plugins you tick (the OpenMPC Plugin Manager VST is ticked for you) into
+`<drive>/VST2 Plugins/<Manufacturer> - VST - <Name>/`: each release's plugin folder as it is, with a `plugin.json` written from its
+`plugin-meta.xml` when the release has none (`file32` for Gen1, `file64` for Gen2, the `.so` at the folder root). Downloads are checked
+against the catalog's SHA-256 and opened with the same package checks as an install. A plugin already on the stick is replaced and keeps
+its `user_data` folders (your ROMs). Packages with symbolic links are refused (a FAT stick cannot hold them: install those with the
+Plugin Manager). Nothing on the MPC is modified; insert the stick and restart MPC to see the plugins under External VST Plugins.
+API: `POST /api/vst2stick {out, arch, ids}`, progress on `/api/stick/job` (`vst2stick.go`).
+
 ## What it does, in order
 
 1. **Connect:** SSH as root with your password, a key in `~/.ssh` (no passphrase), or neither on a device whose root has no password. It reads the device (32-bit ARM or Gen2 aarch64: Gen2 gets the catalog's aarch64 zips; `tar`?

@@ -216,6 +216,43 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 </div>
 
 <div id="stick-mode">
+<details id="v2" class="collapse" open>
+<summary><h2>MPC OS 3.10.1 and later: plugin stick (no setup, no SSH)</h2><span class="hint">Show</span></summary>
+<section class="guide">
+  <ul>
+    <li><b>What it is:</b> MPC OS 3.10.1 loads plugins from a folder named <code>VST2 Plugins</code> on any drive. This writes the plugins you pick into that folder on a USB stick or SD card. Nothing on the MPC is modified.</li>
+    <li><b>Works on:</b> MPC OS <b>3.10.1 or later</b>, Gen1 MPC (Live, Live II, One, X, Key) and Gen2 (Live III, One G2, Key(s) G2). Not the Force yet (no 3.10.1 for it): use the sections below.</li>
+    <li><b>Tip:</b> include the <b>OpenMPC Plugin Manager VST</b> (ticked below). From then on you can browse and install the rest on the MPC itself, over Wi-Fi.</li>
+  </ul>
+</section>
+<section>
+  <fieldset class="where"><legend>Your MPC</legend>
+    <label class="whereopt"><input type="radio" name="v2-arch" value="armv7" checked><span>Gen1 (32-bit)<small>MPC Live, Live II, One, One+, X, X SE, Key 61, Key 37</small></span></label>
+    <label class="whereopt"><input type="radio" name="v2-arch" value="aarch64"><span>Gen2 (64-bit)<small>MPC Live III, One G2, Key G2, XL</small></span></label>
+  </fieldset>
+  <div class="row"><label class="f">Find a plugin<input id="v2-q" type="text" placeholder="name, kind or words from its summary" spellcheck="false"></label></div>
+  <p class="small" id="v2-count"></p>
+  <ul class="list" id="v2-list" style="max-height:340px;overflow:auto"></ul>
+  <div id="v2-drives"></div>
+  <div class="row">
+    <label class="f">USB stick, SD card or folder<input id="v2-out" type="text" placeholder="pick a mounted drive above, or Browse" spellcheck="false"></label>
+    <button id="v2-out-browse" type="button">Browse…</button>
+    <button class="primary" id="v2-build" type="button">Download and write…</button>
+  </div>
+  <p class="msg" id="v2-msg" role="status" aria-live="polite"></p>
+  <pre class="log" id="v2-log" hidden></pre>
+  <div class="guide">
+    <p class="lead"><b>Then, on your MPC.</b> <i>Save your project first.</i></p>
+    <ol>
+      <li>Update to <b>MPC OS 3.10.1</b> or later (Preferences, Info shows the version).</li>
+      <li>Preferences, <b>Enhancements</b>: turn on <b>Enable Enhancements</b> and <b>VST2 Support</b> (read the warning). Wait a few seconds before the next step, so the setting is saved.</li>
+      <li><b>Insert</b> the stick and <b>restart MPC</b> (new plugins show in the plugin browser after a restart).</li>
+      <li>Open the plugin browser: your plugins are under <b>External VST Plugins</b>.</li>
+    </ol>
+    <p class="small">Plugins that need your own ROM or firmware file (JV-880, Osirus, Machinemodule…) load it from their folder on the stick. Running this again replaces the plugins on the stick and keeps the files you added to them.</p>
+  </div>
+</section>
+</details>
 <details id="l1" class="collapse" open>
 <summary><h2>Basic user: one-prompt install stick (MPC OS 3.9.1 and earlier only)</h2><span class="hint">Show</span></summary>
 <section class="guide">
@@ -956,13 +993,58 @@ $("st-build").addEventListener("click", function () {
     }).catch(function (e) { msg($("st-buildmsg"), e.message, "err"); });
 });
 
+/* MPC OS 3.10.1 plugin stick: catalog plugins into <drive>/VST2 Plugins (POST /api/vst2stick, a stick job). */
+var V2 = { cat: [], pick: { "plugin-manager-g2": true } };
+function v2Arch() { var r = document.querySelector('input[name="v2-arch"]:checked'); return r ? r.value : "armv7"; }
+function v2Fits(p) { return v2Arch() === "aarch64" ? !!(p.aarch64 || p.gen2 || p.gen2_only) : !p.gen2_only; }
+function v2Draw() {
+  var q = $("v2-q").value.trim().toLowerCase(), ul = $("v2-list"); ul.textContent = "";
+  var shown = 0, picked = 0;
+  V2.cat.forEach(function (p) {
+    if (p.kind === "addin" || !v2Fits(p)) { delete V2.pick[p.id]; return; }
+    if (V2.pick[p.id]) picked++;
+    var hay = (p.name + " " + p.kind + " " + (p.summary || "")).toLowerCase();
+    if (q && hay.indexOf(q) < 0 && !V2.pick[p.id]) return;
+    shown++;
+    var li = el("li"), lab = el("label", "whereopt"), cb = el("input");
+    cb.type = "checkbox"; cb.checked = !!V2.pick[p.id];
+    cb.onchange = function () { if (cb.checked) V2.pick[p.id] = true; else delete V2.pick[p.id]; v2Draw(); };
+    var t = el("span", null, p.name + " " + p.version); t.appendChild(el("small", null, p.kind + (p.summary ? " \u00b7 " + p.summary : "")));
+    lab.appendChild(cb); lab.appendChild(t); li.appendChild(lab); ul.appendChild(li);
+  });
+  text($("v2-count"), picked + " chosen" + (q ? " \u00b7 " + shown + " shown" : "") + " (the list shows only plugins with a build for this MPC)");
+}
+api("/api/catalog").then(function (r) { V2.cat = (r.plugins || r || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); }); v2Draw(); })
+  .catch(function (e) { msg($("v2-msg"), e.message, "err"); });
+$("v2-q").addEventListener("input", v2Draw);
+Array.prototype.forEach.call(document.getElementsByName("v2-arch"), function (r) { r.addEventListener("change", v2Draw); });
+$("v2-out-browse").addEventListener("click", function () { openBrowse("dir", $("v2-out"), $("v2-out").value.trim()); });
+function v2Poll(since) {
+  api("/api/stick/job?since=" + since).then(function (j) {
+    var log = $("v2-log");
+    if (j.lines.length) { log.textContent += j.lines.join("\n") + "\n"; log.scrollTop = log.scrollHeight; msg($("v2-msg"), j.lines[j.lines.length - 1]); }
+    if (j.state === "running") { setTimeout(function () { v2Poll(j.next); }, 600); return; }
+    $("v2-build").disabled = false;
+    msg($("v2-msg"), j.state === "done" ? "Done: " + j.result + ". Eject the drive safely, then follow the steps below." : j.result, j.state === "done" ? "ok" : "err");
+  }).catch(function () { setTimeout(function () { v2Poll(since); }, 1500); });
+}
+$("v2-build").addEventListener("click", function () {
+  var out = $("v2-out").value.trim(), ids = Object.keys(V2.pick);
+  if (!out) { msg($("v2-msg"), "Pick a USB stick, SD card or folder first.", "err"); return; }
+  if (!ids.length) { msg($("v2-msg"), "Tick at least one plugin.", "err"); return; }
+  $("v2-build").disabled = true; $("v2-log").hidden = false; $("v2-log").textContent = "";
+  msg($("v2-msg"), "Starting…");
+  api("/api/vst2stick", { out: out, arch: v2Arch(), ids: ids }).then(function () { v2Poll(0); })
+    .catch(function (e) { $("v2-build").disabled = false; msg($("v2-msg"), e.message, "err"); });
+});
+
 /* Easy stick: download the pinned community manager stick and write it to a drive. */
 api("/api/stick/easyinfo").then(function (r) { $("es-ver").textContent = r.version; }).catch(function () { $("es-ver").textContent = "a pinned release"; });
 $("es-out-browse").addEventListener("click", function () { openBrowse("dir", $("es-out"), $("es-out").value.trim()); });
 /* Mounted drives, as buttons that fill a path field (and, in the folder dialog, jump to a drive: the dialog can't otherwise go above C:\ on Windows). */
 api("/api/drives").then(function (r) {
   var ds = r.drives || []; if (!ds.length) return;
-  [["es-drives", "es-out"], ["l1-drives", "l1-out"]].forEach(function (p) {
+  [["es-drives", "es-out"], ["l1-drives", "l1-out"], ["v2-drives", "v2-out"]].forEach(function (p) {
     var box = $(p[0]); box.innerHTML = '<p class="small">Mounted drives: </p>';
     var ul = el("ul", "list"); box.appendChild(ul);
     ds.forEach(function (d) {
