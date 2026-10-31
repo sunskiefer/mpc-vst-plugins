@@ -53,6 +53,8 @@ against the catalog's SHA-256 and opened with the same package checks as an inst
 its `user_data` folders (your ROMs). Packages with symbolic links are refused (a FAT stick cannot hold them: install those with the
 Plugin Manager). Nothing on the MPC is modified; insert the stick and restart MPC to see the plugins under External VST Plugins.
 API: `POST /api/vst2stick {out, arch, ids}`, progress on `/api/stick/job` (`vst2stick.go`).
+After the write, chosen plugins that declare `user_files` (their ROMs) get a **Your ROMs and files** row: each file is checked with the
+catalog's rules on the computer and the good ones are written into `<plugin folder>/<path>/` on the stick (`POST /api/vst2stick/userfiles`).
 
 **Moving existing installs (3.10.1).** On 3.10.1 the plugin browser no longer lists plugins registered in `MPC.settings` (every
 install made before), though saved projects still load them. Connected over SSH (Developer mode starts it on 3.10.1), the install tab's

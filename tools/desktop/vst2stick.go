@@ -347,3 +347,116 @@ func (a *App) vst2Stick(w http.ResponseWriter, r *http.Request) {
 	}()
 	writeJSON(w, 200, map[string]string{"job": j.ID})
 }
+
+// stickFile is one file the user chose for a plugin on the stick.
+type stickFile struct {
+	name string
+	data []byte
+}
+
+// writeStickUserFiles checks each file against the group's rules (as the device upload does) and writes the good ones into dir, the
+// group's folder inside a plugin folder on the stick (staged as .part, then renamed). The plugin folder must already be there.
+func writeStickUserFiles(pluginDir string, g UserFileGroup, files []stickFile) ([]UserFileVerdict, error) {
+	if err := g.check(); err != nil {
+		return nil, err
+	}
+	if fi, err := os.Stat(pluginDir); err != nil || !fi.IsDir() {
+		return nil, errors.New("write the plugin to the stick first")
+	}
+	dir := filepath.Join(pluginDir, filepath.FromSlash(g.Path))
+	var out []UserFileVerdict
+	for _, f := range files {
+		v := g.Validate(f.name, f.data)
+		switch {
+		case int64(len(f.data)) > maxUserFile:
+			v = UserFileVerdict{Name: f.name, Size: int64(len(f.data)), Status: "bad", Message: "too large"}
+		case !userFileNameRe.MatchString(f.name) || strings.Contains(f.name, ".."):
+			v = UserFileVerdict{Name: f.name, Size: int64(len(f.data)), Status: "bad", Message: "the file name has characters the MPC cannot take; rename it with letters, digits, spaces and . _ - ( )"}
+		}
+		if v.Status == "ok" || v.Status == "maybe" {
+			tmp := filepath.Join(dir, "."+f.name+".part")
+			err := os.MkdirAll(dir, 0o755)
+			if err == nil {
+				err = os.WriteFile(tmp, f.data, 0o644)
+			}
+			if err == nil {
+				err = os.Rename(tmp, filepath.Join(dir, f.name))
+			}
+			if err != nil {
+				os.Remove(tmp)
+				v.Status, v.Message = "bad", "could not be written to the stick: "+err.Error()
+			} else {
+				v.Message = strings.TrimSpace(v.Message + " Copied to the stick.")
+			}
+		}
+		out = append(out, v)
+	}
+	return out, nil
+}
+
+// POST /api/vst2stick/userfiles (multipart: out, id, group, file...): the user's own files (ROMs) for a plugin on the stick, checked
+// with the rules the catalog gives for it (user_files) before they are written.
+func (a *App) vst2StickUserFiles(w http.ResponseWriter, r *http.Request) {
+	if !postOnly(w, r) {
+		return
+	}
+	mr, err := r.MultipartReader()
+	if err != nil {
+		fail(w, 400, "bad upload")
+		return
+	}
+	vals := map[string]string{}
+	var files []stickFile
+	for len(files) <= 32 {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fail(w, 400, "the upload was cut short or is too large")
+			return
+		}
+		if part.FileName() == "" {
+			b, _ := io.ReadAll(io.LimitReader(part, 4096))
+			vals[part.FormName()] = string(b)
+			continue
+		}
+		b, err := io.ReadAll(io.LimitReader(part, maxUserFile+1))
+		if err != nil {
+			fail(w, 400, "the upload was cut short")
+			return
+		}
+		files = append(files, stickFile{name: path.Base(strings.ReplaceAll(part.FileName(), "\\", "/")), data: b})
+	}
+	if len(files) == 0 || vals["out"] == "" {
+		fail(w, 400, "choose the stick and at least one file")
+		return
+	}
+	a.mu.Lock()
+	cat := a.cat
+	a.mu.Unlock()
+	var g *UserFileGroup
+	skin := ""
+	for _, c := range cat {
+		if c.ID != vals["id"] {
+			continue
+		}
+		skin = c.Skin
+		for i := range c.UserFiles {
+			if c.UserFiles[i].Path == vals["group"] {
+				g = &c.UserFiles[i]
+			}
+		}
+	}
+	if g == nil || !skinRe.MatchString(skin) {
+		fail(w, 400, "the catalog lists no such file folder for this plugin")
+		return
+	}
+	vs, err := writeStickUserFiles(filepath.Join(filepath.Clean(vals["out"]), vst2Dir, skin), *g, files)
+	if err != nil {
+		fail(w, 400, err.Error())
+		return
+	}
+	ok, maybe := userFileSummary(vs)
+	writeJSON(w, 200, map[string]any{"files": vs, "ok": ok, "maybe": maybe})
+}

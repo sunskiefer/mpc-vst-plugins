@@ -163,3 +163,33 @@ func TestPluginJSONFromMetaEffect(t *testing.T) {
 		t.Fatal("a plugin with no outputs must be refused: MPC would not list it")
 	}
 }
+
+func TestStickUserFiles(t *testing.T) {
+	g := UserFileGroup{Path: "roms", Label: "ROMs", Rules: []UserFileRule{{Label: "Test ROM", Ext: []string{".bin"}, Size: 4}}}
+	plugin := filepath.Join(t.TempDir(), "VST2 Plugins", "me - VST - Acid")
+	if _, err := writeStickUserFiles(plugin, g, []stickFile{{"a.bin", []byte("abcd")}}); err == nil {
+		t.Fatal("a plugin that is not on the stick yet must be refused")
+	}
+	os.MkdirAll(plugin, 0o755)
+	vs, err := writeStickUserFiles(plugin, g, []stickFile{{"good.bin", []byte("abcd")}, {"wrong.txt", []byte("abcd")}, {"../evil.bin", []byte("abcd")}, {"short.bin", []byte("ab")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	st := map[string]string{}
+	for _, v := range vs {
+		st[v.Name] = v.Status
+	}
+	if st["good.bin"] != "ok" || st["wrong.txt"] == "ok" || st["../evil.bin"] != "bad" || st["short.bin"] == "ok" {
+		t.Fatalf("verdicts: %v", vs)
+	}
+	if b, err := os.ReadFile(filepath.Join(plugin, "roms", "good.bin")); err != nil || string(b) != "abcd" {
+		t.Fatal("a good file must be written into the group's folder:", err)
+	}
+	ents, _ := os.ReadDir(filepath.Join(plugin, "roms"))
+	if len(ents) != 1 {
+		t.Fatalf("only the good file may be written (no .part left behind): %v", ents)
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(plugin), "evil.bin")); err == nil {
+		t.Fatal("a name with .. escaped the folder")
+	}
+}

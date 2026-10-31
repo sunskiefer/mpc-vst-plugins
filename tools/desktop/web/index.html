@@ -261,6 +261,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
   </div>
   <p class="msg" id="v2-msg" role="status" aria-live="polite"></p>
   <pre class="log" id="v2-log" hidden></pre>
+  <div id="v2-roms" hidden><h3>Your ROMs and files</h3><p class="sub">These plugins need files you supply (a synth's ROMs). Each one is checked here before it is written into the plugin's folder on the stick.</p><ul class="list" id="v2-romlist"></ul></div>
   <div class="guide">
     <p class="lead"><b>Then, on your MPC.</b> <i>Save your project first.</i></p>
     <ol>
@@ -1122,7 +1123,34 @@ function v2Poll(since) {
     if (j.state === "running") { setTimeout(function () { v2Poll(j.next); }, 600); return; }
     $("v2-build").disabled = false;
     msg($("v2-msg"), j.state === "done" ? "Done: " + j.result + ". Eject the drive safely, then follow the steps below." : j.result, j.state === "done" ? "ok" : "err");
+    if (j.state === "done") v2Roms();
   }).catch(function () { setTimeout(function () { v2Poll(since); }, 1500); });
+}
+function v2Roms() {   /* the chosen plugins that declare user_files: a file picker per folder, checked and written to the stick */
+  var ul = $("v2-romlist"); ul.textContent = ""; var any = false, out = $("v2-out").value.trim();
+  V2.cat.forEach(function (p) {
+    if (!V2.pick[p.id] || !p.user_files || !p.user_files.length) return;
+    p.user_files.forEach(function (g) {
+      any = true;
+      var li = el("li"), t = el("div", "t"); t.appendChild(el("b", null, p.name + ": " + g.label));
+      if (g.description) t.appendChild(el("div", "d", g.description));
+      if (g.hint) t.appendChild(el("div", "d small", g.hint));
+      var res = el("div", "d"), fi = el("input"); fi.type = "file"; fi.multiple = true;
+      fi.onchange = function () {
+        if (!fi.files.length) return;
+        var fd = new FormData(); fd.append("out", out); fd.append("id", p.id); fd.append("group", g.path);
+        Array.prototype.forEach.call(fi.files, function (f) { fd.append("file", f, f.name); });
+        text(res, "Checking…");
+        api("/api/vst2stick/userfiles", fd, true).then(function (r) {
+          res.textContent = "";
+          r.files.forEach(function (v) { res.appendChild(el("div", v.status === "ok" ? "" : "small", v.name + ": " + (v.status === "ok" ? "OK" : v.status === "maybe" ? "looks right" : "not used") + (v.message ? " (" + v.message + ")" : ""))); });
+        }).catch(function (e) { text(res, e.message); });
+        fi.value = "";
+      };
+      t.appendChild(res); li.appendChild(t); li.appendChild(fi); ul.appendChild(li);
+    });
+  });
+  $("v2-roms").hidden = !any;
 }
 $("v2-build").addEventListener("click", function () {
   var out = $("v2-out").value.trim(), ids = Object.keys(V2.pick);
