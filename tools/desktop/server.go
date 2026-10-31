@@ -81,6 +81,7 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("/api/stick/easy", a.stickEasy)
 	mux.HandleFunc("/api/stick/easyinfo", a.stickEasyInfo)
 	mux.HandleFunc("/api/stick/g2", a.stickG2)
+	mux.HandleFunc("/api/vst2stick", a.vst2Stick) // MPC OS 3.10.1+: plugins onto a drive's VST2 Plugins folder
 	mux.HandleFunc("/api/browse", a.browse)
 	mux.HandleFunc("/api/drives", a.drives)
 	return a.guard(mux)
