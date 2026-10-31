@@ -1,5 +1,9 @@
-/* A small read-only web page on the local network while the manager is loaded on a track (MPC OS 3.10.1 test):
- * http://<mpc address>:WEB_PORT/ lists what is installed, /api/state gives the same as JSON. MPC creates the plugin
+/* A web page on the local network while the manager is loaded on a track (MPC OS 3.10.1 test):
+ * http://<mpc address>:WEB_PORT/ is the catalog with Install / Update / Remove and APPLY, the same queue as the screen.
+ * GET /api/state is the state as JSON; POST /api/queue?id=<id>&do=install|remove|cancel, /api/migrate?on=0|1,
+ * /api/apply (prepare, then a second call restarts MPC), /api/refresh change it. A POST must carry "X-PM: 1" and no
+ * foreign Origin, so another web site open in the same browser cannot drive it (the header forces a CORS preflight,
+ * which is never answered). MPC creates the plugin
  * more than once, so only one instance holds the port: the others retry the bind every couple of seconds and take
  * over when it is closed. Included by manager.c (it reads mgr_t under mu). */
 #include <netinet/in.h>
@@ -51,61 +55,207 @@ static void wesc(wbuf_t *w, const char *s, int html) {   /* JSON string body, or
     }
 }
 
+static const char *const WEB_ST[] = {"none", "install", "update", "installed", "q_install", "q_update", "q_remove", "disabled", "menu", "register", "q_register"};
+
 static void web_state(mgr_t *m, wbuf_t *w) {
     pthread_mutex_lock(&m->mu);
+    char st[200];   /* what the screen's status line shows (mgr_get_param "status", without the search hints) */
+    if (m->sticky) snprintf(st, sizeof st, "%s", m->status);
+    else queue_text(m, st, sizeof st);
     wput(w, "{\"status\":\"");
-    wesc(w, m->status, 0);
-    wput(w, "\",\"online\":%d,\"loaded\":%d,\"busy\":%d,\"plugins\":[", m->online, m->loaded, m->busy);
-    for (int i = 0, first = 1; i < m->npkg; i++) {
+    wesc(w, st, 0);
+    wput(w, "\",\"status_kind\":%d,\"online\":%d,\"loaded\":%d,\"busy\":%d,\"ready\":%d,\"failed\":%d,\"queued\":%d,"
+            "\"vst2\":%d,\"move\":%d,\"migrate\":%d,\"problem\":\"", m->sticky ? m->status_kind : OK, m->online, m->loaded, m->busy, m->ready, m->failed,
+         count_queued(m), m->dev->vst2, m->dev->vst2 == 2 ? m->dev->nmove : 0, m->migrate);
+    wesc(w, m->dev->problem, 0);
+    wput(w, "\",\"plugins\":[");
+    for (int i = 0; i < m->npkg; i++) {
         const pkg_t *p = &m->pkg[i];
-        if (!p->installed[0]) continue;
-        wput(w, "%s{\"id\":\"", first ? "" : ",");
+        wput(w, "%s{\"id\":\"", i ? "," : "");
         wesc(w, p->id, 0);
         wput(w, "\",\"name\":\"");
         wesc(w, p->name, 0);
+        wput(w, "\",\"author\":\"");
+        wesc(w, p->author, 0);
+        wput(w, "\",\"kind\":\"");
+        wesc(w, p->kind, 0);
         wput(w, "\",\"installed\":\"");
         wesc(w, p->installed, 0);
         wput(w, "\",\"latest\":\"");
         wesc(w, p->latest, 0);
-        wput(w, "\"}");
-        first = 0;
+        wput(w, "\",\"files\":%d,\"state\":\"%s\"}", p->ufiles, WEB_ST[pkg_state(m, i)]);
     }
     wput(w, "]}");
     pthread_mutex_unlock(&m->mu);
 }
 
-static void web_page(mgr_t *m, wbuf_t *w) {
-    wput(w, "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
-            "<title>Plugin Manager</title><style>body{font:15px system-ui;margin:0 16px 40px;background:#e9e7e2;color:#1b1c1f}"
-            "h1{font:700 28px system-ui;text-transform:uppercase}li{padding:6px 0;border-bottom:1px solid #cdcac2;list-style:none}"
-            "ul{padding:0}.v{color:#64666d}.up{color:#d63a30}</style><h1>Plugin Manager</h1>");
-    pthread_mutex_lock(&m->mu);
-    wput(w, "<p class=v>");
-    wesc(w, m->status, 1);
-    wput(w, "</p><ul>");
-    int k = 0;
-    for (int i = 0; i < m->npkg; i++) {
-        const pkg_t *p = &m->pkg[i];
-        if (!p->installed[0]) continue;
-        k++;
-        wput(w, "<li><b>");
-        wesc(w, p->name, 1);
-        wput(w, "</b> <span class=v>");
-        wesc(w, p->installed, 1);
-        wput(w, "</span>");
-        if (p->latest[0] && strcmp(p->installed, p->latest) && strcmp(p->installed, "?")) {
-            wput(w, " <span class=up>update: ");
-            wesc(w, p->latest, 1);
-            wput(w, "</span>");
+static int web_hex(int c) { return c >= '0' && c <= '9' ? c - '0' : (c | 32) >= 'a' && (c | 32) <= 'f' ? (c | 32) - 'a' + 10 : -1; }
+
+static int web_arg(const char *q, const char *k, char *b, int n) {   /* ?k=v from the request line, %XX and + decoded */
+    size_t kl = strlen(k);
+    for (const char *p = q; p && *p && *p != ' '; p++) {
+        if ((p == q || p[-1] == '?' || p[-1] == '&') && !strncmp(p, k, kl) && p[kl] == '=') {
+            int i = 0;
+            for (p += kl + 1; *p && *p != '&' && *p != ' ' && i < n - 1; p++)
+                if (*p == '%' && web_hex(p[1]) >= 0 && web_hex(p[2]) >= 0) b[i++] = web_hex(p[1]) * 16 + web_hex(p[2]), p += 2;
+                else b[i++] = *p == '+' ? ' ' : *p;
+            b[i] = 0;
+            return 1;
         }
-        wput(w, "</li>");
     }
+    return 0;
+}
+
+static const char *web_post(mgr_t *m, const char *path) {   /* "" done, else why not */
+    char id[48], d[16];
+    const char *err = "";
+    pthread_mutex_lock(&m->mu);
+    int busy = m->busy == J_PREPARE || m->busy == J_LAUNCH;
+    if (!strncmp(path, "/api/refresh", 12)) post(m, J_REFRESH);
+    else if (busy) err = "busy";
+    else if (!strncmp(path, "/api/queue?", 11) && web_arg(path + 10, "id", id, sizeof id) && web_arg(path + 10, "do", d, sizeof d)) {
+        int i = 0;
+        while (i < m->npkg && strcmp(m->pkg[i].id, id)) i++;
+        if (i == m->npkg) err = "unknown plugin";
+        else {
+            int st = pkg_state(m, i);
+            if (!strcmp(d, "install") && (st == S_INSTALL || st == S_UPDATE)) act(m, i, "act");
+            else if (!strcmp(d, "reinstall") && st == S_INSTALLED) act(m, i, "reinstall");
+            else if (!strcmp(d, "remove") && (st == S_INSTALLED || st == S_UPDATE)) act(m, i, "remove");
+            else if (!strcmp(d, "cancel") && (st == S_Q_INSTALL || st == S_Q_UPDATE || st == S_Q_REMOVE || st == S_Q_REGISTER)) requeue(m, &m->pkg[i], 0);
+            else if (!strcmp(d, "register") && st == S_REGISTER) act(m, i, "act");
+            else err = "not possible now";
+            m->menu = -1;
+        }
+    } else if (!strncmp(path, "/api/migrate?", 13) && web_arg(path + 12, "on", d, sizeof d)) {
+        if (m->dev->vst2 == 2 && m->dev->nmove) { m->migrate = d[0] == '1'; m->ready = m->failed = 0; m->sticky = 0; }
+        else err = "nothing to move";
+    } else if (!strncmp(path, "/api/apply", 10)) {   /* the page asked first: the second call is the restart prompt's GO */
+        if (m->ready) { m->ready = 0; post(m, J_LAUNCH); }
+        else if (count_queued(m) && !m->dev->problem[0]) post(m, J_PREPARE);
+        else err = "nothing queued";
+    } else err = "unknown request";
+    m->rev++;
     pthread_mutex_unlock(&m->mu);
-    wput(w, "</ul><p class=v>%d installed. This page is read-only (test build).</p>", k);
+    return err;
+}
+
+#include "web_page.h"
+
+static int web_header(const char *req, const char *name, char *b, int n) {   /* a request header's value, case-insensitive name */
+    size_t nl = strlen(name);
+    for (const char *p = strstr(req, "\r\n"); p && p[2]; p = strstr(p + 2, "\r\n"))
+        if (!strncasecmp(p + 2, name, nl) && p[2 + nl] == ':') {
+            const char *v = p + 3 + nl;
+            while (*v == ' ') v++;
+            int i = 0;
+            while (v[i] && v[i] != '\r' && i < n - 1) b[i] = v[i], i++;
+            b[i] = 0;
+            return 1;
+        }
+    return 0;
+}
+
+
+/* ---- the user's files (ROMs): only into a folder the installed plugin's mpc-plugin.json names in user_files ---- */
+#define WEB_MAXFILE (64 << 20)
+
+static int web_safe_rel(const char *p) {   /* "roms", "data/roms": no "..", no leading /, plain characters */
+    if (!p[0] || p[0] == '/' || strstr(p, "..") || strlen(p) > 100) return 0;
+    for (; *p; p++) if (!isalnum((unsigned char)*p) && !strchr(" ._/-", *p)) return 0;
+    return 1;
+}
+
+static int web_safe_name(const char *n) {   /* the desktop app's rule: ^[A-Za-z0-9][A-Za-z0-9 ._()+,'&-]{0,150}$ */
+    if (!isalnum((unsigned char)n[0]) || strlen(n) > 151) return 0;
+    for (const char *p = n + 1; *p; p++) if (!isalnum((unsigned char)*p) && !strchr(" ._()+,'&-", *p)) return 0;
+    return 1;
+}
+
+/* the installed plugin's folder for ?id=, and (with want_path) the checked group folder ?path= inside it; "" + why on failure */
+static const char *web_target(mgr_t *m, const char *q, int want_path, char *folder, int fn, char *grp, int gn) {
+    char id[48];
+    folder[0] = 0;
+    if (!web_arg(q, "id", id, sizeof id)) return "no id";
+    pthread_mutex_lock(&m->mu);
+    for (int i = 0; i < m->npkg; i++)
+        if (!strcmp(m->pkg[i].id, id) && m->pkg[i].folder[0]) snprintf(folder, fn, "%s", m->pkg[i].folder);
+    pthread_mutex_unlock(&m->mu);
+    if (!folder[0]) return "not installed";
+    if (!want_path) return "";
+    if (!web_arg(q, "path", grp, gn) || !web_safe_rel(grp)) return "bad folder";
+    char mp[400], pat[140], pat2[140];
+    snprintf(mp, sizeof mp, "%s/mpc-plugin.json", folder);
+    char *js = slurp(mp, 64 << 10);
+    snprintf(pat, sizeof pat, "\"path\": \"%s\"", grp);
+    snprintf(pat2, sizeof pat2, "\"path\":\"%s\"", grp);
+    const char *u = js ? strstr(js, "\"user_files\"") : NULL;
+    int ok = u && (strstr(u, pat) || strstr(u, pat2));
+    free(js);
+    return ok ? "" : "this plugin has no such folder for your files";
+}
+
+static int web_mkdirs(const char *base, const char *rel) {
+    char p[600];
+    int n = snprintf(p, sizeof p, "%s/%s", base, rel), b = strlen(base);
+    if (n >= (int)sizeof p) return -1;
+    for (int i = b + 1; i <= n; i++)
+        if (p[i] == '/' || !p[i]) {
+            char c = p[i];
+            p[i] = 0;
+            if (mkdir(p, 0755) && errno != EEXIST) return -1;
+            p[i] = c;
+        }
+    return 0;
+}
+
+static void web_ls(const char *dir, wbuf_t *w) {
+    wput(w, "[");
+    DIR *d = opendir(dir);
+    struct dirent *e;
+    int first = 1;
+    while (d && (e = readdir(d))) {
+        char fp[900];
+        struct stat st;
+        if (e->d_name[0] == '.') continue;
+        snprintf(fp, sizeof fp, "%s/%s", dir, e->d_name);
+        if (stat(fp, &st) || !S_ISREG(st.st_mode)) continue;
+        wput(w, "%s{\"name\":\"", first ? "" : ",");
+        wesc(w, e->d_name, 0);
+        wput(w, "\",\"size\":%lld}", (long long)st.st_size);
+        first = 0;
+    }
+    if (d) closedir(d);
+    wput(w, "]");
+}
+
+/* PUT body: `have` bytes already read after the headers, then the rest from the socket, into <dir>/<name>.part, renamed when complete */
+static const char *web_save(int c, const char *dir, const char *name, const char *have, long have_n, long len) {
+    char fp[900], part[910];
+    snprintf(fp, sizeof fp, "%s/%s", dir, name);
+    snprintf(part, sizeof part, "%s.part", fp);
+    int f = open(part, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
+    if (f < 0) return "cannot write on the drive";
+    long done = 0;
+    if (have_n > len) have_n = len;
+    if (have_n > 0 && write(f, have, have_n) != have_n) { close(f); unlink(part); return "write failed"; }
+    done = have_n;
+    char buf[65536];
+    struct pollfd pf = {c, POLLIN, 0};
+    while (done < len) {
+        if (poll(&pf, 1, 10000) <= 0) break;
+        long want = len - done > (long)sizeof buf ? (long)sizeof buf : len - done;
+        ssize_t k = read(c, buf, want);
+        if (k <= 0 || write(f, buf, k) != k) break;
+        done += k;
+    }
+    if (done != len || fsync(f) || close(f)) { if (done != len) close(f); unlink(part); return "the upload stopped part way"; }
+    if (rename(part, fp)) { unlink(part); return "cannot write on the drive"; }
+    return "";
 }
 
 static void web_reply(int c, mgr_t *m) {
-    char req[2048];
+    char req[4096];
     int n = 0, k;
     struct pollfd pf = {c, POLLIN, 0};
     while (n < (int)sizeof req - 1 && poll(&pf, 1, 2000) > 0 && (k = read(c, req + n, sizeof req - 1 - n)) > 0) {
@@ -116,9 +266,56 @@ static void web_reply(int c, mgr_t *m) {
     req[n] = 0;
     wbuf_t w = {0};
     const char *type = "text/html; charset=utf-8", *code = "200 OK";
+    int hl = strstr(req, "\r\n\r\n") ? (int)(strstr(req, "\r\n\r\n") - req) + 4 : n;
+    char x[8], origin[200], host[200];
+    int trusted = web_header(req, "X-PM", x, sizeof x) && !strcmp(x, "1") &&
+                  !(web_header(req, "Origin", origin, sizeof origin) && (!web_header(req, "Host", host, sizeof host) ||
+                    strncmp(origin, "http://", 7) || strcmp(origin + 7, host)));
+    char folder[256], grp[120], name[160], dir[400];
+    const char *why;
     if (!strncmp(req, "GET /api/state ", 15)) web_state(m, &w), type = "application/json";
-    else if (!strncmp(req, "GET / ", 6)) web_page(m, &w);
-    else code = "404 Not Found", wput(&w, "not found\n"), type = "text/plain";
+    else if (!strncmp(req, "GET /api/manifest?", 18)) {   /* the plugin's mpc-plugin.json as it is (its user_files rules) */
+        if ((why = web_target(m, req + 17, 0, folder, sizeof folder, grp, sizeof grp))[0]) code = "404 Not Found", wput(&w, "%s\n", why), type = "text/plain";
+        else {
+            char mp[400];
+            snprintf(mp, sizeof mp, "%s/mpc-plugin.json", folder);
+            char *js = slurp(mp, 64 << 10);
+            if (js) wput(&w, "%s", js), type = "application/json"; else code = "404 Not Found", type = "text/plain";
+            free(js);
+        }
+    } else if (!strncmp(req, "GET /api/ls?", 12)) {
+        if ((why = web_target(m, req + 11, 1, folder, sizeof folder, grp, sizeof grp))[0]) code = "404 Not Found", wput(&w, "%s\n", why), type = "text/plain";
+        else snprintf(dir, sizeof dir, "%s/%s", folder, grp), web_ls(dir, &w), type = "application/json";
+    } else if ((!strncmp(req, "PUT /api/file?", 14) || !strncmp(req, "POST /api/delfile?", 18)) && trusted) {
+        const char *q = req[0] == 'P' && req[1] == 'U' ? req + 13 : req + 17;
+        char cl[24];
+        long len = web_header(req, "Content-Length", cl, sizeof cl) ? atol(cl) : -1;
+        type = "text/plain";
+        if ((why = web_target(m, q, 1, folder, sizeof folder, grp, sizeof grp))[0]) code = "409 Conflict", wput(&w, "%s\n", why);
+        else if (!web_arg(q, "name", name, sizeof name) || !web_safe_name(name)) code = "409 Conflict", wput(&w, "that file name cannot be used\n");
+        else if (req[1] == 'O') {   /* delfile */
+            snprintf(dir, sizeof dir, "%s/%s/%s", folder, grp, name);
+            if (unlink(dir)) code = "409 Conflict", wput(&w, "no such file\n"); else wput(&w, "ok\n");
+        } else if (len < 0 || len > WEB_MAXFILE) code = "413 Payload Too Large", wput(&w, "too big (64 MB at most)\n");
+        else if (web_mkdirs(folder, grp)) code = "409 Conflict", wput(&w, "cannot make the folder\n");
+        else {
+            snprintf(dir, sizeof dir, "%s/%s", folder, grp);
+            if ((why = web_save(c, dir, name, req + hl, n - hl, len))[0]) code = "409 Conflict", wput(&w, "%s\n", why);
+            else wput(&w, "ok\n");
+        }
+    }
+    else if (!strncmp(req, "GET / ", 6)) wput(&w, "%s", WEB_PAGE);
+    else if (!strncmp(req, "POST /api/", 10) || !strncmp(req, "PUT /api/", 9)) {
+        type = "text/plain";
+        if (!trusted) code = "403 Forbidden", wput(&w, "refused: not from this page\n");
+        else {
+            char path[300];
+            sscanf(req + 5, "%299s", path);
+            const char *err = web_post(m, path);
+            if (err[0]) code = "409 Conflict", wput(&w, "%s\n", err);
+            else wput(&w, "ok\n");
+        }
+    } else code = "404 Not Found", wput(&w, "not found\n"), type = "text/plain";
     char h[200];
     int hn = snprintf(h, sizeof h, "HTTP/1.0 %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
                       code, type, w.n);

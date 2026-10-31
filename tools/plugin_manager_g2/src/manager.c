@@ -76,6 +76,8 @@ typedef struct {
     long long size;
     char installed[24];   /* "" not installed, "?" installed (version unknown), else the version */
     char synths[200];     /* the Synths folder it is installed in; an addin: its own folder under ADDINS_DIR */
+    int ufiles;           /* its mpc-plugin.json declares user_files (ROMs the user adds): the web page offers them */
+    char folder[256];     /* its plugin folder (the .so's), "" not installed: the web page's ROM upload writes in it */
     char uids[4][16];     /* build-yourself components' VST uids (catalog "components") */
     int legacy;           /* registered, but not from a plugin folder (old /sdcard/vst layout); an addin folder
                            * without uninstall.sh (made by hand): either is updated in place, not removed */
@@ -1371,7 +1373,7 @@ static void hist_record(const device_t *d, const char *id, const char *act, cons
 }
 
 static void scan_installed(const device_t *d, pkg_t *pkg, int n) {
-    for (int i = 0; i < n; i++) pkg[i].installed[0] = pkg[i].synths[0] = 0, pkg[i].legacy = 0;
+    for (int i = 0; i < n; i++) pkg[i].installed[0] = pkg[i].synths[0] = pkg[i].folder[0] = 0, pkg[i].legacy = 0, pkg[i].ufiles = 0;
     for (int k = 0; k < d->nent; k++) {
         const entry_t *en = &d->ent[k];
         char folder[256], mpath[300];
@@ -1382,7 +1384,13 @@ static void scan_installed(const device_t *d, pkg_t *pkg, int n) {
         manifest_t mf = {{0}, {0}};
         snprintf(mpath, sizeof mpath, "%s/mpc-plugin.json", folder);
         char *js = slurp(mpath, 64 << 10);
-        if (js) { jobject(js, manifest_member, &mf); free(js); }
+        int uf = 0;
+        if (js) {
+            const char *u = strstr(js, "\"user_files\"");
+            if (u && (u = strchr(u, '['))) { u++; while (isspace((unsigned char)*u)) u++; uf = *u == '{'; }
+            jobject(js, manifest_member, &mf);
+            free(js);
+        }
         for (int i = 0; i < n; i++) {
             pkg_t *p = &pkg[i];
             if (is_addin(p)) continue;
@@ -1390,6 +1398,8 @@ static void scan_installed(const device_t *d, pkg_t *pkg, int n) {
             for (int c = 0; c < 4 && !hit; c++) hit = p->uids[c][0] && !strcasecmp(p->uids[c], en->uid);
             if (!hit || p->installed[0]) continue;
             snprintf(p->installed, sizeof p->installed, "%s", mf.version[0] ? mf.version : "?");
+            snprintf(p->folder, sizeof p->folder, "%s", folder);
+            p->ufiles = uf;
             const char *base = strrchr(folder, '/');
             if (base && strstr(base, " - VST - ")) snprintf(p->synths, sizeof p->synths, "%.*s", (int)(base - folder), folder);
             else p->legacy = 1;
@@ -2131,7 +2141,7 @@ static void card_field(const mgr_t *m, int i, const char *f, char *b, int n) {
     else snprintf(b, n, "0");   /* the triggers */
 }
 
-#include "web.c"
+static void *web_thread(void *ud);   /* web.c, included below the actions it calls */
 
 /* ---- engine interface ---- */
 
@@ -2211,6 +2221,8 @@ static int repeated(long long *last, int ms) {
     *last = now;
     return 0;
 }
+
+#include "web.c"
 
 /* the trigger params (a tap), not the option params the host steps on purpose (kind, sort, ...), the keyboard keys or THEME (its own window) */
 static int is_button(const char *key) {

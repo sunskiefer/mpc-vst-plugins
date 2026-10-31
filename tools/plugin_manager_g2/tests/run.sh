@@ -279,7 +279,24 @@ grep -q "Content-Type: application/json" /tmp/web.out
 grep -q "\"plugins\":\[{\"id\":" /tmp/web.out
 grep -q "<h1>Plugin Manager</h1>" /tmp/web.out
 grep -q "404 Not Found" /tmp/web.out
-[ "$(grep -c "GET /api/state:" /tmp/web.out)" = 2 ] && ! grep -q "no answer" /tmp/web.out   # the second instance answered after the first closed
+[ "$(grep -c "403 Forbidden" /tmp/web.out)" = 2 ]                  # no X-PM header; a foreign Origin
+grep -q "\"queued\":1," /tmp/web.out && grep -q "\"id\":\"beta-addin\",[^}]*\"state\":\"q_install\"" /tmp/web.out   # the page queues like a card press
+grep -q "409 Conflict" /tmp/web.out && grep -q "^unknown plugin" /tmp/web.out && grep -q "^nothing queued" /tmp/web.out
+grep -q "async function load" /tmp/web.out
+[ "$(grep -c "GET /api/state:" /tmp/web.out)" = 3 ] && ! grep -q "no answer" /tmp/web.out   # the second instance answered after the first closed
+echo "-- ROM uploads (live catalog: MPC Plaits on the fake MPC One, with user_files rules added)"
+gcc $SAN -DFS_ANY=1 -std=gnu11 -w src/manager.c tests/drive.c -lpthread -ldl -o /tmp/drive_web
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/mpc-one.sh
+P="/media/az01-internal/Synths/poloq - VST - MPC Plaits"
+echo '"'"'{"schema": 1, "id": "mpc-plaits", "version": "1.0.0", "user_files": [{"path": "roms", "label": "ROMs", "rules": [{"label": "Test ROM", "ext": [".bin"], "size": 4}]}]}'"'"' > "$P/mpc-plugin.json"
+/tmp/drive_web webfiles > /tmp/webfiles.out
+grep -q "\"id\":\"mpc-plaits\",[^}]*\"files\":1" /tmp/webfiles.out        # the page offers its files
+grep -q "\"id\":\"acid\",[^}]*\"files\":0" /tmp/webfiles.out
+grep -q "\[{\"name\":\"My ROM.bin\",\"size\":4}\]" /tmp/webfiles.out
+[ "$(grep -c "this plugin has no such folder for your files" /tmp/webfiles.out)" = 2 ]   # other, acid
+grep -q "^bad folder" /tmp/webfiles.out && grep -q "^that file name cannot be used" /tmp/webfiles.out && grep -q "^refused: not from this page" /tmp/webfiles.out
+[ ! -e "$P/x.bin" ] && [ ! -e "$P/evil.bin" ] && [ -z "$(ls -A "$P/roms")" ]   # nothing escaped, the delete removed the file
 echo "web OK"
 fi # web
 '

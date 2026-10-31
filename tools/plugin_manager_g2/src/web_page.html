@@ -1,0 +1,179 @@
+<!doctype html>
+<!-- The Plugin Manager's web page (src/web.c serves it; regenerate src/web_page.h with vst/gen_web.py after editing). -->
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Plugin Manager</title>
+<style>
+:root { --bg:#e9e7e2; --p:#f7f6f3; --l:#cdcac2; --fg:#1b1c1f; --m:#64666d; --a:#d63a30; --ok:#2e7d32; }
+body { font:15px/1.5 system-ui,sans-serif; margin:0 16px 90px; background:var(--bg); color:var(--fg); }
+.w { max-width:820px; margin:auto; }
+h1 { font:700 30px system-ui; text-transform:uppercase; margin:22px 0 4px; }
+#st { color:var(--m); margin:0 0 12px; } #st.e { color:var(--a); }
+.tabs { display:flex; gap:6px; margin:8px 0; } .tabs button[aria-pressed=true] { background:var(--fg); color:#fff; }
+input[type=search] { font:15px system-ui; padding:9px 11px; border:1px solid var(--l); border-radius:6px; width:100%; box-sizing:border-box; background:var(--p); }
+ul.l { list-style:none; padding:0; margin:8px 0; }
+ul.l > li { padding:9px 4px; border-bottom:1px solid var(--l); }
+.r { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .r .t { flex:1 1 220px; min-width:0; }
+.d { color:var(--m); font-size:13px; display:block; }
+button { font:600 13px system-ui; text-transform:uppercase; letter-spacing:.06em; border:1px solid var(--l); background:var(--p); border-radius:6px; padding:9px 12px; cursor:pointer; color:var(--fg); }
+button.p { background:var(--a); border-color:var(--a); color:#fff; } button.q { border-color:var(--a); color:var(--a); } button:disabled { opacity:.45; }
+.mv { background:var(--p); border:1px solid var(--l); border-left:4px solid var(--a); border-radius:6px; padding:10px 12px; margin:10px 0; }
+.files { background:var(--p); border:1px solid var(--l); border-radius:6px; padding:10px 12px; margin:8px 0 2px; }
+.files h3 { font:700 14px system-ui; text-transform:uppercase; letter-spacing:.06em; margin:4px 0; }
+.files ul { list-style:none; padding:0; margin:6px 0; } .files li { display:flex; gap:8px; align-items:center; padding:3px 0; font-size:14px; }
+.files li span { flex:1; } .ok { color:var(--ok); } .bad { color:var(--a); }
+#bar { position:fixed; left:0; right:0; bottom:0; background:var(--fg); color:#fff; padding:12px 16px; display:flex; justify-content:center; gap:14px; align-items:center; }
+#bar[hidden] { display:none; }
+</style>
+<div class="w">
+  <h1>Plugin Manager</h1>
+  <p id="st">Loading…</p>
+  <div id="mv"></div>
+  <div class="tabs"><button data-t="0" aria-pressed="true">Discover</button><button data-t="1">Installed</button><button data-t="2">Updates</button></div>
+  <input type="search" id="q" placeholder="Search plugins">
+  <ul class="l" id="l"></ul>
+</div>
+<div id="bar" hidden><span id="bt"></span><button class="p" id="ap">Apply</button></div>
+<script>
+let S = null, tab = 0, open = {};   // open: plugin id -> its files panel (HTML) while shown
+const $ = i => document.getElementById(i);
+const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
+const H = {'X-PM': '1'};   // the server refuses changes without it (another web site cannot send it)
+
+async function api(p) {
+  const r = await fetch(p, {method: 'POST', headers: H});
+  if (!r.ok) alert(await r.text());
+  load.last = ''; load();
+}
+async function load() {
+  try {
+    const t = await (await fetch('/api/state', {cache: 'no-store'})).text();
+    if (t == load.last) return;   // unchanged: keep the page as it is (an open file picker, a half-typed search)
+    load.last = t; S = JSON.parse(t); draw();
+  }
+  catch (e) { $('st').textContent = 'The MPC is not answering (restarting?). Retrying…'; }
+}
+
+const L = {install: ['Install', 'p', 'install'], update: ['Update', 'p', 'install'], q_install: ['Queued: cancel', 'q', 'cancel'],
+  q_update: ['Queued: cancel', 'q', 'cancel'], q_remove: ['Removing: cancel', 'q', 'cancel'], register: ['Register', '', 'register'],
+  q_register: ['Queued: cancel', 'q', 'cancel']};
+
+function draw() {
+  const st = $('st');
+  st.textContent = S.problem || S.status;
+  st.className = S.problem || S.status_kind == 2 ? 'e' : '';
+  $('mv').innerHTML = S.move ? `<div class="mv r"><span class="t"><b>${S.move} plugins need moving</b> so MPC OS 3.10.1 lists them.
+    Your projects and ROMs are kept.</span><button class="${S.migrate ? 'q' : 'p'}" onclick="api('/api/migrate?on=${S.migrate ? 0 : 1}')">${S.migrate ? 'Queued: cancel' : 'Move'}</button></div>` : '';
+  const q = $('q').value.toLowerCase(), busy = S.busy == 2 || S.busy == 3, dis = busy ? 'disabled' : '';
+  const ps = S.plugins.filter(p => tab == 0 ? p.state != 'installed' : tab == 1 ? p.installed : p.state == 'update' || p.state == 'q_update')
+    .filter(p => !q || (p.name + ' ' + p.author).toLowerCase().includes(q));
+  $('l').innerHTML = ps.map(p => {
+    const a = L[p.state];
+    let b = a ? `<button class="${a[1]}" ${dis} onclick="api('/api/queue?id=${p.id}&do=${a[2]}')">${a[0]}</button>` : '';
+    if (p.state == 'installed' || p.state == 'update') b += `<button ${dis} onclick="api('/api/queue?id=${p.id}&do=remove')">Remove</button>`;
+    if (p.files) b += `<button onclick="files('${p.id}')">${open[p.id] ? 'Hide files' : 'Your files'}</button>`;
+    return `<li><div class="r"><span class="t"><b>${esc(p.name)}</b><span class="d">${esc(p.author)} · ${esc(p.kind)}` +
+      `${p.installed ? ' · installed ' + esc(p.installed) : ''}${p.state == 'update' ? ' · ' + esc(p.latest) + ' available' : ''}</span></span>${b}</div>` +
+      `${open[p.id] || ''}</li>`;
+  }).join('') || '<li>Nothing here.</li>';
+  $('bar').hidden = !S.queued && !S.ready;
+  $('bt').textContent = busy ? 'Working…' : S.ready ? 'Ready. MPC will restart to apply.' : S.queued + ' change' + (S.queued == 1 ? '' : 's') + ' queued';
+  $('ap').textContent = S.ready ? 'Restart MPC and apply' : 'Apply';
+  $('ap').disabled = busy;
+}
+
+// ---- the user's files (ROMs): the rules come from the plugin's mpc-plugin.json user_files (the desktop app's checks, userfiles.go)
+const G = {};   // id -> its user_files groups
+function hasExt(n, ex) { const e = n.slice(n.lastIndexOf('.')).toLowerCase(); return ex.some(x => x.toLowerCase() == e); }
+function findBytes(d, t, from = 0) {
+  outer: for (let i = from; i <= d.length - t.length; i++) { for (let j = 0; j < t.length; j++) if (d[i + j] != t[j]) continue outer; return i; }
+  return -1;
+}
+const enc = s => new TextEncoder().encode(s);
+function fileVersion(d, sig) {
+  const i = findBytes(d, enc(sig)); if (i < 0) return null;
+  const o = d.indexOf(91, i + sig.length); if (o < 0) return null;   // '['
+  const c = d.indexOf(93, o + 1); if (c < 0 || c - o - 1 > 64) return null;   // ']'
+  return new TextDecoder().decode(d.slice(o + 1, c)).toLowerCase();
+}
+function validate(g, name, d) {   // -> {status: ok|maybe|bad|ignored, label, message}
+  let first = '', matched = false;
+  for (const r of g.rules) {
+    if (!hasExt(name, r.ext || [])) continue;
+    matched = true;
+    const n = d.length, lab = (r.label || '').toLowerCase();
+    let why = '', label = r.label;
+    if (r.size > 0 && n != r.size) why = `the size is ${n} bytes, ${lab} needs exactly ${r.size}`;
+    else if ((r.size_min > 0 && n < r.size_min) || (r.size_max > 0 && n > r.size_max)) why = `the size is ${n} bytes, ${lab} is ${r.size_min} to ${r.size_max}`;
+    else if (r.header && findBytes(d.subarray(0, r.header.length), enc(r.header)) != 0) why = 'this is not the right kind of file for ' + lab;
+    if (!why && r.signature) {
+      const v = fileVersion(d, r.signature);
+      if (v == null) why = 'this does not look like ' + lab + ' (its identification text is missing)';
+      else if (r.versions && r.versions.length) {
+        const m = r.versions.find(c => v.startsWith(c.prefix.toLowerCase()));
+        if (m) label = m.label; else why = `its version "${v}" is not one the plugin supports`;
+      }
+    }
+    if (why) { first = first || why; continue; }
+    return r.unverified ? {status: 'maybe', label, message: r.note || ''} : {status: 'ok', label};
+  }
+  return matched ? {status: 'bad', message: first} : {status: 'ignored', message: 'not a file type this plugin uses'};
+}
+const okName = n => /^[A-Za-z0-9][A-Za-z0-9 ._()+,'&-]{0,150}$/.test(n);
+
+async function files(id, keep) {
+  if (open[id] && !keep) { delete open[id]; draw(); return; }
+  if (!G[id]) {
+    const r = await fetch('/api/manifest?id=' + encodeURIComponent(id));
+    if (!r.ok) { alert(await r.text()); return; }
+    G[id] = (await r.json()).user_files || [];
+  }
+  let h = '<div class="files">';
+  for (const [k, g] of G[id].entries()) {
+    const r = await fetch(`/api/ls?id=${encodeURIComponent(id)}&path=${encodeURIComponent(g.path)}`);
+    const have = r.ok ? await r.json() : [];
+    h += `<h3>${esc(g.label || g.path)}</h3>${g.description ? `<span class="d">${esc(g.description)}</span>` : ''}<ul>` +
+      (have.map(f => `<li><span>${esc(f.name)} <span class="d" style="display:inline">${f.size} bytes</span></span>` +
+        `<button onclick="del('${id}',${k},'${encodeURIComponent(f.name)}')">Delete</button></li>`).join('') || '<li><span class="d">No files yet.</span></li>') +
+      `</ul><input type="file" multiple onchange="add('${id}',${k},this)">${g.hint ? `<span class="d">${esc(g.hint)}</span>` : ''}<div id="v-${id}-${k}"></div>`;
+  }
+  open[id] = h + '<span class="d">Files are checked in this browser, then copied into the plugin\'s folder on the MPC.</span></div>';
+  draw();
+}
+
+async function add(id, k, input) {
+  const g = G[id][k], out = [];
+  for (const f of input.files) {
+    const d = new Uint8Array(await f.arrayBuffer());
+    const v = okName(f.name) ? validate(g, f.name, d) : {status: 'bad', message: 'rename the file: only letters, digits, spaces and ._()+,\'&- can be used'};
+    if (v.status == 'ok' || v.status == 'maybe') {
+      const r = await fetch(`/api/file?id=${encodeURIComponent(id)}&path=${encodeURIComponent(g.path)}&name=${encodeURIComponent(f.name)}`, {method: 'PUT', headers: H, body: d});
+      if (!r.ok) { v.status = 'bad'; v.message = 'not copied: ' + (await r.text()); }
+    }
+    out.push(`<li><span class="${v.status == 'ok' ? 'ok' : v.status == 'bad' ? 'bad' : ''}">${esc(f.name)}: ${v.status == 'ok' ? 'copied (' + esc(v.label) + ')' :
+      v.status == 'maybe' ? 'copied, looks right' + (v.message ? ' (' + esc(v.message) + ')' : '') : esc(v.message)}</span></li>`);
+  }
+  await files(id, true);
+  const box = document.getElementById(`v-${id}-${k}`);
+  if (box) box.innerHTML = '<ul>' + out.join('') + '</ul>';
+  open[id] = open[id].replace(`<div id="v-${id}-${k}"></div>`, `<div id="v-${id}-${k}"><ul>${out.join('')}</ul></div>`);
+}
+
+async function del(id, k, name) {
+  if (!confirm('Delete ' + decodeURIComponent(name) + ' from the MPC?')) return;
+  const r = await fetch(`/api/delfile?id=${encodeURIComponent(id)}&path=${encodeURIComponent(G[id][k].path)}&name=${name}`, {method: 'POST', headers: H});
+  if (!r.ok) alert(await r.text());
+  files(id, true);
+}
+
+$('ap').onclick = () => {
+  if (S.ready && !confirm('MPC will stop, apply the changes and start again. Save your project first. Continue?')) return;
+  api('/api/apply');
+};
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  tab = +b.dataset.t;
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', x == b));
+  draw();
+});
+$('q').oninput = () => S && draw();
+load();
+setInterval(load, 2000);
+</script>

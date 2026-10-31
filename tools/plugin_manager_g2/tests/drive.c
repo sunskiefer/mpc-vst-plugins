@@ -68,18 +68,19 @@ static void wait_for(const char *key, const char *val) {
   printf("  (timeout waiting for %s=%s)\n", key, val);
 }
 
-/* GET path from the manager's web page on 127.0.0.1 (src/web.c); prints the reply, or "no answer" */
-static void http_get(const char *path) {
+/* a request to the manager's web page on 127.0.0.1 (src/web.c); prints the reply, or "no answer" */
+static void http(const char *method, const char *path, const char *hdrs) {
   int s = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in a = {.sin_family = AF_INET, .sin_port = htons(8790)};
   inet_pton(AF_INET, "127.0.0.1", &a.sin_addr);
   if (connect(s, (struct sockaddr *)&a, sizeof a)) { printf("GET %s: no answer\n", path); close(s); return; }
-  char b[65536]; int n = snprintf(b, sizeof b, "GET %s HTTP/1.0\r\n\r\n", path), k, t = 0;
+  static char b[262144]; int n = snprintf(b, sizeof b, "%s %s HTTP/1.0\r\nHost: 127.0.0.1:8790\r\n%s\r\n", method, path, hdrs), k, t = 0;
   if (write(s, b, n) != n) { close(s); return; }
   while (t < (int)sizeof b - 1 && (k = read(s, b + t, sizeof b - 1 - t)) > 0) t += k;
   b[t] = 0; close(s);
-  printf("GET %s:\n%s\n", path, b);
+  printf("%s %s:\n%s\n", method, path, b);
 }
+static void http_get(const char *path) { http("GET", path, ""); }
 
 int main(int argc, char **argv) {
   e = mpc_engine(); m = e->create(NULL);
@@ -87,8 +88,32 @@ int main(int argc, char **argv) {
   sleep(1);
   printf("net=%s problem=%s (%s) empty=%s disk=%s %s upd_badge=%s count=%s\n", get("net"), get("problem"), get("problem_txt"), get("empty"),
          get("disk"), get("disk_txt"), get("upd_badge"), get("upd_count"));
+  if (argc > 1 && !strcmp(argv[1], "webfiles")) {   /* ROMs into a folder the installed plugin's user_files names, and nowhere else */
+    const char *ok = "X-PM: 1\r\nContent-Length: 4\r\n\r\nabcd";   /* the body rides after the headers */
+    http_get("/api/state");
+    http_get("/api/manifest?id=mpc-plaits");
+    http_get("/api/ls?id=mpc-plaits&path=roms");
+    http("PUT", "/api/file?id=mpc-plaits&path=roms&name=My%20ROM.bin", ok);
+    http("PUT", "/api/file?id=mpc-plaits&path=other&name=x.bin", ok);              /* not a user_files folder */
+    http("PUT", "/api/file?id=mpc-plaits&path=..%2Fx&name=x.bin", ok);              /* climbing out */
+    http("PUT", "/api/file?id=mpc-plaits&path=roms&name=..%2Fevil.bin", ok);       /* a name with a path */
+    http("PUT", "/api/file?id=mpc-plaits&path=roms&name=x.bin", "Content-Length: 4\r\n\r\nabcd");   /* no X-PM */
+    http("PUT", "/api/file?id=acid&path=roms&name=x.bin", ok);                      /* a plugin without user_files */
+    http_get("/api/ls?id=mpc-plaits&path=roms");
+    http("POST", "/api/delfile?id=mpc-plaits&path=roms&name=My%20ROM.bin", "X-PM: 1\r\n");
+    http_get("/api/ls?id=mpc-plaits&path=roms");
+    e->destroy(m); return 0;
+  }
   if (argc > 1 && !strcmp(argv[1], "web")) {   /* the web page; a second instance waits for the port and takes over */
     http_get("/api/state"); http_get("/"); http_get("/nope");
+    http("POST", "/api/queue?id=beta-addin&do=install", "");                                          /* no X-PM: refused */
+    http("POST", "/api/queue?id=beta-addin&do=install", "X-PM: 1\r\nOrigin: http://evil.example\r\n");   /* another site: refused */
+    http("POST", "/api/queue?id=beta-addin&do=install", "X-PM: 1\r\nOrigin: http://127.0.0.1:8790\r\n");
+    http_get("/api/state");   /* the queue now holds it */
+    http("POST", "/api/queue?id=beta-addin&do=install", "X-PM: 1\r\n");                             /* already queued: 409 */
+    http("POST", "/api/queue?id=beta-addin&do=cancel", "X-PM: 1\r\n");
+    http("POST", "/api/queue?id=nosuch&do=install", "X-PM: 1\r\n");
+    http("POST", "/api/apply", "X-PM: 1\r\n");                                                        /* nothing queued: 409 */
     void *m2 = e->create(NULL); sleep(1);
     e->destroy(m); m = m2; sleep(3);
     http_get("/api/state");
