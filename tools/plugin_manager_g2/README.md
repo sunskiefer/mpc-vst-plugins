@@ -43,6 +43,10 @@ the project's development**: the catalog, its release rules and the official way
   as the default for new installs (it is forgotten for a session only if that drive is not there, and returns when it is). The storage readout at the
   top right then names the drive (`CARD · 12.0 GB ▾`); tap it for an **INSTALL TO** menu of the usable places with their free space (0.2.5).
 - Addins (the catalog's `addin` kind) are supported as well as plugins.
+- **MPC OS 3.10.1 and later (1.0):** with VST2 Support on, installs and updates go to `<drive>/VST2 Plugins/` with a `plugin.json`
+  (the only folder 3.10.1 lists), the drive menu offers every writable drive (internal, SD card, USB), and plugins installed before
+  are offered as one **Move N plugins to VST2 Plugins** item on APPLY (their folders and your files are copied; nothing is deleted).
+  With VST2 Support off it tells you to turn it on. On older firmware nothing changes.
 
 **Safe by design**
 - Plugins go only to a folder MPC lists in `SynthContentLocations` (MPC draws a plugin's skin only from there). A location must be writable, not

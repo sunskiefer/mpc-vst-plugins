@@ -5,6 +5,22 @@
 Native plugins for **Akai MPC OS standalone devices** (MPC Live/One/X/Key, Force): a catalog to find and install them,
 an installer app, and the tools to build, test and release your own.
 
+## MPC OS 3.10.1 and later: plugins the official way
+
+MPC OS **3.10.1** adds official support for third-party VST2 plugins: turn on **Preferences, Enhancements, VST2 Support** and
+MPC lists every plugin folder in a **`VST2 Plugins`** folder at the root of any drive (internal, SD card, USB) under
+**External VST Plugins**. No SSH, no root, no settings edits. Every plugin in the catalog works this way.
+
+- **New to this?** [Getting started](docs/GETTING_STARTED.md): make a plugin stick with the installer app, or copy a plugin
+  folder yourself, then add the **OpenMPC Plugin Manager VST** to browse and install the rest on the MPC itself.
+- **Already have plugins installed** (with the installer, the Plugin Manager or a stick)? On 3.10.1 the plugin browser only lists
+  plugins in `VST2 Plugins`. Your plugins and saved projects are fine; move them with one tap in the Plugin Manager 1.0, or with
+  the installer app's **Move** button. Details in [Getting started](docs/GETTING_STARTED.md#already-have-plugins).
+- **Making plugins?** Start with [Akai's MPC Plugin SDK](AKAI-SDK-URL) for a new plugin. This repo adds what it does not cover:
+  porting existing engines ([docs/PORTING.md](docs/PORTING.md)), the **Skin Studio** for screen skins
+  ([docs/SKIN_STUDIO.md](docs/SKIN_STUDIO.md)), host tests and CPU benchmarks, and the catalog, which lists SDK-built plugins too.
+- **Force:** no 3.10.1 for the Force yet; everything below (the installer app, the Plugin Manager, sticks) keeps working on it.
+
 > **MPC OS 2.x and 3.x.** Plugins here are built and tested on **MPC OS 3.x**. On **MPC OS 2.x** a plugin loads and its
 > Q-Links work, but its touchscreen page only appears if the plugin's skin is written in the older format 2.x reads. The
 > catalog checks from its files whether each release can work on 2.x, and marks one tested on a 2.x unit **MPC OS 2.x tested**

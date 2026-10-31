@@ -2055,3 +2055,27 @@ Fixes (offline-tested; not yet on a device): the manager's keys get the same 250
 - **"Last apply: 1 done, 2 failed" + garbage after a successful uninstall (Live III, device):** the result file held one `ok` line. MPC
   creates the plugin more than once and each instance refreshes; two instances parsing the file with `strtok` at the same moment corrupt
   each other. `show_result` now claims the file by renaming it (one instance reports it) and result/history parsing use `strtok_r`.
+
+## 2026-10-31: MPC OS 3.10.1 official VST2 support: the VST2 Plugins folder (Live III device; firmware strings offline)
+
+- **The folder (device, Live III, 3.10.1.6):** with Preferences, Enhancements, **VST2 Support** on, MPC lists plugin folders in
+  `<drive root>/VST2 Plugins/<Manufacturer> - VST - <Name>/` that hold a `plugin.json` (`name`, `manufacturer`, `uid`, `kind`,
+  `numInputs`, `numOutputs`, `file32` / `file64` relative to the folder, ...). Our portable plugin folder works unchanged with the `.so`
+  at its root: Acid-303 and Machinemodule were found by the Developer-mode VST2 manager's rescan, listed under **External VST Plugins**
+  after an MPC restart (a rescan alone does not update the browser), and played. Machinemodule found its own firmware files through
+  `mpc_plugin_dir()` (`MODULE_SUBDIR`) from the new location; JV-880 loaded its ROMs from it (journal `JV880 v2: Loading from
+  /nvme/VST2 Plugins/...`), Airwindows skins drew their shared `../../AW Skin/` images from a sibling folder in `VST2 Plugins`.
+- **Legacy registrations (device):** plugins registered in `MPC.settings` (`pluginList-arm-64bit`) are **not offered in the plugin
+  browser on 3.10.1, with VST2 Support on or off**; the list stays intact and the scan does not write to it. Saved projects still load
+  them by the stored path, and when that path is gone they **fall back to the `VST2 Plugins` copy** (same uid/name/vendor) and play.
+  So copying installed folders into `VST2 Plugins` is safe for projects (`tools/vst2_migrate.sh`: 41 plugins + `AW Skin` in 2 min).
+- **Settings (device):** the switches are `Enhancements.Enabled`, `Enhancements.VST2Support`, `Enhancements.DeveloperPanel` in
+  `MPC.settings`; switching VST2 Support off is saved lazily (a restart straight after the toggle kept it on; a later reboot kept it off).
+- **Developer mode (device):** starts sshd; root login with an empty password; survives a reboot.
+- **MIDI out (device):** plugin MIDI through our ALSA sequencer port still works (Maze Sequencer drove a synth on another track);
+  VST MIDI output is still not used by the host.
+- **glibc (offline, both 3.10.1 images):** 2.39 on Gen1 and Gen2.
+- **noexec drives (firmware strings, offline; not yet seen on a device):** MPC remounts a noexec drive with exec for `VST2 Plugins`.
+- **Gotcha (device, our error):** a hand edit that removed only the first line of a four-line `<PLUGIN>` element from
+  `KNOWNPLUGINS` made MPC crash at start (SEGV, restarts until systemd gave up). Edit the plugin list as whole elements, keep CRLF.
+- **Force:** no 3.10.1 image yet (board `ada2` is not in the Gen1 image's board list); the Force stays on the MPC.settings route.
