@@ -48,6 +48,7 @@ anywhere, engines must find their data next to it (`wrapper/plugin_dir.h`, `MODU
 | `kind` | `instrument` or `effect` |
 | `uid` | VST uid (hex), same as `plugin-meta.xml`; never changes |
 | `layout` | `"portable"` (the plugin folder). Absent in releases of the old layout |
+| `vst2` | `true` when the plugin folder has a `plugin.json` (Akai's folder format, read by MPC OS 3.10.1 and later from `<drive>/VST2 Plugins/<Manufacturer> - VST - <Name>/`). `release.py` writes both from the plugin-list entry: `name`, `manufacturer`, `uid` (`"0x"` + the 8 hex digits), `kind`, `category`, `numInputs`, `numOutputs`, `version`, and `file32` (Gen1) or `file64` (Gen2) naming the `.so` at the folder root, so the folder works unchanged from a Synths folder (older firmware, `install.sh`) and from `VST2 Plugins`. `catalog_check.py` checks the file against the manifest (folder name, uid, `file32`/`file64`, `numOutputs` > 0); a release without one is listed with a warning (older releases are converted when the catalog is built). |
 | `so` | library file name |
 | `skin`, `folder` | skin folder name; the plugin folder in the zip, `portable/<skin>` |
 | `extras` | data shipped next to the `.so`, relative to the plugin folder |

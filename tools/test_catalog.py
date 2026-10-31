@@ -195,6 +195,74 @@ class OsCompatTest(Base):
             self.assertTrue([e for e in errors if "os_compat must be" in e], (bad, errors))
 
 
+class Vst2Test(Base):
+    """MPC OS 3.10.1+ lists plugins from "VST2 Plugins/<Manufacturer> - VST - <Name>/plugin.json": every release carries one."""
+    PJ = "VST - Test Synth/plugin.json"   # the plugin folder's, not mpc-plugin.json
+
+    def pj(self, z):
+        with zipfile.ZipFile(z) as zf:
+            return json.loads(next(zf.read(n) for n in zf.namelist() if n.endswith(self.PJ)))
+
+    def test_release_writes_plugin_json(self):
+        z = self.build()
+        pj = self.pj(z)
+        self.assertEqual((pj["name"], pj["manufacturer"], pj["file32"], pj["kind"]), ("Test Synth", "Acme", "test_synth.so", "instrument"))
+        self.assertEqual(int(pj["uid"], 16), int(json.loads(zipfile.ZipFile(z).read("Test-Synth-1.2.0/mpc-plugin.json"))["uid"], 16))
+        self.assertNotIn("file64", pj)
+        e, w, _ = catalog_check.check(z)
+        self.assertEqual(e, [])
+        self.assertTrue(json.loads(zipfile.ZipFile(z).read("Test-Synth-1.2.0/mpc-plugin.json"))["vst2"])
+
+    def test_aarch64_uses_file64(self):
+        z = self.build(machine=183, glibc=b"GLIBC_2.34")
+        pj = self.pj(z)
+        self.assertEqual(pj.get("file64"), "test_synth.so")
+        self.assertNotIn("file32", pj)
+
+    def test_bad_plugin_json_is_an_error(self):
+        z = self.build()
+        for change, want in ((lambda j: j.update(uid="0x00000001"), "uid"), (lambda j: j.update(file32="VST/x-arm32.so"), "file32 must be"),
+                             (lambda j: j.update(numOutputs=0), "numOutputs"), (lambda j: j.update(name="Other"), "folder name"),
+                             (lambda j: j.update(kind="drum"), "kind")):
+            def fn(d, change=change):
+                j = json.loads(d)
+                change(j)
+                return json.dumps(j).encode()
+            e, _, _ = catalog_check.check(self.resum(z, self.PJ, fn))
+            self.assertTrue(any("plugin.json" in x and want in x for x in e), (want, e))
+        e, _, _ = catalog_check.check(self.resum(z, self.PJ, lambda d: b"{not json"))
+        self.assertTrue(any("not valid JSON" in x for x in e), e)
+
+    def test_a_four_character_uid_is_accepted(self):
+        z = self.build()
+        uid = int(self.pj(z)["uid"], 16).to_bytes(4, "big")
+        if all(32 <= c < 127 for c in uid):
+            e, _, _ = catalog_check.check(self.resum(z, self.PJ, lambda d: json.dumps(dict(json.loads(d), uid=uid.decode())).encode()))
+            self.assertEqual(e, [])
+
+    def test_missing_plugin_json_warns_on_an_older_release(self):
+        """A release made before plugin.json (no "vst2" in its manifest) still validates, with a warning; one that says vst2 must have it."""
+        z = self.build()
+        def strip(zpath, unflag):
+            out = zpath + (".u.zip" if unflag else ".f.zip")
+            with zipfile.ZipFile(zpath) as zin, zipfile.ZipFile(out, "w") as zout:
+                for i in zin.infolist():
+                    if i.filename.endswith(self.PJ):
+                        continue
+                    d = zin.read(i.filename)
+                    if unflag and i.filename.endswith("mpc-plugin.json"):
+                        m = json.loads(d)
+                        m.pop("vst2", None)
+                        d = json.dumps(m).encode()
+                    zout.writestr(i, d)
+            return self.resum(out, "SHA256SUMS", lambda d: d)   # sums for what is left
+        e, w, _ = catalog_check.check(strip(z, True))
+        self.assertEqual(e, [], e)
+        self.assertTrue(any("no plugin.json" in x for x in w), w)
+        e, _, _ = catalog_check.check(strip(z, False))
+        self.assertTrue(any("no plugin.json" in x for x in e), e)
+
+
 class CatalogTest(Base):
     def test_good_package(self):
         z = self.build()

@@ -3,7 +3,7 @@
 A release is **one zip per CPU** people can share around: `<Name>-<version>-mpc-armv7.zip` (Gen1 MPC and Force) and, for a port that
 lists `"targets": ["armv7", "aarch64"]`, `<Name>-<version>-mpc-aarch64.zip` (Gen2, docs/GEN2.md). Run `release.py` once per `.so`
 (`build/x.so` and `build/aarch64/x.so`) with the same arguments and attach both zips to the same release. Each zip unpacks to a folder with
-the plugin as one folder (`portable/<skin>/`: the `.so`, the skin, its data and a `plugin-meta.xml`), `install.sh` /
+the plugin as one folder (`portable/<skin>/`: the `.so`, the skin, its data, a `plugin-meta.xml` and a `plugin.json` for MPC OS 3.10.1's `VST2 Plugins` folder: copy the folder there and it is listed, no installer needed), `install.sh` /
 `uninstall.sh` and a generated `INSTALL.md` (scripted and manual steps, requirements, CPU result, checksums). The folder is
 the only layout: it can be dropped into any `Synths` folder by other installers too (`docs/CATALOG_SPEC.md`, "Plugin folder").
 

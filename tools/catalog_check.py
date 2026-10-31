@@ -353,6 +353,33 @@ def check(zpath, catalog=False, expect_id=None, expect_repo=None, require_portab
                 err("plugin-meta.xml uid %r != manifest uid %r" % (attr.get("uid"), m["uid"]))
             if entry and attr.get("name") != m["name"]:
                 err("plugin-meta.xml name doesn't match the manifest")
+            # MPC OS 3.10.1+: "VST2 Plugins/<Manufacturer> - VST - <Name>/plugin.json" (Akai's folder format) lists the plugin
+            pjb = files.get(base + "plugin.json")
+            if pjb is None:
+                (err if m.get("vst2") else warn)("no plugin.json in the plugin folder: MPC OS 3.10.1 and later will not list it from a VST2 Plugins folder")
+            else:
+                try:
+                    pj = json.loads(pjb)
+                except ValueError:
+                    pj = None
+                    err("plugin.json is not valid JSON")
+                if isinstance(pj, dict):
+                    key = "file64" if m["arch"] == "aarch64" else "file32"
+                    if "%s - VST - %s" % (pj.get("manufacturer"), pj.get("name")) != m["skin"]:
+                        err("plugin.json manufacturer/name do not make the folder name %r" % m["skin"])
+                    uid = str(pj.get("uid", ""))
+                    try:
+                        uidn = int(uid, 16) if uid.lower().startswith("0x") else int(uid) if uid.isdigit() else int.from_bytes(uid.encode("latin-1"), "big") if len(uid) == 4 else -1
+                    except ValueError:
+                        uidn = -1
+                    if uidn != int(str(m["uid"]), 16):
+                        err("plugin.json uid %r is not the manifest uid %s" % (uid, m["uid"]))
+                    if pj.get(key) != m["so"]:
+                        err("plugin.json %s must be %r (the .so at the folder root), not %r" % (key, m["so"], pj.get(key)))
+                    if not isinstance(pj.get("numOutputs", 2), int) or pj.get("numOutputs", 2) <= 0:
+                        err("plugin.json numOutputs must be more than 0 (MPC does not list a plugin with none)")
+                    if pj.get("kind", "instrument") not in ("instrument", "effect"):
+                        err("plugin.json kind must be instrument or effect")
             for e in m.get("extras", []):
                 if not re.fullmatch(r"[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*", e) or ".." in e.split("/"):
                     err("bad extra path %r" % e)

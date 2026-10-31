@@ -242,6 +242,24 @@ manifest = {
     "license": a.license,
     "cpu": {"p99_pct": bench["p99_pct"], "max_pct": bench["max_pct"], "verdict": bench["verdict"]} if bench else None,
 }
+# MPC OS 3.10.1 and later list plugins from "<drive>/VST2 Plugins/<Manufacturer> - VST - <Name>/" with a plugin.json (Akai's plugin
+# folder format). This folder works there as it is: plugin.json names the .so at the folder root (file32 on Gen1, file64 on Gen2), so
+# engines still find their data next to it. Older firmware ignores the file; install.sh keeps registering the folder in MPC.settings.
+if manifest["arch"] in ("armv7", "aarch64"):
+    if not re.fullmatch(r"[0-9a-fA-F]{1,8}", attr["uid"]):
+        raise SystemExit("the plugin-list entry's uid must be hex for plugin.json: %r" % attr["uid"])
+    pj = {"name": name, "manufacturer": attr["manufacturer"], "version": a.version,
+          "kind": "effect" if kind == "effect" else "instrument", "uid": "0x%08x" % int(attr["uid"], 16),
+          "category": attr.get("category") or ("Effect" if kind == "effect" else "Synth"),
+          "numInputs": int(attr.get("numInputs", "2" if kind == "effect" else "0")), "numOutputs": int(attr.get("numOutputs", "2")),
+          ("file64" if manifest["arch"] == "aarch64" else "file32"): so_name}
+    if pj["numOutputs"] <= 0:
+        raise SystemExit("numOutputs must be more than 0: MPC 3.10.1 does not list a plugin with no outputs")
+    for k, v in (("description", a.about), ("license", a.license), ("url", "https://github.com/" + a.repo if a.repo else "")):
+        if v:
+            pj[k] = v
+    open(os.path.join(pdir, "plugin.json"), "w").write(json.dumps(pj, indent=2) + "\n")
+    manifest["vst2"] = True
 open(os.path.join(root, "mpc-plugin.json"), "w").write(json.dumps(manifest, indent=2) + "\n")
 # a copy travels with the installed folder, so a device-side manager can tell which version is installed
 open(os.path.join(pdir, "mpc-plugin.json"), "w").write(json.dumps(manifest, indent=2) + "\n")
