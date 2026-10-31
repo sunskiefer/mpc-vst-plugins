@@ -120,6 +120,8 @@ typedef struct {
     char status[160];
     device_t *dev;   /* probed by the worker on each refresh */
     int migrate, migrate_seen;   /* MPC OS 3.10.1: "move to VST2 Plugins" is queued; it was offered once this session (cleared, it stays off) */
+    pthread_t web;   /* the local web page (web.c) */
+    int web_on;
 } mgr_t;
 
 /* ---- small helpers ---- */
@@ -2129,6 +2131,8 @@ static void card_field(const mgr_t *m, int i, const char *f, char *b, int n) {
     else snprintf(b, n, "0");   /* the triggers */
 }
 
+#include "web.c"
+
 /* ---- engine interface ---- */
 
 static void *mgr_create(const char *data_dir) {
@@ -2144,6 +2148,7 @@ static void *mgr_create(const char *data_dir) {
     m->dev = calloc(1, sizeof *m->dev);
     if (!m->dev) { free(m); return NULL; }
     if (pthread_create(&m->th, NULL, worker, m)) { free(m->dev); free(m); return NULL; }
+    m->web_on = !getenv("PM_NO_WEB") && !pthread_create(&m->web, NULL, web_thread, m);
     return m;
 }
 
@@ -2154,6 +2159,7 @@ static void mgr_destroy(void *inst) {
     pthread_cond_signal(&m->cv);
     pthread_mutex_unlock(&m->mu);
     pthread_join(m->th, NULL);
+    if (m->web_on) pthread_join(m->web, NULL);
     free(m->dev);
     free(m);
 }

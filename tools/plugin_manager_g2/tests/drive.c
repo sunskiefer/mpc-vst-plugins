@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 typedef struct { void *(*create)(const char *); void (*destroy)(void *); void (*midi)(void *, const uint8_t *, int);
   void (*set_param)(void *, const char *, const char *); int (*get_param)(void *, const char *, char *, int);
   void (*render)(void *, int16_t *, int); void *process; } E;
@@ -65,12 +68,32 @@ static void wait_for(const char *key, const char *val) {
   printf("  (timeout waiting for %s=%s)\n", key, val);
 }
 
+/* GET path from the manager's web page on 127.0.0.1 (src/web.c); prints the reply, or "no answer" */
+static void http_get(const char *path) {
+  int s = socket(AF_INET, SOCK_STREAM, 0);
+  struct sockaddr_in a = {.sin_family = AF_INET, .sin_port = htons(8790)};
+  inet_pton(AF_INET, "127.0.0.1", &a.sin_addr);
+  if (connect(s, (struct sockaddr *)&a, sizeof a)) { printf("GET %s: no answer\n", path); close(s); return; }
+  char b[65536]; int n = snprintf(b, sizeof b, "GET %s HTTP/1.0\r\n\r\n", path), k, t = 0;
+  if (write(s, b, n) != n) { close(s); return; }
+  while (t < (int)sizeof b - 1 && (k = read(s, b + t, sizeof b - 1 - t)) > 0) t += k;
+  b[t] = 0; close(s);
+  printf("GET %s:\n%s\n", path, b);
+}
+
 int main(int argc, char **argv) {
   e = mpc_engine(); m = e->create(NULL);
   for (int i = 0; i < 60 && !strstr(get("summary"), "available") ; i++) sleep(1);
   sleep(1);
   printf("net=%s problem=%s (%s) empty=%s disk=%s %s upd_badge=%s count=%s\n", get("net"), get("problem"), get("problem_txt"), get("empty"),
          get("disk"), get("disk_txt"), get("upd_badge"), get("upd_count"));
+  if (argc > 1 && !strcmp(argv[1], "web")) {   /* the web page; a second instance waits for the port and takes over */
+    http_get("/api/state"); http_get("/"); http_get("/nope");
+    void *m2 = e->create(NULL); sleep(1);
+    e->destroy(m); m = m2; sleep(3);
+    http_get("/api/state");
+    e->destroy(m); return 0;
+  }
   if (argc > 1 && !strcmp(argv[1], "addins")) {   /* the offline fixture (tests/fixture.py, tests/addins.sh) */
     set("kind", "3"); printf("ADDINS (DISCOVER: only the one not installed)\n"); cards();
     printf("install beta (card 1)\n"); press("r1_act"); cards();

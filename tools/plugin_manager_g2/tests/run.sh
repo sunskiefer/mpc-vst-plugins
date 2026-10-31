@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Offline tests in the gcc:12 Docker image (needs network: they read the live catalog and download one zip).
-#   ONLY=<section> tests/run.sh   one section (devices addins links vst2 pick theme safety arch) in a minute or two; no ONLY: everything (about 9 minutes)
+#   ONLY=<section> tests/run.sh   one section (devices addins links vst2 pick theme safety arch web) in a minute or two; no ONLY: everything (about 9 minutes)
 #   tests/run.sh            the wrapper host test, each fake device in tests/devices/, then the addin flow against
 #                           an offline fixture (tests/fixture.py: three addin packages and a file:// catalog)
 # A fake device is a shell script that builds the device's files inside the container: MPC.settings (the real format,
@@ -14,7 +14,7 @@ MPC_VST="$MV" python3 "$here/tests/fixture.py"
 docker run --rm -e ONLY -e TRACE -e DEV -v "$here":/p -v "$MV":/mv:ro -w /p gcc:12 bash -c '
 set -eo pipefail; [ -z "$TRACE" ] || set -x
 SAN="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1"
-want() { [ -z "$ONLY" ] || [ "$ONLY" = "$1" ]; }   # ONLY=safety: just that section (devices, addins, links, pick, theme, safety, arch)
+want() { [ -z "$ONLY" ] || [ "$ONLY" = "$1" ]; }   # ONLY=safety: just that section (devices, addins, links, pick, theme, safety, arch, web)
 export PM_TAPMS=40   # the double-tap window, short (FS_ANY builds only)
 export PM_GLIBC=2.39   # a Gen2 / MPC OS 3.x glibc: the container has 2.36, which reads as OS 2.x and refused the live catalog packages (a 120 s wait per device)
 gcc $SAN -std=gnu11 -w -Ivst/build src/manager.c /mv/tools/host_test.c /mv/wrapper/vst2_wrap.c -lpthread -ldl -lm -o /tmp/host_test
@@ -271,4 +271,15 @@ grep -q "card 1: AR" /tmp/arch-32.out && grep -q "card 2: DU" /tmp/arch-32.out
 grep -q "apply_state 4" /tmp/arch-32.out   # Dual'"'"'s armv7 zip is missing: the install fails
 echo "arch OK"
 fi # arch
+if want web; then
+echo "== web (offline fixture): the read-only page, its JSON, and a second instance taking the port over"
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/mpc-one.sh && sh tests/addins.sh && /tmp/drive_addins web > /tmp/web.out
+grep -q "Content-Type: application/json" /tmp/web.out
+grep -q "\"plugins\":\[{\"id\":" /tmp/web.out
+grep -q "<h1>Plugin Manager</h1>" /tmp/web.out
+grep -q "404 Not Found" /tmp/web.out
+[ "$(grep -c "GET /api/state:" /tmp/web.out)" = 2 ] && ! grep -q "no answer" /tmp/web.out   # the second instance answered after the first closed
+echo "web OK"
+fi # web
 '
