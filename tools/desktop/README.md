@@ -54,6 +54,13 @@ its `user_data` folders (your ROMs). Packages with symbolic links are refused (a
 Plugin Manager). Nothing on the MPC is modified; insert the stick and restart MPC to see the plugins under External VST Plugins.
 API: `POST /api/vst2stick {out, arch, ids}`, progress on `/api/stick/job` (`vst2stick.go`).
 
+**Moving existing installs (3.10.1).** On 3.10.1 the plugin browser no longer lists plugins registered in `MPC.settings` (every
+install made before), though saved projects still load them. Connected over SSH (Developer mode starts it on 3.10.1), the install tab's
+**MPC OS 3.10.1: move your plugins to VST2 Plugins** box runs `tools/vst2_migrate.sh` on the device: **Check** prints what it would
+copy; **Move** stops MPC, copies every plugin folder (user files included, plus shared skin folders such as `AW Skin`) into
+`VST2 Plugins` on the same drive with a `plugin.json`, and starts MPC. Nothing is deleted and `MPC.settings` is not edited.
+`vst2_migrate.sh` in this folder is an embedded copy of `tools/vst2_migrate.sh` (a test keeps them identical). API: `POST /api/vst2migrate {apply}`.
+
 ## What it does, in order
 
 1. **Connect:** SSH as root with your password, a key in `~/.ssh` (no passphrase), or neither on a device whose root has no password. It reads the device (32-bit ARM or Gen2 aarch64: Gen2 gets the catalog's aarch64 zips; `tar`?

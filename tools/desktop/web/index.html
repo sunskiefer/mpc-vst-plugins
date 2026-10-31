@@ -140,6 +140,14 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
   <p class="msg" id="connmsg" role="status" aria-live="polite"></p>
 </section>
 
+<section id="mig" class="off">
+  <h2>MPC OS 3.10.1: move your plugins to VST2 Plugins</h2>
+  <p class="sub">On MPC OS 3.10.1 and later the plugin browser lists only plugins in a <code>VST2 Plugins</code> folder (Preferences, Enhancements: turn on <b>VST2 Support</b> first). Plugins installed before are still there, and saved projects still load them, but you can't pick them from the browser. <b>Check</b> shows what would be copied; <b>Move</b> copies every installed plugin folder, your ROMs and files included, into <code>VST2 Plugins</code> on the same drive and restarts MPC. Nothing is deleted and <code>MPC.settings</code> is not edited. On older MPC OS this does nothing.</p>
+  <div class="row"><button id="mig-check" type="button">Check</button><button class="primary" id="mig-move" type="button">Move…</button></div>
+  <p class="msg" id="mig-msg" role="status" aria-live="polite"></p>
+  <pre class="log" id="mig-log" hidden></pre>
+</section>
+
 <section id="s2" class="off">
   <h2><span class="n">2</span>Choose plugins</h2>
   <p class="sub">Tick what you want from the catalog, and/or drop plugin zips you downloaded or built yourself.</p>
@@ -452,7 +460,7 @@ function el(tag, cls, t) { var e = document.createElement(tag); if (cls) e.class
 
 function setConnected(c, info, problems) {
   S.connected = c; S.problems = problems || []; S.libc = c && info ? (info.libc || "") : ""; S.arch = c && info ? (info.arch || "") : "";
-  $("s2").classList.toggle("off", !c); $("s3").classList.toggle("off", !c); $("s4").classList.toggle("off", !c); $("s5").classList.toggle("off", !c); $("s6").classList.toggle("off", !c); $("s7").classList.toggle("off", !c);
+  $("mig").classList.toggle("off", !c); $("s2").classList.toggle("off", !c); $("s3").classList.toggle("off", !c); $("s4").classList.toggle("off", !c); $("s5").classList.toggle("off", !c); $("s6").classList.toggle("off", !c); $("s7").classList.toggle("off", !c);
   S.patches = null; drawPatches();
   if (c) {
     var n = (info.installed || []).length;
@@ -864,6 +872,28 @@ function poll(since, log, resultEl, doneText) {
     refresh();
   }).catch(function (e) { setTimeout(function () { poll(since, log, resultEl, doneText); }, 1500); });
 }
+
+/* MPC OS 3.10.1: copy the installed plugin folders into VST2 Plugins on the device (POST /api/vst2migrate, a device job). */
+function migRun(apply) {
+  if (apply && !confirm("Move: MPC stops while your plugins are copied, then starts again. Save your project first. Go on?")) return;
+  $("mig-check").disabled = $("mig-move").disabled = true;
+  $("mig-log").hidden = false; $("mig-log").textContent = "";
+  msg($("mig-msg"), apply ? "Moving…" : "Checking…");
+  api("/api/vst2migrate", { apply: apply }).then(function () { migPoll(0); })
+    .catch(function (e) { $("mig-check").disabled = $("mig-move").disabled = false; msg($("mig-msg"), e.message, "err"); });
+}
+function migPoll(since) {
+  api("/api/job?since=" + since).then(function (j) {
+    var log = $("mig-log");
+    if (j.lines.length) { log.textContent += j.lines.join("\n") + "\n"; log.scrollTop = log.scrollHeight; }
+    if (j.state === "running") { setTimeout(function () { migPoll(j.next); }, 600); return; }
+    $("mig-check").disabled = $("mig-move").disabled = false;
+    msg($("mig-msg"), j.result, j.state === "done" ? "ok" : "err");
+    if (j.state === "done") { loadDevice(); }
+  }).catch(function () { setTimeout(function () { migPoll(since); }, 1500); });
+}
+$("mig-check").addEventListener("click", function () { migRun(false); });
+$("mig-move").addEventListener("click", function () { migRun(true); });
 
 /* --- USB stick mode: independent of the device connection above. --- */
 var ST = { scanHandle: "", running: false, drives: [] };
