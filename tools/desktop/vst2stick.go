@@ -292,7 +292,7 @@ func (a *App) vst2Stick(w http.ResponseWriter, r *http.Request) {
 	cat := a.cat
 	a.mu.Unlock()
 	if cat == nil {
-		c, err := FetchCatalog(a.catalogURL)
+		c, err := a.fetchCatalog()
 		if err != nil {
 			fail(w, 502, "cannot read the catalog: "+err.Error())
 			return
