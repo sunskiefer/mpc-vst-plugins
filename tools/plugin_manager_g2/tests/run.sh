@@ -83,7 +83,17 @@ grep -qF "echo '"'"'-- move to VST2 Plugins'"'"'" $A
 grep -qF -- "-t '"'"'/nvme/VST2 Plugins'"'"'" $A
 grep -qF -- "--json '"'"'/nvme/VST2 Plugins/" $A
 # run the move for real (MPC "stopped": systemctl is a stub) and check what MPC 3.10.1 would see
+mkdir -p "/nvme/Synths/acme - VST - Oldie/Plugin Skins" && echo old > "/nvme/Synths/acme - VST - Oldie/Plugin Skins/TUI.json"
 ARCH=aarch64 sh /tmp/openmpc-pm/vst2.sh --apply   # the container is x86_64; this fake device is a Gen2 (pluginList-arm-64bit)
+# MPC 3.10.1 draws the old copy'"'"'s skin when there is one: it is set aside (renamed), the VST2 copy keeps its own
+test -f "/nvme/VST2 Plugins/acme - VST - Oldie/Plugin Skins/TUI.json" && ! test -e "/nvme/Synths/acme - VST - Oldie/Plugin Skins"
+test -f "/nvme/Synths/acme - VST - Oldie/Plugin Skins.vst2-moved/TUI.json"
+# a plugin moved before this fix: the next run sets its old skin aside too (and an install'"'"'s --json run does the same)
+mv "/nvme/Synths/acme - VST - Oldie/Plugin Skins.vst2-moved" "/nvme/Synths/acme - VST - Oldie/Plugin Skins"
+ARCH=aarch64 sh /tmp/openmpc-pm/vst2.sh --apply > /tmp/vst2-again.out; grep -qF "SKIN  acme - VST - Oldie: old skin in /nvme/Synths set aside" /tmp/vst2-again.out
+mv "/nvme/Synths/acme - VST - Oldie/Plugin Skins.vst2-moved" "/nvme/Synths/acme - VST - Oldie/Plugin Skins"
+ARCH=aarch64 sh /tmp/openmpc-pm/vst2.sh --json "/nvme/VST2 Plugins/acme - VST - Oldie" > /tmp/vst2-json.out; grep -qF "SKIN  acme - VST - Oldie" /tmp/vst2-json.out
+! test -e "/nvme/Synths/acme - VST - Oldie/Plugin Skins"
 test -f "/nvme/VST2 Plugins/acme - VST - Oldie/plugin.json" && test -f "/nvme/VST2 Plugins/acme - VST - Oldie/roms/user.bin"
 test -f "/nvme/Synths/acme - VST - Oldie/oldie.so"   # the old copy stays: saved projects load it
 ! test -e "/nvme/VST2 Plugins/acme - VST - RomsOnly"

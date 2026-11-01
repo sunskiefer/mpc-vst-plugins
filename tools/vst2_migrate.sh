@@ -84,18 +84,36 @@ write_json() {   # write_json OUT ELEMENT
     } > "$1.new" && mv "$1.new" "$1"
 }
 
+# Synths locations: the content locations MPC lists, plus the usual ones; only writable, existing ones.
+LOCS=$(sed -n 's:.*<Location>\(.*\)</Location>.*:\1:p' "$SETTINGS")
+LOCS=$(printf '%s\n' "$LOCS" /nvme/Synths /sdcard/Synths /media/az01-internal/Synths | sed 's:/*$::' | awk 'NF && !seen[$0]++')
+
+# MPC OS 3.10.1 draws a plugin's skin from an old copy of the same folder in a Synths location when there is one, even when it
+# runs the plugin from VST2 Plugins (Live III, 2026-11-02): set that old "Plugin Skins" aside (renamed, not deleted) once the
+# VST2 copy has its own. retire_old_skins FOLDER VST2_DIR
+retire_old_skins() {
+    [ -d "$ROOT$2/$1/Plugin Skins" ] || return 0
+    printf '%s\n' "$LOCS" | while IFS= read -r l; do
+        o="$ROOT$l/$1"
+        [ -d "$o/Plugin Skins" ] || continue
+        if [ $APPLY = 1 ] || [ -n "$JSON" ]; then
+            rm -rf "$o/Plugin Skins.vst2-moved" && mv "$o/Plugin Skins" "$o/Plugin Skins.vst2-moved" && echo "SKIN  $1: old skin in $l set aside (MPC would draw it instead of the new one)"
+        else
+            echo "SKIN  $1: old skin in $l would be set aside"
+        fi
+    done
+}
+
 if [ -n "$JSON" ]; then
     d=${JSON%/}
     el=$(element "$ROOT$d" "${d%/*}")
     [ -n "$el" ] || { echo "$d: no plugin-meta.xml and no MPC.settings entry" >&2; exit 1; }
     uid=$(attr uid "$el"); case $uid in *[!0-9a-fA-F]*|'') echo "$d: uid \"$uid\" is not hex" >&2; exit 1 ;; esac
-    write_json "$ROOT$d/plugin.json" "$el" && echo "wrote $d/plugin.json"
-    exit $?
+    write_json "$ROOT$d/plugin.json" "$el" && echo "wrote $d/plugin.json" || exit 1
+    retire_old_skins "${d##*/}" "${d%/*}"
+    exit 0
 fi
 
-# Synths locations: the content locations MPC lists, plus the usual ones; only writable, existing ones.
-LOCS=$(sed -n 's:.*<Location>\(.*\)</Location>.*:\1:p' "$SETTINGS")
-LOCS=$(printf '%s\n' "$LOCS" /nvme/Synths /sdcard/Synths /media/az01-internal/Synths | sed 's:/*$::' | awk 'NF && !seen[$0]++')
 
 n_ok=0 n_skip=0 n_have=0
 printf '%s\n' "$LOCS" | while IFS= read -r loc; do
@@ -117,7 +135,7 @@ printf '%s\n' "$LOCS" | while IFS= read -r loc; do
         if [ ! -f "$d/$so" ]; then echo "SKIP  $folder: binary $so not in the folder"; continue; fi
         case $uid in *[!0-9a-fA-F]*|'') echo "SKIP  $folder: uid \"$uid\" is not hex"; continue ;; esac
         dest="$ROOT$vdir/$folder"
-        if [ -f "$dest/plugin.json" ]; then echo "HAVE  $folder (already in $vdir)"; continue; fi
+        if [ -f "$dest/plugin.json" ]; then echo "HAVE  $folder (already in $vdir)"; retire_old_skins "$folder" "$vdir"; continue; fi
         # sibling folders the skin uses ("../../AW Skin/x.png")
         sibs=$(cat "$d/Plugin Skins/"*.json 2>/dev/null | grep -o '\.\./\.\./[^/"]*/' | sed 's:^\.\./\.\./::; s:/$::' | sort -u)
         need=$(du -sk "$d" | cut -f1)
@@ -130,6 +148,7 @@ printf '%s\n' "$LOCS" | while IFS= read -r loc; do
         cp -a "$d" "$dest.new" || { echo "FAIL  $folder: copy failed" >&2; rm -rf "$dest.new"; continue; }
         write_json "$dest.new/plugin.json" "$el" || { echo "FAIL  $folder: plugin.json" >&2; rm -rf "$dest.new"; continue; }
         mv "$dest.new" "$dest" || { echo "FAIL  $folder: rename failed" >&2; continue; }
+        retire_old_skins "$folder" "$vdir"
         printf '%s\n' "$sibs" | while IFS= read -r s; do   # names can hold spaces ("AW Skin")
             [ -n "$s" ] && [ -d "$ROOT$loc/$s" ] && [ ! -e "$ROOT$vdir/$s" ] && cp -a "$ROOT$loc/$s" "$ROOT$vdir/$s.new" && mv "$ROOT$vdir/$s.new" "$ROOT$vdir/$s"
         done
