@@ -36,6 +36,18 @@ else
     exit 1
 fi
 
+# sshd keeps the FIRST value it reads for a directive, and the stock sshd_config starts with `Include /etc/ssh/sshd_config.d/*.conf`
+# (which sets PasswordAuthentication no, and its own AuthorizedKeysFile), so a line edited or appended further down is ignored. Put ours
+# before the Include instead.
+sshd_first() {
+    cfg=${ENABLE_SSH_CONFIG:-/etc/ssh/sshd_config}
+    [ -f "$cfg" ] || : > "$cfg"
+    cp -p "$cfg" "$cfg.mpc-usb.bak" 2>/dev/null || true
+    for l in "$@"; do sed -i "/^${l%% *}[ \t]/d" "$cfg"; done
+    { for l in "$@"; do echo "$l"; done; cat "$cfg"; } > "$cfg.mpc-usb.new" && cat "$cfg.mpc-usb.new" > "$cfg"
+    rm -f "$cfg.mpc-usb.new"
+}
+
 was_ro=0
 if awk '$2 == "/" && $4 ~ /(^|,)ro(,|$)/ { f = 1 } END { exit !f }' /proc/mounts; then was_ro=1; fi
 writable=0
@@ -53,16 +65,12 @@ if [ $writable = 1 ]; then
         mkdir -p /root/.ssh && chmod 700 /root/.ssh   # no `install` applet in the Force busybox (set -e killed the script here)
         grep -qxF "$KEY" /root/.ssh/authorized_keys 2>/dev/null || echo "$KEY" >> /root/.ssh/authorized_keys
         chmod 600 /root/.ssh/authorized_keys
+        # the firmware's own drop-in points sshd at /data/ssh/authorized_keys (persistent; /root may be an overlay), so put the key there too
+        mkdir -p /data/ssh 2>/dev/null && { grep -qxF "$KEY" /data/ssh/authorized_keys 2>/dev/null || echo "$KEY" >> /data/ssh/authorized_keys; chmod 600 /data/ssh/authorized_keys; }
+        sshd_first "AuthorizedKeysFile .ssh/authorized_keys /data/ssh/authorized_keys"
     else
         echo "root:$PASSWORD" | chpasswd
-        for opt in "PasswordAuthentication yes" "PermitRootLogin yes"; do
-            key=${opt%% *}
-            if grep -q "^#\?$key " /etc/ssh/sshd_config 2>/dev/null; then
-                sed -i "s/^#\?$key .*/$opt/" /etc/ssh/sshd_config
-            else
-                echo "$opt" >> /etc/ssh/sshd_config
-            fi
-        done
+        sshd_first "PasswordAuthentication yes" "PermitRootLogin yes" "AuthenticationMethods any"
     fi
     # enable sshd at boot (host keys are made on first boot by sshdgenkeys.service, already stock)
     for d in /lib/systemd/system /usr/lib/systemd/system; do
