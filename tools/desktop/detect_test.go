@@ -61,7 +61,7 @@ func TestDetectsMPCOS3101(t *testing.T) {
 func TestInstallOnMPCOS3101GoesToVST2PluginsWithPluginJSON(t *testing.T) {
 	fd := newFakeDevice(t)
 	os.WriteFile(filepath.Join(fd.dir, "Settings", "MPC", "MPC.settings"), []byte(`<VALUE name="Enhancements.VST2Support" val="1"/>`), 0o644)
-	ents := pluginEntries("Acid-1.2.3", "", "acid", "me - VST - Acid", fakeInstaller("A", true, 0), nil)
+	ents := pluginEntries("Acid-1.2.3", "", "acid", "me - VST - Acid", fakeInstaller("A", false, 0), nil)
 	for i := range ents {
 		if strings.HasSuffix(ents[i].name, "/plugin-meta.xml") {
 			ents[i].body = acidMeta
@@ -83,6 +83,9 @@ func TestInstallOnMPCOS3101GoesToVST2PluginsWithPluginJSON(t *testing.T) {
 	}
 	if pj := readPJ(t, filepath.Join(dir, "plugin.json")); pj["uid"] != "0x41634964" || pj["file32"] != "acid.so" {
 		t.Fatalf("plugin.json: %v", pj)
+	}
+	if c := fd.calls(); len(c) == 0 || c[len(c)-1] != "restart acvs" {
+		t.Fatalf("an installer that restarts MPC itself ran before plugin.json existed: MPC must be restarted after it, got %v", c)
 	}
 	if in := dialInfo(t, fd); !strings.Contains(strings.Join(in.Installed, "|"), "me - VST - Acid") || in.LegacyCount != 0 {
 		t.Fatalf("a plugin in VST2 Plugins is installed and needs no move: %v legacy %d", in.Installed, in.LegacyCount)

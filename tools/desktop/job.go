@@ -160,7 +160,7 @@ func RunInstall(dev *Device, root Root, items []Item, workDir string, j *Job, re
 			plugins = true
 		}
 	}
-	if plugins {
+	if plugins && dev.Info.VST2 != "on" {
 		j.log("Installing to %s (%s)", root.Label, root.Path)
 		if !root.InContent && root.Path != "" {
 			j.log("WARNING: MPC does not list %s as a content location, so the plugin will load with no skin until the folder is added to MPC's content locations (or you install to a listed folder)", root.Path)
@@ -220,7 +220,7 @@ func RunInstall(dev *Device, root Root, items []Item, workDir string, j *Job, re
 			cleanup()
 			return fmt.Errorf("cannot prepare %s on the device (status %d): %v", dest, code, rerr)
 		}
-		j.log("MPC OS 3.10.1 with VST2 Support: installing into %s", dest)
+		j.log("MPC OS 3.10.1 with VST2 Support: installing into %s (MPC lists only that folder)", dest)
 	}
 	script := installScriptVST2(dest, dev.cfg.AddinsDir, tmp, pkgs, dev.Info.Settings, syncRoots, vst2)
 	j.log("Installing (MPC is stopped once and started again at the end)")
@@ -328,6 +328,14 @@ func installScriptVST2(synths, addins, tmp string, pkgs []*Package, settings, sy
 		}
 		register()
 		w("systemctl start $SVC")
+	}
+	if vst2 { // an installer that restarts MPC by itself started it before plugin.json was written: once more, so MPC lists it
+		for _, p := range pkgs {
+			if !p.Defer && !p.Addin {
+				w(`if [ $rc = 0 ]; then echo 'Restarting MPC once more so it lists the new plugin'; systemctl restart $SVC; fi`)
+				break
+			}
+		}
 	}
 	w(`rm -rf "$T"`)
 	w("exit $rc")
