@@ -33,6 +33,7 @@ SETTINGS=
 for s in "$ROOT"/data/Settings/MPC/MPC.settings "$ROOT"/media/az01-internal/Settings/MPC/MPC.settings; do
     [ -f "$s" ] && { SETTINGS=$s; break; }
 done
+[ -n "$SETTINGS" ] || [ -z "$JSON" ] || SETTINGS=/dev/null   # --json reads the folder's plugin-meta.xml; MPC.settings is only a fallback
 [ -n "$SETTINGS" ] || { echo "MPC.settings not found" >&2; exit 1; }
 if [ -n "$JSON" ]; then :
 elif grep -q 'Enhancements.VST2Support" val="1"' "$SETTINGS"; then

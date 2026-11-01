@@ -470,7 +470,13 @@ fi
 for v in %s; do   # VST2 Plugins folders (MPC OS 3.10.1+) and the plugin folders in them
   [ -d "$v/VST2 Plugins" ] || continue
   printf 'vst2dir=%%s\n' "$v/VST2 Plugins"
-  for d in "$v/VST2 Plugins"/*/; do [ -d "$d" ] && printf 'vst2plug=%%s\n' "$(basename "$d")"; done
+  for d in "$v/VST2 Plugins"/*/; do
+    [ -d "$d" ] || continue
+    printf 'vst2plug=%%s\n' "$(basename "$d")"
+    f="${d}plugin-meta.xml"; [ -f "$f" ] || continue   # also an installed plugin, so updates and removal find it there
+    u=$(sed -n 's/.* uid="\([^"]*\)".*/\1/p' "$f" | head -n 1); n=$(sed -n 's/.* name="\([^"]*\)".*/\1/p' "$f" | head -n 1)
+    printf 'plug=%%s\t%%s\t%%s\t%%s\n' "$v/VST2 Plugins" "$(basename "$d")" "$u" "$n"
+  done
 done
 M=%s; B=%s
 [ -r "$M" ] && echo "model=$(tr -d '\0' < "$M")"
@@ -616,6 +622,9 @@ true`, shQuote(d.cfg.SynthsDir), d.cfg.SettingsGlob, shQuote(d.cfg.RemoteTmp), d
 		}
 	}
 	names := map[string]bool{}
+	for _, v := range info.VST2Dirs { // MPC OS 3.10.1+: plugins there are installed plugins too (not install targets: RunInstall maps a root to its drive's VST2 Plugins)
+		keep[v] = true
+	}
 	for _, p := range plugs {
 		if keep[p.Root] {
 			info.Plugins = append(info.Plugins, p)
@@ -634,7 +643,13 @@ true`, shQuote(d.cfg.SynthsDir), d.cfg.SettingsGlob, shQuote(d.cfg.RemoteTmp), d
 		info.Store = st
 	}
 	if info.VST2 != "" { // MPC OS 3.10.1+ lists only "VST2 Plugins": the others need moving (migrate.go)
-		for f := range names {
+		synthsNames := map[string]bool{}
+		for _, p := range info.Plugins {
+			if !strings.HasSuffix(p.Root, "/VST2 Plugins") {
+				synthsNames[p.Folder] = true
+			}
+		}
+		for f := range synthsNames {
 			if !vst2Folders[f] {
 				info.LegacyCount++
 			}

@@ -35,6 +35,7 @@ static const char VST2_MIGRATE_SH[] =
     "for s in \"$ROOT\"/data/Settings/MPC/MPC.settings \"$ROOT\"/media/az01-internal/Settings/MPC/MPC.settings; do\n"
     "    [ -f \"$s\" ] && { SETTINGS=$s; break; }\n"
     "done\n"
+    "[ -n \"$SETTINGS\" ] || [ -z \"$JSON\" ] || SETTINGS=/dev/null   # --json reads the folder's plugin-meta.xml; MPC.settings is only a fallback\n"
     "[ -n \"$SETTINGS\" ] || { echo \"MPC.settings not found\" >&2; exit 1; }\n"
     "if [ -n \"$JSON\" ]; then :\n"
     "elif grep -q 'Enhancements.VST2Support\" val=\"1\"' \"$SETTINGS\"; then\n"

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -211,7 +212,17 @@ func RunInstall(dev *Device, root Root, items []Item, workDir string, j *Job, re
 		syncRoots = dev.syncRoots()
 		j.log("After installing, every plugin folder on the device is registered with MPC (the app's own script; MPC.settings is backed up first)")
 	}
-	script := installScriptWith(root.Path, dev.cfg.AddinsDir, tmp, pkgs, dev.Info.Settings, syncRoots)
+	dest, vst2 := root.Path, dev.Info.VST2 == "on"
+	if vst2 { // MPC OS 3.10.1+ lists only <drive>/VST2 Plugins/<folder>/ with a plugin.json: install there, then write it (vst2_migrate.sh --json)
+		dest = path.Join(path.Dir(root.Path), "VST2 Plugins")
+		code, rerr := dev.Run("mkdir -p "+shQuote(dest)+" "+shQuote(tmp)+" && cat > "+shQuote(tmp+"/vst2.sh"), strings.NewReader(vst2MigrateSh), nil)
+		if rerr != nil || code != 0 {
+			cleanup()
+			return fmt.Errorf("cannot prepare %s on the device (status %d): %v", dest, code, rerr)
+		}
+		j.log("MPC OS 3.10.1 with VST2 Support: installing into %s", dest)
+	}
+	script := installScriptVST2(dest, dev.cfg.AddinsDir, tmp, pkgs, dev.Info.Settings, syncRoots, vst2)
 	j.log("Installing (MPC is stopped once and started again at the end)")
 	code, rerr := dev.Run(script, nil, func(l string) { j.log("  %s", l) })
 	if rerr != nil {
@@ -235,6 +246,12 @@ func installScript(synths, addins, tmp string, pkgs []*Package) string {
 // while MPC is stopped for the batch, so MPC restarts once.
 // syncRoots, when not empty, runs sync.sh from $T/sync with those -t options while MPC is stopped (InstallOpts.Register).
 func installScriptWith(synths, addins, tmp string, pkgs []*Package, settings, syncRoots string) string {
+	return installScriptVST2(synths, addins, tmp, pkgs, settings, syncRoots, false)
+}
+
+// installScriptVST2 is installScriptWith; with vst2, synths is a "VST2 Plugins" folder and each plugin folder installed there gets
+// its plugin.json from $T/vst2.sh (the embedded vst2_migrate.sh, copied there first) before MPC starts again.
+func installScriptVST2(synths, addins, tmp string, pkgs []*Package, settings, syncRoots string, vst2 bool) string {
 	var b strings.Builder
 	w := func(f string, a ...any) { fmt.Fprintf(&b, f+"\n", a...) }
 	w("T=%s; SYN=%s; STATE=\"$SYN/.mpc-store\"; rc=0", shQuote(tmp), shQuote(synths))
@@ -249,6 +266,13 @@ func installScriptWith(synths, addins, tmp string, pkgs []*Package, settings, sy
 		return `"$SYN"`
 	}
 	record := func(p *Package) {
+		if vst2 && !p.Addin {
+			for _, m := range p.Plugins {
+				if m.Skin != "" {
+					w(`  [ -d "$SYN"/%s ] && sh "$T/vst2.sh" --json "$SYN"/%s`, shQuote(m.Skin), shQuote(m.Skin))
+				}
+			}
+		}
 		if p.Addin {
 			w("  :") // its folder records the version; a then-branch may not be empty
 			return

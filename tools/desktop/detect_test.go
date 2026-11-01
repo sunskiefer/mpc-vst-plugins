@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -54,5 +55,47 @@ func TestDetectsMPCOS3101(t *testing.T) {
 	os.WriteFile(filepath.Join(fd.dir, "Settings", "MPC", "MPC.settings"), []byte(`<VALUE name="Enhancements.VST2Support" val="0"/>`), 0o644)
 	if in := dialInfo(t, fd); in.VST2 != "off" {
 		t.Fatalf("VST2 Support off must read as off, got %q", in.VST2)
+	}
+}
+
+func TestInstallOnMPCOS3101GoesToVST2PluginsWithPluginJSON(t *testing.T) {
+	fd := newFakeDevice(t)
+	os.WriteFile(filepath.Join(fd.dir, "Settings", "MPC", "MPC.settings"), []byte(`<VALUE name="Enhancements.VST2Support" val="1"/>`), 0o644)
+	ents := pluginEntries("Acid-1.2.3", "", "acid", "me - VST - Acid", fakeInstaller("A", true, 0), nil)
+	for i := range ents {
+		if strings.HasSuffix(ents[i].name, "/plugin-meta.xml") {
+			ents[i].body = acidMeta
+		}
+	}
+	p, err := OpenPackage(writeZip(t, t.TempDir(), ents), "upload")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := runJob(t, fd, Item{Pkg: p}); err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(fd.dir, "VST2 Plugins", "me - VST - Acid")
+	if _, err := os.Stat(filepath.Join(dir, "acid.so")); err != nil {
+		t.Fatal("the plugin must go to VST2 Plugins on the same drive:", err)
+	}
+	if _, err := os.Stat(filepath.Join(fd.dir, "Synths", "me - VST - Acid")); err == nil {
+		t.Fatal("not into Synths: MPC OS 3.10.1 would not list it")
+	}
+	if pj := readPJ(t, filepath.Join(dir, "plugin.json")); pj["uid"] != "0x41634964" || pj["file32"] != "acid.so" {
+		t.Fatalf("plugin.json: %v", pj)
+	}
+	if in := dialInfo(t, fd); !strings.Contains(strings.Join(in.Installed, "|"), "me - VST - Acid") || in.LegacyCount != 0 {
+		t.Fatalf("a plugin in VST2 Plugins is installed and needs no move: %v legacy %d", in.Installed, in.LegacyCount)
+	}
+}
+
+func TestInstallWithVST2SupportOffStaysInSynths(t *testing.T) {
+	fd := newFakeDevice(t)
+	os.WriteFile(filepath.Join(fd.dir, "Settings", "MPC", "MPC.settings"), []byte(`<VALUE name="Enhancements.VST2Support" val="0"/>`), 0o644)
+	if _, err := runJob(t, fd, Item{Pkg: installerPkg(t, "A-1", "a-plug", "me - VST - A", fakeInstaller("A", true, 0))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(fd.dir, "Synths", "me - VST - A")); err != nil {
+		t.Fatal(err)
 	}
 }
