@@ -108,7 +108,9 @@ function validate(g, name, d) {   // -> {status: ok|maybe|bad|ignored, label, me
     let why = '', label = r.label;
     if (r.size > 0 && n != r.size) why = `the size is ${n} bytes, ${lab} needs exactly ${r.size}`;
     else if ((r.size_min > 0 && n < r.size_min) || (r.size_max > 0 && n > r.size_max)) why = `the size is ${n} bytes, ${lab} is ${r.size_min} to ${r.size_max}`;
-    else if (r.header && findBytes(d.subarray(0, r.header.length), enc(r.header)) != 0) why = 'this is not the right kind of file for ' + lab;
+    else if ((r.header && findBytes(d.subarray(0, r.header.length), enc(r.header)) != 0) ||
+             (r.header_hex && findBytes(d.subarray(0, r.header_hex.length / 2), hexBytes(r.header_hex)) != 0)) why = 'this is not the right kind of file for ' + lab;
+    if (!why) why = nameProblem(r, name);
     if (!why && r.signature) {
       const v = fileVersion(d, r.signature);
       if (v == null) why = 'this does not look like ' + lab + ' (its identification text is missing)';
@@ -118,9 +120,19 @@ function validate(g, name, d) {   // -> {status: ok|maybe|bad|ignored, label, me
       }
     }
     if (why) { first = first || why; continue; }
-    return r.unverified ? {status: 'maybe', label, message: r.note || ''} : {status: 'ok', label};
+    return r.unverified ? {status: 'maybe', label, message: r.note || '', saveAs: r.save_as} : {status: 'ok', label, saveAs: r.save_as};
   }
   return matched ? {status: 'bad', message: first} : {status: 'ignored', message: 'not a file type this plugin uses'};
+}
+function hexBytes(h) {   // a rule's header_hex; bad hex matches nothing (userfiles.go hexBytes)
+  if (!/^([0-9a-fA-F]{2})+$/.test(h)) return enc('\0not hex\0');
+  return new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
+}
+function nameProblem(r, name) {   // userfiles.go nameProblem, for an upload (a stored file is listed as it is)
+  const low = name.toLowerCase();
+  if (r.names && r.names.length && !r.names.some(n => n.toLowerCase() == low)) return `${r.label} must be named ${r.names.join(' or ')}`;
+  if (r.name_contains && !low.includes(r.name_contains.toLowerCase())) return `the name of ${(r.label || '').toLowerCase()} must contain ${r.name_contains}: rename the file`;
+  return '';
 }
 const okName = n => /^[A-Za-z0-9][A-Za-z0-9 ._()+,'&-]{0,150}$/.test(n);
 
@@ -150,8 +162,10 @@ async function add(id, k, input) {
     const d = new Uint8Array(await f.arrayBuffer());
     const v = okName(f.name) ? validate(g, f.name, d) : {status: 'bad', message: 'rename the file: only letters, digits, spaces and ._()+,\'&- can be used'};
     if (v.status == 'ok' || v.status == 'maybe') {
-      const r = await fetch(`/api/file?id=${encodeURIComponent(id)}&path=${encodeURIComponent(g.path)}&name=${encodeURIComponent(f.name)}`, {method: 'PUT', headers: H, body: d});
+      const as = v.saveAs || f.name;   // the plugin loads it by its save_as name, whatever it is called here
+      const r = await fetch(`/api/file?id=${encodeURIComponent(id)}&path=${encodeURIComponent(g.path)}&name=${encodeURIComponent(as)}`, {method: 'PUT', headers: H, body: d});
       if (!r.ok) { v.status = 'bad'; v.message = 'not copied: ' + (await r.text()); }
+      else if (as != f.name) v.label = (v.label || '') + ', saved as ' + as;
     }
     out.push(`<li><span class="${v.status == 'ok' ? 'ok' : v.status == 'bad' ? 'bad' : ''}">${esc(f.name)}: ${v.status == 'ok' ? 'copied (' + esc(v.label) + ')' :
       v.status == 'maybe' ? 'copied, looks right' + (v.message ? ' (' + esc(v.message) + ')' : '') : esc(v.message)}</span></li>`);

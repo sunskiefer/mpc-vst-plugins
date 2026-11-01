@@ -374,19 +374,26 @@ func writeStickUserFiles(pluginDir string, g UserFileGroup, files []stickFile) (
 			v = UserFileVerdict{Name: f.name, Size: int64(len(f.data)), Status: "bad", Message: "the file name has characters the MPC cannot take; rename it with letters, digits, spaces and . _ - ( )"}
 		}
 		if v.Status == "ok" || v.Status == "maybe" {
-			tmp := filepath.Join(dir, "."+f.name+".part")
+			name := f.name
+			if v.SaveAs != "" { // the plugin loads it by this name, whatever it is called on the computer
+				name = v.SaveAs
+			}
+			tmp := filepath.Join(dir, "."+name+".part")
 			err := os.MkdirAll(dir, 0o755)
 			if err == nil {
 				err = os.WriteFile(tmp, f.data, 0o644)
 			}
 			if err == nil {
-				err = os.Rename(tmp, filepath.Join(dir, f.name))
+				err = os.Rename(tmp, filepath.Join(dir, name))
 			}
 			if err != nil {
 				os.Remove(tmp)
 				v.Status, v.Message = "bad", "could not be written to the stick: "+err.Error()
 			} else {
 				v.Message = strings.TrimSpace(v.Message + " Copied to the stick.")
+				if name != f.name {
+					v.Message += " Saved as " + name + "."
+				}
 			}
 		}
 		out = append(out, v)

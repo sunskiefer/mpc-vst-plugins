@@ -193,3 +193,19 @@ func TestStickUserFiles(t *testing.T) {
 		t.Fatal("a name with .. escaped the folder")
 	}
 }
+
+func TestStickUserFilesSaveAs(t *testing.T) {
+	g := UserFileGroup{Path: "roms", Label: "ROMs", Rules: []UserFileRule{{Label: "Test ROM", Ext: []string{".bin"}, Size: 4, SaveAs: "test.bin"}}}
+	plugin := filepath.Join(t.TempDir(), "VST2 Plugins", "me - VST - Acid")
+	os.MkdirAll(plugin, 0o755)
+	vs, err := writeStickUserFiles(plugin, g, []stickFile{{"My Copy.bin", []byte("abcd")}})
+	if err != nil || len(vs) != 1 || vs[0].Status != "ok" {
+		t.Fatalf("%v %v", vs, err)
+	}
+	if b, err := os.ReadFile(filepath.Join(plugin, "roms", "test.bin")); err != nil || string(b) != "abcd" {
+		t.Fatal("an upload must be saved under the rule's save_as:", err)
+	}
+	if _, err := os.Stat(filepath.Join(plugin, "roms", "My Copy.bin")); err == nil {
+		t.Fatal("the computer's file name must not be kept")
+	}
+}
