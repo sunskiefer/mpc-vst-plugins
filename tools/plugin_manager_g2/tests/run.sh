@@ -280,9 +280,11 @@ echo "== arch (offline fixture): the aarch64 zip on Gen2, the armv7 one otherwis
 rm -rf /tmp/openmpc-pm; PM_ARCH=aarch64 /tmp/drive_addins arch > /tmp/arch-64.out
 grep -q "card 1: DU" /tmp/arch-64.out      # Dual only: Armonly has no aarch64 zip
 ! grep -q "card 1: AR\|card 2: DU" /tmp/arch-64.out
+grep -q "\"id\":\"dual\"" /tmp/arch-64.out && ! grep -q "\"id\":\"armonly\"" /tmp/arch-64.out   # the web page leaves it out too
 grep -q "apply_state 3" /tmp/arch-64.out   # the aarch64 zip downloaded and verified
 rm -rf /tmp/openmpc-pm; /tmp/drive_addins arch 2 > /tmp/arch-32.out
 grep -q "card 1: AR" /tmp/arch-32.out && grep -q "card 2: DU" /tmp/arch-32.out
+grep -q "\"id\":\"armonly\"" /tmp/arch-32.out
 grep -q "apply_state 4" /tmp/arch-32.out   # Dual'"'"'s armv7 zip is missing: the install fails
 echo "arch OK"
 fi # arch

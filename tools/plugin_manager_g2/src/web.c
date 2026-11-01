@@ -79,9 +79,10 @@ static void web_state(mgr_t *m, wbuf_t *w) {
         wput(w, "\"}");
     }
     wput(w, "],\"plugins\":[");
-    for (int i = 0; i < m->npkg; i++) {
+    for (int i = 0, n = 0; i < m->npkg; i++) {
         const pkg_t *p = &m->pkg[i];
-        wput(w, "%s{\"id\":\"", i ? "," : "");
+        if (!p->url[0] && !installed(p)) continue;   /* as the screen: no download for this MPC (a Gen1-only zip on a Gen2), not listed */
+        wput(w, "%s{\"id\":\"", n++ ? "," : "");
         wesc(w, p->id, 0);
         wput(w, "\",\"name\":\"");
         wesc(w, p->name, 0);

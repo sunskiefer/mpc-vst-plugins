@@ -203,6 +203,7 @@ int main(int argc, char **argv) {
   }
   if (argc > 1 && !strcmp(argv[1], "arch")) {   /* the zip for the device (tests/fixture.py "Dual", "Armonly"): EFFECTS, install card 1 */
     set("kind", "2"); cards();
+    http_get("/api/state");   /* the web page lists what the screen does */
     press(argc > 2 ? "r2_act" : "r1_act"); press("apply");
     for (int i = 0; i < 60 && strcmp(get("apply_state"), "3") && strcmp(get("apply_state"), "4"); i++) sleep(1);
     cards();
