@@ -8,6 +8,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,8 +31,15 @@ type UserFileRule struct {
 	Size      int64    `json:"size,omitempty"`     // exact size in bytes
 	SizeMin   int64    `json:"size_min,omitempty"` // or a range
 	SizeMax   int64    `json:"size_max,omitempty"`
-	Header    string   `json:"header,omitempty"`    // the file starts with this
-	Signature string   `json:"signature,omitempty"` // the file contains this
+	Header    string   `json:"header,omitempty"`     // the file starts with this text
+	HeaderHex string   `json:"header_hex,omitempty"` // or with these bytes, in hex ("c0de")
+	Signature string   `json:"signature,omitempty"`  // the file contains this
+	// Names: the file names this rule accepts (compared without case), for kinds the plugin tells apart only by name (two files
+	// of one size). NameContains: text the name must contain. SaveAs: the name the plugin loads it by; an upload is saved under it
+	// whatever the file is called on the computer, and a file already in the folder passes only under that name.
+	Names        []string `json:"names,omitempty"`
+	NameContains string   `json:"name_contains,omitempty"`
+	SaveAs       string   `json:"save_as,omitempty"`
 	// Versions: the text in the next [...] after Signature is matched by prefix, first match wins, and its label names the file.
 	Versions []UserFileVersion `json:"versions,omitempty"`
 	// Unverified: size and header can be checked here, the content cannot. A file that passes is listed as "looks right" with Note,
@@ -61,6 +69,7 @@ type UserFileVerdict struct {
 	Status  string `json:"status"` // ok | maybe | bad | ignored
 	Label   string `json:"label,omitempty"`
 	Message string `json:"message,omitempty"`
+	SaveAs  string `json:"saveAs,omitempty"` // an upload is stored under this name (the rule's save_as), "" its own
 }
 
 const (
@@ -77,7 +86,21 @@ func (g UserFileGroup) check() error {
 	if len(g.Rules) == 0 {
 		return fmt.Errorf("user-file group %q has no rules", g.Path)
 	}
+	for _, r := range g.Rules {
+		if r.SaveAs != "" && (!userFileNameRe.MatchString(r.SaveAs) || !hasExt(r.SaveAs, r.Ext)) {
+			return fmt.Errorf("user-file rule %q: bad save_as %q", r.Label, r.SaveAs)
+		}
+	}
 	return nil
+}
+
+// hexBytes decodes a rule's header_hex (checked when the manifest is made); bad hex gives a header nothing matches.
+func hexBytes(h string) []byte {
+	b, err := hex.DecodeString(h)
+	if err != nil || len(b) == 0 {
+		return []byte("\x00not hex\x00")
+	}
+	return b
 }
 
 func hasExt(name string, exts []string) bool {
@@ -108,8 +131,41 @@ func fileVersion(data []byte, sig string) (string, bool) {
 	return strings.ToLower(string(rest[open+1 : open+1+closeAt])), true
 }
 
-// ValidateUserFile checks one file's content against the group's rules.
+// Validate checks a file about to be uploaded against the group's rules; ValidateStored one already in the folder (by the
+// name it has there, which must be a rule's save_as when it has one).
 func (g UserFileGroup) Validate(name string, data []byte) UserFileVerdict {
+	return g.validate(name, data, false)
+}
+
+func (g UserFileGroup) ValidateStored(name string, data []byte) UserFileVerdict {
+	return g.validate(name, data, true)
+}
+
+// nameProblem says why name does not suit the rule ("" it does).
+func (r UserFileRule) nameProblem(name string, stored bool) string {
+	low := strings.ToLower(name)
+	if stored && r.SaveAs != "" {
+		if low != strings.ToLower(r.SaveAs) {
+			return fmt.Sprintf("the plugin loads %s only as %s: delete this copy and add it again", strings.ToLower(r.Label), r.SaveAs)
+		}
+		return ""
+	}
+	if len(r.Names) > 0 {
+		ok := false
+		for _, n := range r.Names {
+			ok = ok || low == strings.ToLower(n)
+		}
+		if !ok {
+			return fmt.Sprintf("%s must be named %s", r.Label, strings.Join(r.Names, " or "))
+		}
+	}
+	if r.NameContains != "" && !strings.Contains(low, strings.ToLower(r.NameContains)) {
+		return fmt.Sprintf("the name of %s must contain %s: rename the file", strings.ToLower(r.Label), r.NameContains)
+	}
+	return ""
+}
+
+func (g UserFileGroup) validate(name string, data []byte, stored bool) UserFileVerdict {
 	v := UserFileVerdict{Name: name, Size: int64(len(data))}
 	var firstWhy string
 	matched := false
@@ -125,8 +181,11 @@ func (g UserFileGroup) Validate(name string, data []byte) UserFileVerdict {
 			why = fmt.Sprintf("the size is %d bytes, %s needs exactly %d", size, strings.ToLower(r.Label), r.Size)
 		case r.SizeMin > 0 && size < r.SizeMin, r.SizeMax > 0 && size > r.SizeMax:
 			why = fmt.Sprintf("the size is %d bytes, %s is %d to %d", size, strings.ToLower(r.Label), r.SizeMin, r.SizeMax)
-		case r.Header != "" && !bytes.HasPrefix(data, []byte(r.Header)):
+		case r.Header != "" && !bytes.HasPrefix(data, []byte(r.Header)), r.HeaderHex != "" && !bytes.HasPrefix(data, hexBytes(r.HeaderHex)):
 			why = "this is not the right kind of file for " + strings.ToLower(r.Label)
+		}
+		if why == "" {
+			why = r.nameProblem(name, stored)
 		}
 		label := r.Label
 		if why == "" && r.Signature != "" {
@@ -153,6 +212,9 @@ func (g UserFileGroup) Validate(name string, data []byte) UserFileVerdict {
 			continue
 		}
 		v.Label = label
+		if !stored {
+			v.SaveAs = r.SaveAs
+		}
 		if r.Unverified {
 			v.Status, v.Message = "maybe", r.Note
 		} else {
@@ -241,7 +303,7 @@ func (d *Device) listUserFiles(dir string, g UserFileGroup) ([]UserFileVerdict, 
 			vs = append(vs, UserFileVerdict{Name: name, Size: n, Status: "bad", Message: "could not be read on the device"})
 			continue
 		}
-		vs = append(vs, g.Validate(name, data))
+		vs = append(vs, g.ValidateStored(name, data))
 	}
 	sort.Slice(vs, func(i, j int) bool { return vs[i].Name < vs[j].Name })
 	return vs, nil
@@ -362,13 +424,20 @@ func (a *App) userFilesUpload(w http.ResponseWriter, r *http.Request) {
 			v = UserFileVerdict{Name: f.name, Size: int64(len(f.data)), Status: "bad", Message: "the file name has characters the device cannot take; rename it with letters, digits, spaces and . _ - ( )"}
 		}
 		if v.Status == "ok" || v.Status == "maybe" {
-			tmp := dir + "/." + f.name + ".part"
-			code, rerr := a.dev.Run("mkdir -p "+shQuote(dir)+" && cat > "+shQuote(tmp)+" && mv -f "+shQuote(tmp)+" "+shQuote(dir+"/"+f.name), bytes.NewReader(f.data), nil)
+			as := f.name
+			if v.SaveAs != "" {
+				as = v.SaveAs
+			}
+			tmp := dir + "/." + as + ".part"
+			code, rerr := a.dev.Run("mkdir -p "+shQuote(dir)+" && cat > "+shQuote(tmp)+" && mv -f "+shQuote(tmp)+" "+shQuote(dir+"/"+as), bytes.NewReader(f.data), nil)
 			if rerr != nil || code != 0 {
 				a.dev.Run("rm -f "+shQuote(tmp), nil, nil)
 				v.Status, v.Message = "bad", "could not be copied to the device"
 			} else {
 				v.Message = strings.TrimSpace(v.Message + " Copied to the device.")
+				if as != f.name {
+					v.Message += " Saved as " + as + "."
+				}
 			}
 		}
 		results = append(results, v)

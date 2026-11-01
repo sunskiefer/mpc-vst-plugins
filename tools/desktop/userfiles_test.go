@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
 	"net/url"
 	"os"
@@ -57,6 +58,49 @@ func TestUserFileRules(t *testing.T) {
 	}
 	if (UserFileGroup{Path: "../x", Rules: g.Rules}).check() == nil || (UserFileGroup{Path: "osirus/roms"}).check() == nil || g.check() != nil {
 		t.Error("group paths are checked like user_data, and a group needs rules")
+	}
+}
+
+// A JV-880-shaped spec: the plugin loads its files by name, two kinds share a size, cards need SR-JV80 in the name; and a
+// Microwave-shaped binary header.
+func TestUserFileNamesAndBinaryHeaders(t *testing.T) {
+	g := UserFileGroup{Path: "roms", Label: "ROMs", Rules: []UserFileRule{
+		{Label: "Program ROM", Ext: []string{".bin"}, Size: 8, Names: []string{"jv880_rom1.bin"}, SaveAs: "jv880_rom1.bin"},
+		{Label: "Memory", Ext: []string{".bin"}, Size: 8, Names: []string{"jv880_nvram.bin"}, SaveAs: "jv880_nvram.bin"},
+		{Label: "Sound ROM", Ext: []string{".bin"}, Size: 4, SaveAs: "rom2.bin"},
+		{Label: "Card", Ext: []string{".bin"}, Size: 2, NameContains: "SR-JV80"},
+		{Label: "XT ROM", Ext: []string{".rom"}, Size: 4, HeaderHex: "c0de"},
+	}}
+	eight, four := make([]byte, 8), make([]byte, 4)
+	for _, c := range []struct {
+		name         string
+		data         []byte
+		stored       bool
+		status, save string
+	}{
+		{"JV880_ROM1.BIN", eight, false, "ok", "jv880_rom1.bin"},
+		{"jv880_nvram.bin", eight, false, "ok", "jv880_nvram.bin"},
+		{"rom1-dump.bin", eight, false, "bad", ""},      // same size as both: only the name tells them apart
+		{"anything.bin", four, false, "ok", "rom2.bin"}, // a size of its own: any name, saved as the plugin's
+		{"anything.bin", four, true, "bad", ""},         // in the folder under another name: the plugin would not load it
+		{"rom2.bin", four, true, "ok", ""},
+		{"SR-JV80-01 Pop.bin", []byte{1, 2}, false, "ok", ""},
+		{"pop.bin", []byte{1, 2}, false, "bad", ""},
+		{"xt.rom", []byte{0xc0, 0xde, 0, 0}, false, "ok", ""},
+		{"xt.rom", []byte{0xc0, 0x00, 0, 0}, false, "bad", ""},
+	} {
+		v := g.validate(c.name, c.data, c.stored)
+		if v.Status != c.status || v.SaveAs != c.save {
+			t.Errorf("%s (stored %v): got %s save %q (%s), want %s save %q", c.name, c.stored, v.Status, v.SaveAs, v.Message, c.status, c.save)
+		}
+	}
+	if g.check() != nil {
+		t.Error(g.check())
+	}
+	bad := g
+	bad.Rules = []UserFileRule{{Label: "x", Ext: []string{".bin"}, SaveAs: "../x.bin"}}
+	if bad.check() == nil {
+		t.Error("a save_as with a path must be refused")
 	}
 }
 
@@ -133,5 +177,31 @@ func TestUploadChecksFilesAndCopiesTheGoodOnes(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "Virus C (6v6).BIN")); err == nil {
 		t.Error("the file is gone")
+	}
+}
+
+func TestUploadSavesUnderTheNameThePluginLoads(t *testing.T) {
+	h := newHarness(t)
+	syn, _ := seed(t, h.fd)
+	g := UserFileGroup{Path: "roms", Label: "ROMs", Rules: []UserFileRule{{Label: "OS file", Ext: []string{".syx"}, Size: 6, SaveAs: "Elektron_OS1.63.syx"}}}
+	h.app.cat = []CatPlugin{{ID: "a", Name: "A", Version: "1.0.0", Skin: "me - VST - A", UserData: []string{"roms"}, UserFiles: []UserFileGroup{g}}}
+	h.app.catAt = time.Now()
+	if code, _ := h.post("/api/connect", map[string]string{"host": "127.0.0.1", "password": "secret"}); code != 200 {
+		t.Fatal("connect")
+	}
+	code, m := uploadUserFiles(t, h, map[string]string{"root": syn, "folder": "me - VST - A", "group": "roms"}, map[string][]byte{"md os (1).syx": []byte("abcdef")})
+	if code != 200 || !strings.Contains(fmt.Sprint(m), "Saved as Elektron_OS1.63.syx") {
+		t.Fatalf("upload: %d %v", code, m)
+	}
+	dir := filepath.Join(syn, "me - VST - A", "roms")
+	if b, err := os.ReadFile(filepath.Join(dir, "Elektron_OS1.63.syx")); err != nil || string(b) != "abcdef" {
+		t.Fatalf("the file must be saved under the plugin's name: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "md os (1).syx")); err == nil {
+		t.Error("the file must not also be kept under its own name")
+	}
+	resp, out := h.do("GET", "/api/userfiles?root="+url.QueryEscape(syn)+"&folder="+url.QueryEscape("me - VST - A")+"&group=roms", nil, nil)
+	if resp.StatusCode != 200 || !strings.Contains(string(out), `"ok":1`) {
+		t.Errorf("listed as good under its saved name: %s", out)
 	}
 }

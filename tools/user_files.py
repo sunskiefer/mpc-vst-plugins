@@ -7,7 +7,9 @@ device. docs/CATALOG_SPEC.md describes the fields.
 import re
 
 PATH_RE = r"[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*"
-RULE_KEYS = {"label", "ext", "size", "size_min", "size_max", "header", "signature", "versions", "unverified", "note"}
+RULE_KEYS = {"label", "ext", "size", "size_min", "size_max", "header", "header_hex", "signature", "versions", "unverified", "note",
+             "names", "name_contains", "save_as"}
+NAME_RE = r"[A-Za-z0-9][A-Za-z0-9 ._()+,'&-]{0,150}"   # a file name the installer can write (desktop/userfiles.go userFileNameRe)
 GROUP_KEYS = {"path", "label", "description", "hint", "rules"}
 
 
@@ -60,6 +62,22 @@ def user_files_problems(groups, user_data):
             for v in r.get("versions", []):
                 if not (isinstance(v, dict) and v.get("prefix") and v.get("label")):
                     out.append("%s: each version needs a prefix and a label" % rw)
+            if "header_hex" in r:
+                h = r["header_hex"]
+                if not (isinstance(h, str) and re.fullmatch(r"([0-9a-fA-F]{2}){1,32}", h)):
+                    out.append("%s: header_hex must be hex bytes like \"c0de\"" % rw)
+                if r.get("header"):
+                    out.append("%s: give header or header_hex, not both" % rw)
+            ok_ext = lambda n: isinstance(exts, list) and any(n.lower().endswith(e.lower()) for e in exts if isinstance(e, str))
+            for n in r.get("names", []) if isinstance(r.get("names", []), list) else [None]:
+                if not (isinstance(n, str) and re.fullmatch(NAME_RE, n) and ok_ext(n)):
+                    out.append("%s: names must be plain file names with one of the rule's extensions" % rw)
+            if "names" in r and (not isinstance(r["names"], list) or not r["names"]):
+                out.append("%s: names must be a non-empty list" % rw)
+            if "name_contains" in r and not (isinstance(r["name_contains"], str) and r["name_contains"].strip()):
+                out.append("%s: name_contains must be text" % rw)
+            if "save_as" in r and not (isinstance(r["save_as"], str) and re.fullmatch(NAME_RE, r["save_as"]) and ok_ext(r["save_as"])):
+                out.append("%s: save_as must be a plain file name with one of the rule's extensions" % rw)
             if r.get("unverified") and not r.get("note"):
                 out.append("%s: an unverified rule needs a note that tells the user what happens next" % rw)
     return out
