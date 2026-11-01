@@ -11,8 +11,9 @@ MPC OS **3.10.1** adds official support for third-party VST2 plugins: turn on **
 MPC lists every plugin folder in a **`VST2 Plugins`** folder at the root of any drive (internal, SD card, USB) under
 **External VST Plugins**. No SSH, no root, no settings edits. Every plugin in the catalog works this way.
 
-- **New to this?** [Getting started](docs/GETTING_STARTED.md): make a plugin stick with the installer app, or copy a plugin
-  folder yourself, then add the **OpenMPC Plugin Manager VST** to browse and install the rest on the MPC itself.
+- **New to this?** [Getting started](docs/GETTING_STARTED.md): put the **OpenMPC Plugin Manager VST** on a USB stick (one click
+  in the installer app, or copy its folder yourself), add it to a track, and open the address it shows on your phone or computer:
+  browse the catalog, install, update, move old installs and add ROMs from there, or on the MPC's own screen.
 - **Already have plugins installed** (with the installer, the Plugin Manager or a stick)? On 3.10.1 the plugin browser only lists
   plugins in `VST2 Plugins`. Your plugins and saved projects are fine; move them with one tap in the Plugin Manager 1.0, or with
   the installer app's **Move** button. Details in [Getting started](docs/GETTING_STARTED.md#already-have-plugins).

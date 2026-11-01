@@ -2085,3 +2085,14 @@ Fixes (offline-tested; not yet on a device): the manager's keys get the same 250
 - **Gotcha (device, our error):** a hand edit that removed only the first line of a four-line `<PLUGIN>` element from
   `KNOWNPLUGINS` made MPC crash at start (SEGV, restarts until systemd gave up). Edit the plugin list as whole elements, keep CRLF.
 - **Force:** no 3.10.1 image yet (board `ada2` is not in the Gen1 image's board list); the Force stays on the MPC.settings route.
+
+## 2026-11-01: a plugin can serve a web page on the local network (Live III, MPC OS 3.10.1.6, device)
+
+- MPC runs as root (`/usr/bin/MPC`, thread "MPC 3 Main") and the kernel has no iptables/nftables support: nothing filters incoming
+  connections. MPC itself already listens on 7447 and 41401, Akai's DeviceControlService on 51000; all reachable from the LAN.
+- The Plugin Manager's server thread (port 8790) answered from inside MPC while the manager was on a track, **with Developer mode
+  off as well** (no SSH needed). Install + APPLY from a phone browser worked; the page drops while MPC restarts and returns when MPC
+  reopens a project with the manager on a track.
+- MPC creates the plugin more than once: only one instance can bind the port, so the others retry and take over when it closes.
+- A browser page cannot fetch GitHub release zips itself (the `github.com` 302 has no `Access-Control-Allow-Origin`); the catalog
+  JSON on github.io can be read (`*`). A page served by the manager doesn't need the zips: the MPC downloads them.

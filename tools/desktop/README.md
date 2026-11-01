@@ -43,6 +43,14 @@ None of this needs the device's own SSH yet. Both the firmware path and the outp
 instead of typing one, and the output folder step also lists this computer's mounted drives (`/api/drives`; Linux, macOS and
 Windows): pick a mounted USB stick there and Build writes the stick straight onto it, with nothing left to copy by hand.
 
+## The start screen
+
+Two cards by MPC OS version. **3.10.1 or later:** the steps (Enhancements, VST2 Support, restart), a button to the
+**Just the Plugin Manager** stick (then use the Plugin Manager's web page; no SSH or Developer mode), and a link to the plugin
+stick for an MPC without Wi-Fi. **3.9.1 or earlier:** connect over SSH, or make a stick. After connecting, one line names the
+model, MPC OS, VST2 Support, plugins still to move and the Plugin Manager version (read in the same SSH round trip as the rest);
+on 3.10.1 device patches are not offered and the move box shows only when there is something to move.
+
 ## MPC OS 3.10.1 and later: plugin stick
 
 MPC OS 3.10.1 loads plugins from a `VST2 Plugins` folder at the root of any drive (Preferences, Enhancements: Enable Enhancements and
