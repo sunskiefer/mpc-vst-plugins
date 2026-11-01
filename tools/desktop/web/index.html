@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MPC Plugin Installer</title>
+<title>OpenMPC Installer</title>
 <style>
 :root { --bg:#e9e7e2; --panel:#f7f6f3; --panel-2:#eeede8; --line:#cdcac2; --fg:#1b1c1f; --muted:#64666d; --accent:#d63a30; --accent-fg:#fff;
   --ok:#2e7d32; --lcd:#1b1c1f; --lcd-fg:#f4f4f4; --display:"Titillium Web","Arial Narrow",system-ui,sans-serif; --text:"Roboto",system-ui,sans-serif; color-scheme:light; }
@@ -109,8 +109,8 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 <div class="wrap">
 <div id="newver" class="small" hidden style="background:var(--panel);border:1px solid var(--accent);border-radius:6px;padding:10px 14px;margin-top:16px"></div>
 <header>
-  <h1>MPC plugin installer</h1>
-  <p class="lede">Install plugins from the catalog, or zips you already have, on your MPC or Force. This page runs on your computer only. Nothing about your device is saved.</p>
+  <h1>OpenMPC Plugins &amp; Tools Installer</h1>
+  <p class="lede">Get the OpenMPC Plugin Manager and community plugins onto your MPC or Force: a USB stick for any MPC OS, or installs over Wi-Fi with SSH, plus tools for ROMs, removals and backups. This page runs on your computer only. Nothing about your device is saved.</p>
 </header>
 
 <section id="which">
@@ -251,12 +251,11 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 
 <div id="stick-mode">
 <details id="v2" class="collapse">
-<summary><h2>MPC OS 3.10.1 or later: Plugin Manager stick, or plugins straight onto a stick</h2><span class="hint">Show</span></summary>
+<summary><h2>MPC OS 3.10.1 or later: Plugin Manager stick</h2><span class="hint">Show</span></summary>
 <section class="guide">
   <ul>
-    <li><b>What it is:</b> MPC OS 3.10.1 loads plugins from a folder named <code>VST2 Plugins</code> on any drive. This writes the plugins you pick into that folder on a USB stick or SD card. Nothing on the MPC is modified.</li>
-    <li><b>Works on:</b> MPC OS <b>3.10.1 or later</b>, Gen1 MPC (Live, Live II, One, X, Key) and Gen2 (Live III, One G2, Key(s) G2). Not the Force yet (no 3.10.1 for it): use the sections below.</li>
-    <li><b>Tip:</b> include the <b>OpenMPC Plugin Manager VST</b> (ticked below), or press <b>Just the Plugin Manager</b>. From then on you install the rest on the MPC itself, or from its web page on your phone or computer.</li>
+    <li><b>What it is:</b> writes the <b>OpenMPC Plugin Manager VST</b> into a <code>VST2 Plugins</code> folder on a USB stick or SD card. On the MPC you add it to a track and install everything else from its screen, or from its web page on your phone or computer. Nothing on the MPC is modified.</li>
+    <li><b>Works on:</b> MPC OS <b>3.10.1 or later</b>, Gen1 MPC (Live, Live II, One, X, Key) and Gen2 (Live III, One G2, Key(s) G2).</li>
   </ul>
 </section>
 <section>
@@ -264,30 +263,29 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
     <label class="whereopt"><input type="radio" name="v2-arch" value="armv7" checked><span>Gen1 (32-bit)<small>MPC Live, Live II, One, One+, X, X SE, Key 61, Key 37</small></span></label>
     <label class="whereopt"><input type="radio" name="v2-arch" value="aarch64"><span>Gen2 (64-bit)<small>MPC Live III, One G2, Key G2, XL</small></span></label>
   </fieldset>
-  <div class="row"><label class="f">Find a plugin<input id="v2-q" type="text" placeholder="name, kind or words from its summary" spellcheck="false"></label></div>
-  <p class="small" id="v2-count"></p>
-  <ul class="list" id="v2-list" style="max-height:340px;overflow:auto"></ul>
   <div id="v2-drives"></div>
   <div class="row">
     <label class="f">USB stick, SD card or folder<input id="v2-out" type="text" placeholder="pick a mounted drive above, or Browse" spellcheck="false"></label>
     <button id="v2-out-browse" type="button">Browse…</button>
-    <button class="primary" id="v2-build" type="button">Download and write…</button>
+    <button class="primary" id="v2-mgr" type="button">Write the Plugin Manager</button>
   </div>
-  <div class="row"><button id="v2-mgr" type="button">Just the Plugin Manager</button>
-    <span class="small" style="flex:1 1 260px">One click: only the Plugin Manager goes on the stick. Install everything else from its web page on your phone or computer.</span></div>
+  <details id="v2-more" class="sub">
+    <summary>No Wi-Fi on the MPC? Put plugins (and their ROMs) straight onto the stick instead</summary>
+    <div class="row"><label class="f">Find a plugin<input id="v2-q" type="text" placeholder="name, kind or words from its summary" spellcheck="false"></label></div>
+    <p class="small" id="v2-count"></p>
+    <ul class="list" id="v2-list" style="max-height:340px;overflow:auto"></ul>
+    <div class="row"><button id="v2-build" type="button">Write the ticked plugins…</button></div>
+  </details>
   <p class="msg" id="v2-msg" role="status" aria-live="polite"></p>
   <pre class="log" id="v2-log" hidden></pre>
   <div id="v2-roms" hidden><h3>Your ROMs and files</h3><p class="sub">These plugins need files you supply (a synth's ROMs). Each one is checked here before it is written into the plugin's folder on the stick.</p><ul class="list" id="v2-romlist"></ul></div>
   <div class="guide">
     <p class="lead"><b>Then, on your MPC.</b> <i>Save your project first.</i></p>
     <ol>
-      <li>Update to <b>MPC OS 3.10.1</b> or later (Preferences, Info shows the version).</li>
-      <li>Preferences, <b>Enhancements</b>: turn on <b>Enable Enhancements</b> and <b>VST2 Support</b> (read the warning). Wait a few seconds before the next step, so the setting is saved.</li>
-      <li><b>Insert</b> the stick and <b>restart MPC</b> (new plugins show in the plugin browser after a restart).</li>
-      <li>Open the plugin browser: your plugins are under <b>External VST Plugins</b>.</li>
-      <li>Add the <b>Plugin Manager</b> to a track. Its status line shows an address like <code>http://192.168.1.40:8790</code>: open it on a phone or computer on the same Wi-Fi to install plugins, move old ones and add ROMs. Save your project with the Plugin Manager on a track and the page comes back after each restart.</li>
+      <li>Preferences, <b>Enhancements</b>: turn on <b>Enable Enhancements</b> and <b>VST2 Support</b> (read the warning). Wait a few seconds, so the setting is saved.</li>
+      <li><b>Insert</b> the stick and <b>restart MPC</b>.</li>
+      <li>Add a track: <b>External VST Plugins &gt; Plugin Manager</b>. Its status line shows an address like <code>http://192.168.1.40:8790</code>: open it on a phone or computer on the same Wi-Fi to install plugins, move old ones and add ROMs. Save your project with the Plugin Manager on a track and the page comes back after each restart.</li>
     </ol>
-    <p class="small">Plugins that need your own ROM or firmware file (JV-880, Osirus, Machinemodule…) load it from their folder on the stick. Running this again replaces the plugins on the stick and keeps the files you added to them.</p>
   </div>
 </section>
 </details>
@@ -319,56 +317,6 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
       <li>Insert the stick and choose <b>Open</b> on the prompt.</li>
       <li>Wait for MPC to restart. A <code>g2-install-result.txt</code> on the stick says what happened.</li>
     </ol>
-  </div>
-</section>
-</details>
-<details id="esd" class="collapse">
-<summary><h2>Older option: community Plugin Manager stick (MPC OS 3.9.1 and 3.10.0)</h2><span class="hint">Show</span></summary>
-<section id="es" class="guide">
-  <ul>
-    <li><b>What it is:</b> browse and install community plugins on the MPC's own screen, with no computer connection, password or setup. This writes a ready-made USB stick; you plug it into the MPC and confirm one prompt.</li>
-    <li><b>Works on:</b>
-      <ul>
-        <li><b>MPC OS 3.9.1:</b> Gen1 MPC (Live, One, X, Key), Force and Gen2 (Live III, One G2, Key(s) G2).</li>
-        <li><b>MPC OS 3.10:</b> Gen1 MPC and Gen2 (a Live III on stock 3.10 is confirmed). Needs a one-time setup, see the steps below.</li>
-      </ul></li>
-    <li><b>Why use this one instead of the basic stick:</b>
-      <ul>
-        <li>Works on <b>MPC OS 3.10</b> too (the basic stick can't, 3.10 has no USB prompt).</li>
-        <li>Browse the whole plugin catalog on the MPC's screen and install, update or remove plugins, instead of only installing the OpenMPC Plugin Manager VST.</li>
-        <li>Choose where plugins go (internal drive, SD card, NVMe), and see what is already installed.</li>
-        <li>It also has an <b>OpenMPC Plugin Manager VST</b> button, so you can still get it from there.</li>
-      </ul></li>
-    <li><b>One stick fits every device</b> and picks the right version itself.</li>
-    <li><b>Credit:</b> the on-device manager is <a href="https://github.com/Eurikon/plugin-manager-usb-for-open-mpc" target="_blank" rel="noopener">Plugin Manager USB for OPEN MPC</a> by <b>Twisted Cable</b> (MIT). This installer downloads a build of that project with the OpenMPC Plugin Manager VST option added, from <a href="https://github.com/sd88me/plugin-manager-usb-for-open-mpc" target="_blank" rel="noopener">our fork</a> (<span id="es-ver"></span>, checked against a fixed checksum), and copies it to your stick.</li>
-  </ul>
-  <div class="callout"><b>Gen2 is a beta.</b> <i>Tested on a Live III: on MPC OS 3.9.1 (2026-10-28, including with addins installed) and on stock MPC OS 3.10 (2026-10-29, the manager opened from the stick and with Shift + Menu).</i></div>
-  <div id="es-drives"></div>
-  <div class="row">
-    <label class="f">Empty USB stick or folder<input id="es-out" type="text" placeholder="pick a mounted stick below, or Browse" spellcheck="false"></label>
-    <button id="es-out-browse" type="button">Browse…</button>
-    <button class="primary" id="es-build" type="button">Download and write…</button>
-  </div>
-  <p class="msg" id="es-msg" role="status" aria-live="polite"></p>
-  <div class="guide" id="es-steps">
-    <p class="lead"><b>Then, on your MPC.</b> <i>Save your project first: opening the manager stops MPC.</i></p>
-    <p class="lead"><b>MPC OS 3.9.1 (and earlier)</b></p>
-    <ol>
-      <li><b>Insert</b> the stick.</li>
-      <li>Choose <b>Open</b> on the prompt that appears.</li>
-    </ol>
-    <p class="small">On 3.9.1, <b>Shift + Menu</b> only brings the manager back while it is already open. It does not start it.</p>
-    <p class="lead"><b>MPC OS 3.10: one-time setup first.</b> <i>3.10 has no USB prompt, so the stick carries a small helper you load once. After that, inserting the stick offers to open the manager.</i></p>
-    <ol>
-      <li><b>Delete any old</b> <code>Plugin Manager helper</code> from the internal <b>MPC Documents</b> first: the helper has to match the stick you just made.</li>
-      <li><b>Insert</b> the stick.</li>
-      <li>In MPC's <b>File Browser</b>, navigate to your USB stick and select <code>Plugin Manager helper.xpa</code>.</li>
-      <li>Choose <b>Load</b> and pick the internal <b>MPC Documents</b> folder as the destination, <b>not the stick</b>.</li>
-      <li><b>Restart.</b></li>
-      <li>Hold <b>Shift + Menu</b> for two seconds.</li>
-    </ol>
-    <p class="small">From then on, on 3.10, a fresh insertion of the stick offers <b>Open</b>. If the stick was already in when MPC started, hold <b>Shift + Menu</b> for two seconds instead.</p>
-    <p class="lead"><b>Either way:</b> when you are done, tap <b>Return to MPC</b> and wait up to a minute. <i>Do not power off.</i></p>
   </div>
 </section>
 </details>
@@ -1001,7 +949,7 @@ $("mode-stick").addEventListener("click", function () { setMode("stick"); });
 /* the start cards: open the right part of the page */
 function openPart(id) { var d = $(id); if (d && d.tagName === "DETAILS") d.open = true; if (d) d.scrollIntoView({ behavior: "smooth", block: "start" }); }
 $("go-310").addEventListener("click", function () { setMode("stick"); openPart("v2"); setTimeout(function () { $("v2-mgr").focus({ preventScroll: true }); }, 400); });
-$("go-310-plugins").addEventListener("click", function () { setMode("stick"); openPart("v2"); });
+$("go-310-plugins").addEventListener("click", function () { setMode("stick"); $("v2-more").open = true; openPart("v2"); });
 $("go-ssh").addEventListener("click", function () { setMode("install"); openPart("s1"); $("host").focus({ preventScroll: true }); });
 $("go-stick").addEventListener("click", function () { setMode("stick"); openPart("l1"); });
 
@@ -1196,13 +1144,10 @@ function v2Write(ids) {
 $("v2-build").addEventListener("click", function () { v2Write(Object.keys(V2.pick)); });
 $("v2-mgr").addEventListener("click", function () { v2Write(["plugin-manager-g2"]); });
 
-/* Easy stick: download the pinned community manager stick and write it to a drive. */
-api("/api/stick/easyinfo").then(function (r) { $("es-ver").textContent = r.version; }).catch(function () { $("es-ver").textContent = "a pinned release"; });
-$("es-out-browse").addEventListener("click", function () { openBrowse("dir", $("es-out"), $("es-out").value.trim()); });
 /* Mounted drives, as buttons that fill a path field (and, in the folder dialog, jump to a drive: the dialog can't otherwise go above C:\ on Windows). */
 api("/api/drives").then(function (r) {
   var ds = r.drives || []; if (!ds.length) return;
-  [["es-drives", "es-out"], ["l1-drives", "l1-out"], ["v2-drives", "v2-out"]].forEach(function (p) {
+  [["l1-drives", "l1-out"], ["v2-drives", "v2-out"]].forEach(function (p) {
     var box = $(p[0]); box.innerHTML = '<p class="small">Mounted drives: </p>';
     var ul = el("ul", "list"); box.appendChild(ul);
     ds.forEach(function (d) {
@@ -1218,15 +1163,6 @@ api("/api/drives").then(function (r) {
     bd.appendChild(b);
   });
 }).catch(function () {});
-$("es-build").addEventListener("click", function () {
-  var out = $("es-out").value.trim();
-  if (!out) { msg($("es-msg"), "Pick an empty USB stick or folder first.", "err"); return; }
-  msg($("es-msg"), "Downloading and writing…");
-  api("/api/stick/easy", { Out: out }).then(function (r) {
-    var where = stickOutIsAMountedDrive(out) ? "That's a mounted drive, so it's already on the stick." : "Copy everything in " + r.out + " (hidden files too) to the root of a FAT32 or exFAT USB stick.";
-    msg($("es-msg"), "Wrote " + r.version + " to " + r.out + ". " + where + " Eject it safely, then follow the steps below for your MPC OS.", "ok");
-  }).catch(function (e) { msg($("es-msg"), e.message, "err"); });
-});
 
 /* Level 1 (beta) stick: ask the MPC OS first, since the stock USB prompt exists only up to 3.9.1. */
 var L1_OS = {
