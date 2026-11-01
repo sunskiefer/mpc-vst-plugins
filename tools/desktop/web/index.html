@@ -134,14 +134,14 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
         <li><b>With SSH</b> (a modded unit): install from this computer over Wi-Fi.</li>
         <li><b>Without SSH</b>: a stick that installs the Plugin Manager with one prompt, or one that turns SSH on.</li>
       </ul>
-      <div class="row"><button class="primary" type="button" id="go-ssh">I have SSH: connect</button><button type="button" id="go-stick">Make a USB stick</button></div>
+      <div class="row"><button class="primary" type="button" id="go-ssh">I have SSH: connect</button><button type="button" id="go-stick">I don't have SSH: make a USB stick</button></div>
     </div>
   </div>
 </section>
 
 <div class="ktabs" id="modetabs" role="tablist" aria-label="Mode">
-  <button type="button" id="mode-stick" role="tab" aria-selected="true">Plugin install (no SSH or connection needed)</button>
-  <button type="button" id="mode-install" role="tab" aria-selected="false">Install over SSH</button>
+  <button type="button" id="mode-stick" role="tab" aria-selected="true">USB sticks (no connection to the MPC)</button>
+  <button type="button" id="mode-install" role="tab" aria-selected="false">Install over Wi-Fi (SSH)</button>
 </div>
 
 <div id="install-mode" hidden>
@@ -250,8 +250,8 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 </div>
 
 <div id="stick-mode">
-<details id="v2" class="collapse" open>
-<summary><h2>MPC OS 3.10.1 and later: plugin stick (no setup, no SSH)</h2><span class="hint">Show</span></summary>
+<details id="v2" class="collapse">
+<summary><h2>MPC OS 3.10.1 or later: Plugin Manager stick, or plugins straight onto a stick</h2><span class="hint">Show</span></summary>
 <section class="guide">
   <ul>
     <li><b>What it is:</b> MPC OS 3.10.1 loads plugins from a folder named <code>VST2 Plugins</code> on any drive. This writes the plugins you pick into that folder on a USB stick or SD card. Nothing on the MPC is modified.</li>
@@ -291,8 +291,8 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
   </div>
 </section>
 </details>
-<details id="l1" class="collapse" open>
-<summary><h2>Basic user: one-prompt install stick (MPC OS 3.9.1 and earlier only)</h2><span class="hint">Show</span></summary>
+<details id="l1" class="collapse">
+<summary><h2>MPC OS 3.9.1 or earlier, no SSH: Plugin Manager stick (one prompt)</h2><span class="hint">Show</span></summary>
 <section class="guide">
   <ul>
     <li><b>What it is:</b> the simplest way. A stick that installs the <b>OpenMPC Plugin Manager VST</b> for you. Confirm one prompt and MPC restarts with it installed. No SSH, no network, no manager screens to learn. <i>Private beta.</i></li>
@@ -323,7 +323,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 </section>
 </details>
 <details id="esd" class="collapse">
-<summary><h2>Plugin manager stick (all MPC OS versions, including 3.10)</h2><span class="hint">Show</span></summary>
+<summary><h2>Older option: community Plugin Manager stick (MPC OS 3.9.1 and 3.10.0)</h2><span class="hint">Show</span></summary>
 <section id="es" class="guide">
   <ul>
     <li><b>What it is:</b> browse and install community plugins on the MPC's own screen, with no computer connection, password or setup. This writes a ready-made USB stick; you plug it into the MPC and confirm one prompt.</li>
@@ -373,7 +373,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 </section>
 </details>
 <details id="dadv" class="collapse">
-<summary><h2>For developers: turn on SSH (MPC OS 3.9.1 and earlier only)</h2><span class="hint">Show</span></summary>
+<summary><h2>MPC OS 3.9.1 or earlier: turn on SSH with a stick (then use Install over Wi-Fi)</h2><span class="hint">Show</span></summary>
 <section id="st-intro" class="guide">
   <ul>
     <li><b>What this is for:</b> developers who want an ordinary <b>SSH login</b> on their device, to install plugins and addins with this installer's SSH tab or by hand.</li>
