@@ -22,6 +22,7 @@ button.p { background:var(--a); border-color:var(--a); color:#fff; } button.q { 
 .files li span { flex:1; } .ok { color:var(--ok); } .bad { color:var(--a); }
 #bar { position:fixed; left:0; right:0; bottom:0; background:var(--fg); color:#fff; padding:12px 16px; display:flex; justify-content:center; gap:14px; align-items:center; }
 #bar[hidden] { display:none; }
+#kinds button { padding:7px 10px; font-size:12px; } #kinds .n { opacity:.6; margin-left:4px; }
 .th { width:64px; height:40px; object-fit:cover; border-radius:4px; background:var(--l); flex:none; }
 .top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; } .top select { font:14px system-ui; padding:8px; border-radius:6px; border:1px solid var(--l); background:var(--p); }
 .pg { height:6px; background:var(--l); border-radius:3px; overflow:hidden; margin:4px 0 0; } .pg i { display:block; height:100%; background:var(--a); }
@@ -33,18 +34,25 @@ details.sum summary { cursor:pointer; color:var(--m); font-size:13px; }
   <div class="top"><span id="to"></span></div>
   <div id="mv"></div>
   <div class="tabs"><button data-t="0" aria-pressed="true">Discover</button><button data-t="1">Installed</button><button data-t="2">Updates</button></div>
-  <input type="search" id="q" placeholder="Search plugins">
+  <div class="tabs" id="kinds"></div>
+  <div class="top"><input type="search" id="q" placeholder="Name, developer, style or tag" style="flex:1 1 220px">
+    <select id="style"></select><select id="sort"><option value="updated">Last updated</option><option value="added">Newest</option>
+    <option value="downloads">Most downloaded</option><option value="name">Name</option></select></div>
+  <p class="d" id="count"></p>
   <ul class="l" id="l"></ul>
 </div>
 <div id="bar" hidden><span id="bt"></span><button class="p" id="ap">Apply</button></div>
 <script>
-let S = null, tab = 0, open = {};   // open: plugin id -> its files panel (HTML) while shown
+let S = null, tab = 0, open = {}, kind = 'all';   // open: plugin id -> its files panel (HTML) while shown
 const $ = i => document.getElementById(i);
 const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
 const H = {'X-PM': '1'};
 let CAT = {};   // id -> the catalog's screenshot and summary (the page reads the catalog itself; the MPC does not keep them)
 fetch('https://sd88me.github.io/mpc-vst-plugins/catalog.json').then(r => r.json()).then(c => {
-  for (const p of (c.plugins || c)) CAT[p.id] = {shot: p.screenshot, summary: p.summary};
+  for (const p of (c.plugins || c)) CAT[p.id] = {shot: p.screenshot, summary: p.summary, style: p.style || '', tags: p.tags || [],
+    role: p.role, kind: p.kind, added: p.added || '', updated: p.updated || '', downloads: p.downloads || 0};
+  const st = [...new Set(Object.values(CAT).map(x => x.style).filter(Boolean))].sort();
+  $('style').innerHTML = '<option value="">All styles</option>' + st.map(x => `<option>${esc(x)}</option>`).join('');
   load.last = ''; if (S) draw();
 }).catch(() => {});   // the server refuses changes without it (another web site cannot send it)
 
@@ -82,15 +90,27 @@ function draw() {
     S.targets.map((t, k) => `<option value="${k}" ${k == S.tsel ? 'selected' : ''}>${esc(t.name)}</option>`).join('') + `</select> <span class="d" style="display:inline">${esc(S.disk)}</span>`
     : S.disk ? `<span class="d">${esc(S.disk)}</span>` : '';
   const q = $('q').value.toLowerCase(), busy = S.busy == 2 || S.busy == 3, dis = busy ? 'disabled' : '';
-  const ps = S.plugins.filter(p => tab == 0 ? p.state != 'installed' : tab == 1 ? p.installed : p.state == 'update' || p.state == 'q_update')
-    .filter(p => !q || (p.name + ' ' + p.author).toLowerCase().includes(q));
+  const KN = {all: 'All', instrument: 'Instruments', midi: 'MIDI', effect: 'Effects', addin: 'Addins'};
+  const kindOf = p => { const c = CAT[p.id] || {}; return p.kind == 'instrument' && c.role == 'midi' ? 'midi' : p.kind; };   // as the catalog site
+  const inTab = S.plugins.filter(p => tab == 0 ? p.state != 'installed' : tab == 1 ? p.installed : p.state == 'update' || p.state == 'q_update');
+  $('kinds').innerHTML = Object.keys(KN).map(k => `<button aria-pressed="${k == kind}" onclick="kind='${k}';draw()">${KN[k]}<span class="n">${
+    k == 'all' ? inTab.length : inTab.filter(p => kindOf(p) == k).length}</span></button>`).join('');
+  const sty = $('style').value, so = $('sort').value;
+  const hay = p => { const c = CAT[p.id] || {}; return [p.name, p.author, c.style, (c.tags || []).join(' '), c.summary].join(' ').toLowerCase(); };
+  const ps = inTab.filter(p => kind == 'all' || kindOf(p) == kind).filter(p => !sty || (CAT[p.id] || {}).style == sty)
+    .filter(p => !q || hay(p).includes(q));
+  const cv = (p, k) => (CAT[p.id] || {})[k] || '';
+  ps.sort((a, b) => so == 'name' ? a.name.localeCompare(b.name) : so == 'downloads' ? (cv(b, 'downloads') || 0) - (cv(a, 'downloads') || 0)
+    : String(cv(b, so)).localeCompare(String(cv(a, so))) || a.name.localeCompare(b.name));
+  $('count').textContent = ps.length + ' of ' + inTab.length;
   $('l').innerHTML = ps.map(p => {
     const a = L[p.state];
     let b = a ? `<button class="${a[1]}" ${dis} onclick="api('/api/queue?id=${p.id}&do=${a[2]}')">${a[0]}</button>` : '';
     if (p.state == 'installed' || p.state == 'update') b += `<button ${dis} onclick="api('/api/queue?id=${p.id}&do=remove')">Remove</button>`;
     if (p.files) b += `<button onclick="files('${p.id}')">${open[p.id] ? 'Hide files' : 'Your files'}</button>`;
     const c = CAT[p.id] || {};
-    return `<li><div class="r">${c.shot ? `<img class="th" loading="lazy" alt="" src="${esc(c.shot)}">` : ''}<span class="t"><b>${esc(p.name)}</b><span class="d">${esc(p.author)} · ${esc(p.kind)}` +
+    const sty2 = c.style ? ' · ' + esc(c.style) : '';
+    return `<li><div class="r">${c.shot ? `<img class="th" loading="lazy" alt="" src="${esc(c.shot)}">` : ''}<span class="t"><b>${esc(p.name)}</b><span class="d">${esc(p.author)} · ${esc(KN[kindOf(p)] || p.kind)}${sty2}` +
       `${p.installed ? ' · installed ' + esc(p.installed) : ''}${p.state == 'update' ? ' · ' + esc(p.latest) + ' available' : ''}</span>` +
       `${c.summary ? `<details class="sum"><summary>About</summary>${esc(c.summary)}</details>` : ''}</span>${b}</div>` +
       `${open[p.id] || ''}</li>`;
@@ -217,7 +237,7 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', x == b));
   draw();
 });
-$('q').oninput = () => S && draw();
+$('q').oninput = $('style').onchange = $('sort').onchange = () => S && draw();
 load();
 setInterval(load, 2000);
 </script>
