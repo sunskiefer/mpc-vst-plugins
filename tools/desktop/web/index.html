@@ -259,6 +259,8 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
     <button id="v2-out-browse" type="button">Browse…</button>
     <button class="primary" id="v2-build" type="button">Download and write…</button>
   </div>
+  <div class="row"><button id="v2-mgr" type="button">Just the Plugin Manager</button>
+    <span class="small" style="flex:1 1 260px">One click: only the Plugin Manager goes on the stick. Install everything else from its web page on your phone or computer.</span></div>
   <p class="msg" id="v2-msg" role="status" aria-live="polite"></p>
   <pre class="log" id="v2-log" hidden></pre>
   <div id="v2-roms" hidden><h3>Your ROMs and files</h3><p class="sub">These plugins need files you supply (a synth's ROMs). Each one is checked here before it is written into the plugin's folder on the stick.</p><ul class="list" id="v2-romlist"></ul></div>
@@ -269,6 +271,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
       <li>Preferences, <b>Enhancements</b>: turn on <b>Enable Enhancements</b> and <b>VST2 Support</b> (read the warning). Wait a few seconds before the next step, so the setting is saved.</li>
       <li><b>Insert</b> the stick and <b>restart MPC</b> (new plugins show in the plugin browser after a restart).</li>
       <li>Open the plugin browser: your plugins are under <b>External VST Plugins</b>.</li>
+      <li>Add the <b>Plugin Manager</b> to a track. Its status line shows an address like <code>http://192.168.1.40:8790</code>: open it on a phone or computer on the same Wi-Fi to install plugins, move old ones and add ROMs. Save your project with the Plugin Manager on a track and the page comes back after each restart.</li>
     </ol>
     <p class="small">Plugins that need your own ROM or firmware file (JV-880, Osirus, Machinemodule…) load it from their folder on the stick. Running this again replaces the plugins on the stick and keeps the files you added to them.</p>
   </div>
@@ -1121,7 +1124,7 @@ function v2Poll(since) {
     var log = $("v2-log");
     if (j.lines.length) { log.textContent += j.lines.join("\n") + "\n"; log.scrollTop = log.scrollHeight; msg($("v2-msg"), j.lines[j.lines.length - 1]); }
     if (j.state === "running") { setTimeout(function () { v2Poll(j.next); }, 600); return; }
-    $("v2-build").disabled = false;
+    $("v2-build").disabled = $("v2-mgr").disabled = false;
     msg($("v2-msg"), j.state === "done" ? "Done: " + j.result + ". Eject the drive safely, then follow the steps below." : j.result, j.state === "done" ? "ok" : "err");
     if (j.state === "done") v2Roms();
   }).catch(function () { setTimeout(function () { v2Poll(since); }, 1500); });
@@ -1129,7 +1132,7 @@ function v2Poll(since) {
 function v2Roms() {   /* the chosen plugins that declare user_files: a file picker per folder, checked and written to the stick */
   var ul = $("v2-romlist"); ul.textContent = ""; var any = false, out = $("v2-out").value.trim();
   V2.cat.forEach(function (p) {
-    if (!V2.pick[p.id] || !p.user_files || !p.user_files.length) return;
+    if ((V2.wrote || []).indexOf(p.id) < 0 || !p.user_files || !p.user_files.length) return;   /* only what this write put on the stick */
     p.user_files.forEach(function (g) {
       any = true;
       var li = el("li"), t = el("div", "t"); t.appendChild(el("b", null, p.name + ": " + g.label));
@@ -1152,15 +1155,17 @@ function v2Roms() {   /* the chosen plugins that declare user_files: a file pick
   });
   $("v2-roms").hidden = !any;
 }
-$("v2-build").addEventListener("click", function () {
-  var out = $("v2-out").value.trim(), ids = Object.keys(V2.pick);
+function v2Write(ids) {
+  var out = $("v2-out").value.trim(); V2.wrote = ids;
   if (!out) { msg($("v2-msg"), "Pick a USB stick, SD card or folder first.", "err"); return; }
   if (!ids.length) { msg($("v2-msg"), "Tick at least one plugin.", "err"); return; }
-  $("v2-build").disabled = true; $("v2-log").hidden = false; $("v2-log").textContent = "";
+  $("v2-build").disabled = $("v2-mgr").disabled = true; $("v2-log").hidden = false; $("v2-log").textContent = "";
   msg($("v2-msg"), "Starting…");
   api("/api/vst2stick", { out: out, arch: v2Arch(), ids: ids }).then(function () { v2Poll(0); })
-    .catch(function (e) { $("v2-build").disabled = false; msg($("v2-msg"), e.message, "err"); });
-});
+    .catch(function (e) { $("v2-build").disabled = $("v2-mgr").disabled = false; msg($("v2-msg"), e.message, "err"); });
+}
+$("v2-build").addEventListener("click", function () { v2Write(Object.keys(V2.pick)); });
+$("v2-mgr").addEventListener("click", function () { v2Write(["plugin-manager-g2"]); });
 
 /* Easy stick: download the pinned community manager stick and write it to a drive. */
 api("/api/stick/easyinfo").then(function (r) { $("es-ver").textContent = r.version; }).catch(function () { $("es-ver").textContent = "a pinned release"; });
