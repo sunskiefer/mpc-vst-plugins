@@ -22,10 +22,15 @@ button.p { background:var(--a); border-color:var(--a); color:#fff; } button.q { 
 .files li span { flex:1; } .ok { color:var(--ok); } .bad { color:var(--a); }
 #bar { position:fixed; left:0; right:0; bottom:0; background:var(--fg); color:#fff; padding:12px 16px; display:flex; justify-content:center; gap:14px; align-items:center; }
 #bar[hidden] { display:none; }
+.th { width:64px; height:40px; object-fit:cover; border-radius:4px; background:var(--l); flex:none; }
+.top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; } .top select { font:14px system-ui; padding:8px; border-radius:6px; border:1px solid var(--l); background:var(--p); }
+.pg { height:6px; background:var(--l); border-radius:3px; overflow:hidden; margin:4px 0 0; } .pg i { display:block; height:100%; background:var(--a); }
+details.sum summary { cursor:pointer; color:var(--m); font-size:13px; }
 </style>
 <div class="w">
   <h1>Plugin Manager</h1>
-  <p id="st">Loading…</p>
+  <p id="st">Loading…</p><div id="pg"></div>
+  <div class="top"><span id="to"></span></div>
   <div id="mv"></div>
   <div class="tabs"><button data-t="0" aria-pressed="true">Discover</button><button data-t="1">Installed</button><button data-t="2">Updates</button></div>
   <input type="search" id="q" placeholder="Search plugins">
@@ -36,7 +41,12 @@ button.p { background:var(--a); border-color:var(--a); color:#fff; } button.q { 
 let S = null, tab = 0, open = {};   // open: plugin id -> its files panel (HTML) while shown
 const $ = i => document.getElementById(i);
 const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
-const H = {'X-PM': '1'};   // the server refuses changes without it (another web site cannot send it)
+const H = {'X-PM': '1'};
+let CAT = {};   // id -> the catalog's screenshot and summary (the page reads the catalog itself; the MPC does not keep them)
+fetch('https://sd88me.github.io/mpc-vst-plugins/catalog.json').then(r => r.json()).then(c => {
+  for (const p of (c.plugins || c)) CAT[p.id] = {shot: p.screenshot, summary: p.summary};
+  load.last = ''; if (S) draw();
+}).catch(() => {});   // the server refuses changes without it (another web site cannot send it)
 
 async function api(p) {
   const r = await fetch(p, {method: 'POST', headers: H});
@@ -67,6 +77,10 @@ function draw() {
   st.className = S.problem || S.status_kind == 2 ? 'e' : '';
   $('mv').innerHTML = S.move ? `<div class="mv r"><span class="t"><b>${S.move} plugins need moving</b> so MPC OS 3.10.1 lists them.
     Your projects and ROMs are kept.</span><button class="${S.migrate ? 'q' : 'p'}" onclick="api('/api/migrate?on=${S.migrate ? 0 : 1}')">${S.migrate ? 'Queued: cancel' : 'Move'}</button></div>` : '';
+  $('pg').innerHTML = S.downloading ? `<div class="pg"><i style="width:${Math.round(S.progress * 100)}%"></i></div>` : '';
+  $('to').innerHTML = S.targets.length > 1 ? `Install new plugins to <select onchange="api('/api/target?k=' + this.value)" ${S.busy == 2 || S.busy == 3 ? 'disabled' : ''}>` +
+    S.targets.map((t, k) => `<option value="${k}" ${k == S.tsel ? 'selected' : ''}>${esc(t.name)}</option>`).join('') + `</select> <span class="d" style="display:inline">${esc(S.disk)}</span>`
+    : S.disk ? `<span class="d">${esc(S.disk)}</span>` : '';
   const q = $('q').value.toLowerCase(), busy = S.busy == 2 || S.busy == 3, dis = busy ? 'disabled' : '';
   const ps = S.plugins.filter(p => tab == 0 ? p.state != 'installed' : tab == 1 ? p.installed : p.state == 'update' || p.state == 'q_update')
     .filter(p => !q || (p.name + ' ' + p.author).toLowerCase().includes(q));
@@ -75,8 +89,10 @@ function draw() {
     let b = a ? `<button class="${a[1]}" ${dis} onclick="api('/api/queue?id=${p.id}&do=${a[2]}')">${a[0]}</button>` : '';
     if (p.state == 'installed' || p.state == 'update') b += `<button ${dis} onclick="api('/api/queue?id=${p.id}&do=remove')">Remove</button>`;
     if (p.files) b += `<button onclick="files('${p.id}')">${open[p.id] ? 'Hide files' : 'Your files'}</button>`;
-    return `<li><div class="r"><span class="t"><b>${esc(p.name)}</b><span class="d">${esc(p.author)} · ${esc(p.kind)}` +
-      `${p.installed ? ' · installed ' + esc(p.installed) : ''}${p.state == 'update' ? ' · ' + esc(p.latest) + ' available' : ''}</span></span>${b}</div>` +
+    const c = CAT[p.id] || {};
+    return `<li><div class="r">${c.shot ? `<img class="th" loading="lazy" alt="" src="${esc(c.shot)}">` : ''}<span class="t"><b>${esc(p.name)}</b><span class="d">${esc(p.author)} · ${esc(p.kind)}` +
+      `${p.installed ? ' · installed ' + esc(p.installed) : ''}${p.state == 'update' ? ' · ' + esc(p.latest) + ' available' : ''}</span>` +
+      `${c.summary ? `<details class="sum"><summary>About</summary>${esc(c.summary)}</details>` : ''}</span>${b}</div>` +
       `${open[p.id] || ''}</li>`;
   }).join('') || '<li>Nothing here.</li>';
   $('bar').hidden = !S.queued && !S.ready;
@@ -134,6 +150,14 @@ function nameProblem(r, name) {   // userfiles.go nameProblem, for an upload (a 
   if (r.name_contains && !low.includes(r.name_contains.toLowerCase())) return `the name of ${(r.label || '').toLowerCase()} must contain ${r.name_contains}: rename the file`;
   return '';
 }
+function storedNote(g, f) {   // a file already there: under a rule's save_as name only (its content is checked when uploaded)
+  const r = g.rules.filter(r => hasExt(f.name, r.ext || []));
+  if (!r.length) return ' <span class="bad">not a file this plugin uses</span>';
+  if (r.every(x => x.save_as) && !r.some(x => x.save_as.toLowerCase() == f.name.toLowerCase()))
+    return ` <span class="bad">the plugin loads it only as ${esc(r.map(x => x.save_as).join(' or '))}: delete it and add it again</span>`;
+  return r.some(x => (x.size && x.size == f.size) || (!x.size && (!x.size_min || f.size >= x.size_min) && (!x.size_max || f.size <= x.size_max)))
+    ? ' <span class="ok">✓</span>' : ' <span class="bad">wrong size</span>';
+}
 const okName = n => /^[A-Za-z0-9][A-Za-z0-9 ._()+,'&-]{0,150}$/.test(n);
 
 async function files(id, keep) {
@@ -148,7 +172,7 @@ async function files(id, keep) {
     const r = await fetch(`/api/ls?id=${encodeURIComponent(id)}&path=${encodeURIComponent(g.path)}`);
     const have = r.ok ? await r.json() : [];
     h += `<h3>${esc(g.label || g.path)}</h3>${g.description ? `<span class="d">${esc(g.description)}</span>` : ''}<ul>` +
-      (have.map(f => `<li><span>${esc(f.name)} <span class="d" style="display:inline">${f.size} bytes</span></span>` +
+      (have.map(f => `<li><span>${esc(f.name)} <span class="d" style="display:inline">${f.size} bytes</span>${storedNote(g, f)}</span>` +
         `<button onclick="del('${id}',${k},'${encodeURIComponent(f.name)}')">Delete</button></li>`).join('') || '<li><span class="d">No files yet.</span></li>') +
       `</ul><input type="file" multiple onchange="add('${id}',${k},this)">${g.hint ? `<span class="d">${esc(g.hint)}</span>` : ''}<div id="v-${id}-${k}"></div>`;
   }

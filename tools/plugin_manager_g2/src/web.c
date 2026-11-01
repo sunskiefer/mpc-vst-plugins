@@ -68,7 +68,17 @@ static void web_state(mgr_t *m, wbuf_t *w) {
             "\"vst2\":%d,\"move\":%d,\"migrate\":%d,\"problem\":\"", m->sticky ? m->status_kind : OK, m->online, m->loaded, m->busy, m->ready, m->failed,
          count_queued(m), m->dev->vst2, m->dev->vst2 == 2 ? m->dev->nmove : 0, m->migrate);
     wesc(w, m->dev->problem, 0);
-    wput(w, "\",\"plugins\":[");
+    wput(w, "\",\"downloading\":%d,\"progress\":%.2f,\"disk\":\"", m->downloading, m->progress);
+    wesc(w, m->disk_free, 0);
+    wput(w, "\",\"tsel\":%d,\"targets\":[", ntargets(m) ? m->tsel % ntargets(m) : 0);
+    for (int k = 0; k < ntargets(m) && k < 4; k++) {   /* where new installs go (the screen's drive menu shows four) */
+        wput(w, "%s{\"name\":\"", k ? "," : "");
+        wesc(w, target_name(m, k), 0);
+        wput(w, "\",\"path\":\"");
+        wesc(w, target_at(m, k), 0);
+        wput(w, "\"}");
+    }
+    wput(w, "],\"plugins\":[");
     for (int i = 0; i < m->npkg; i++) {
         const pkg_t *p = &m->pkg[i];
         wput(w, "%s{\"id\":\"", i ? "," : "");
@@ -130,6 +140,15 @@ static const char *web_post(mgr_t *m, const char *path) {   /* "" done, else why
     } else if (!strncmp(path, "/api/migrate?", 13) && web_arg(path + 12, "on", d, sizeof d)) {
         if (m->dev->vst2 == 2 && m->dev->nmove) { m->migrate = d[0] == '1'; m->ready = m->failed = 0; m->sticky = 0; }
         else err = "nothing to move";
+    } else if (!strncmp(path, "/api/target?", 12) && web_arg(path + 11, "k", d, sizeof d)) {   /* the screen's drive menu pick */
+        int k = atoi(d);
+        if (k < 0 || k >= ntargets(m) || k >= 4) err = "no such drive";
+        else if (k != m->tsel % ntargets(m)) {
+            m->tsel = k;
+            target_save(m);
+            m->ready = 0;
+            post(m, J_REFRESH);
+        }
     } else if (!strncmp(path, "/api/apply", 10)) {   /* the page asked first: the second call is the restart prompt's GO */
         if (m->ready) { m->ready = 0; post(m, J_LAUNCH); }
         else if (count_queued(m) && !m->dev->problem[0]) post(m, J_PREPARE);

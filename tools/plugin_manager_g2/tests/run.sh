@@ -282,6 +282,7 @@ grep -q "^screen status: On your phone or computer: http://[0-9.]*:8790$" /tmp/w
 grep -q "404 Not Found" /tmp/web.out
 [ "$(grep -c "403 Forbidden" /tmp/web.out)" = 2 ]                  # no X-PM header; a foreign Origin
 grep -q "\"queued\":1," /tmp/web.out && grep -q "\"id\":\"beta-addin\",[^}]*\"state\":\"q_install\"" /tmp/web.out   # the page queues like a card press
+grep -q "\"targets\":\[{\"name\":" /tmp/web.out && grep -q "^no such drive" /tmp/web.out
 grep -q "409 Conflict" /tmp/web.out && grep -q "^unknown plugin" /tmp/web.out && grep -q "^nothing queued" /tmp/web.out
 grep -q "async function load" /tmp/web.out
 [ "$(grep -c "GET /api/state:" /tmp/web.out)" = 3 ] && ! grep -q "no answer" /tmp/web.out   # the second instance answered after the first closed

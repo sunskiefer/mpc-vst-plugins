@@ -115,6 +115,7 @@ int main(int argc, char **argv) {
     http("POST", "/api/queue?id=beta-addin&do=cancel", "X-PM: 1\r\n");
     http("POST", "/api/queue?id=nosuch&do=install", "X-PM: 1\r\n");
     http("POST", "/api/apply", "X-PM: 1\r\n");                                                        /* nothing queued: 409 */
+    http("POST", "/api/target?k=9", "X-PM: 1\r\n");                                                   /* no such drive: 409 */
     void *m2 = e->create(NULL); sleep(1);
     e->destroy(m); m = m2; sleep(3);
     http_get("/api/state");
