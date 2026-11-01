@@ -333,6 +333,7 @@ static int web_quit(mgr_t *m) {
 static void *web_thread(void *ud) {
     mgr_t *m = ud;
     int s = -1;
+    long long last = -100;   /* when the address was read: it can change (Wi-Fi joined later, DHCP), so every few seconds */
     while (!web_quit(m)) {
         if (s < 0) {
             s = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
@@ -346,6 +347,17 @@ static void *web_thread(void *ud) {
                 continue;
             }
         }
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        if (ts.tv_sec - last >= 5) {
+            char a[48], u[64] = "";
+            web_addr(a, sizeof a);
+            if (a[0]) snprintf(u, sizeof u, "http://%s:%d", a, WEB_PORT);
+            pthread_mutex_lock(&web_mu);
+            snprintf(web_url, sizeof web_url, "%s", u);
+            pthread_mutex_unlock(&web_mu);
+            last = ts.tv_sec;
+        }
         struct pollfd pf = {s, POLLIN, 0};
         if (poll(&pf, 1, 500) <= 0) continue;
         int c = accept4(s, NULL, NULL, SOCK_CLOEXEC);
@@ -353,6 +365,11 @@ static void *web_thread(void *ud) {
         web_reply(c, m);
         close(c);
     }
-    if (s >= 0) close(s);
+    if (s >= 0) {
+        close(s);
+        pthread_mutex_lock(&web_mu);
+        web_url[0] = 0;   /* nobody serves the page now (another instance may take the port and set it again) */
+        pthread_mutex_unlock(&web_mu);
+    }
     return NULL;
 }

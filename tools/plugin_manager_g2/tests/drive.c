@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
     e->destroy(m); return 0;
   }
   if (argc > 1 && !strcmp(argv[1], "web")) {   /* the web page; a second instance waits for the port and takes over */
+    printf("screen status: %s\n", get("status"));   /* the page's address, once the port is held */
     http_get("/api/state"); http_get("/"); http_get("/nope");
     http("POST", "/api/queue?id=beta-addin&do=install", "");                                          /* no X-PM: refused */
     http("POST", "/api/queue?id=beta-addin&do=install", "X-PM: 1\r\nOrigin: http://evil.example\r\n");   /* another site: refused */

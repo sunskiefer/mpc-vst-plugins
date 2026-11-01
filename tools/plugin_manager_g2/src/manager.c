@@ -2033,9 +2033,22 @@ static void changes_text(const mgr_t *m, char *b, int n) {   /* the restart prom
     if (m->migrate && k < n) snprintf(b + k, n - k, "%sMove %d plugin%s to VST2 Plugins", k ? "\xc2\xa0\xc2\xb7  " : "", m->dev->nmove, m->dev->nmove == 1 ? "" : "s");
 }
 
+/* the web page's address while one instance serves it (web.c), shared by every instance: the one on screen may not be the one
+ * holding the port */
+static pthread_mutex_t web_mu = PTHREAD_MUTEX_INITIALIZER;
+static char web_url[64];
+
 static void queue_text(const mgr_t *m, char *b, int n) {
     int q = count_queued(m), k;
-    if (!q) { snprintf(b, n, "Nothing queued. Pick INSTALL or UPDATE on a plugin."); return; }
+    if (!q) {
+        char u[64];
+        pthread_mutex_lock(&web_mu);
+        snprintf(u, sizeof u, "%s", web_url);
+        pthread_mutex_unlock(&web_mu);
+        if (u[0]) snprintf(b, n, "On your phone or computer: %s", u);
+        else snprintf(b, n, "Nothing queued. Pick INSTALL or UPDATE on a plugin.");
+        return;
+    }
     k = snprintf(b, n, "%d change%s queued:", q, q > 1 ? "s" : "");
     for (int i = 0; i < m->npkg && k < n; i++)
         if (m->pkg[i].queued)

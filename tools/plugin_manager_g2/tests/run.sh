@@ -278,6 +278,7 @@ sh tests/devices/mpc-one.sh && sh tests/addins.sh && /tmp/drive_addins web > /tm
 grep -q "Content-Type: application/json" /tmp/web.out
 grep -q "\"plugins\":\[{\"id\":" /tmp/web.out
 grep -q "<h1>Plugin Manager</h1>" /tmp/web.out
+grep -q "^screen status: On your phone or computer: http://[0-9.]*:8790$" /tmp/web.out   # the address on the screen
 grep -q "404 Not Found" /tmp/web.out
 [ "$(grep -c "403 Forbidden" /tmp/web.out)" = 2 ]                  # no X-PM header; a foreign Origin
 grep -q "\"queued\":1," /tmp/web.out && grep -q "\"id\":\"beta-addin\",[^}]*\"state\":\"q_install\"" /tmp/web.out   # the page queues like a card press
