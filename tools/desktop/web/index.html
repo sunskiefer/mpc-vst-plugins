@@ -47,6 +47,11 @@ ul.list .t .d { display:block; color:var(--muted); font-size:13px; }
 .uf .tag.maybe { color:var(--accent); border-color:var(--accent); } .uf .tag.bad { color:var(--err, #d44); border-color:var(--err, #d44); }
 .uf input[type=file] { max-width:100%; } .uf .row button { margin-left:8px; }
 
+.vcards { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-top:8px; }
+.vcard { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; }
+.vcard.rec { border:2px solid var(--accent); } .vcard > b { font:700 22px/1.1 var(--display); text-transform:uppercase; letter-spacing:.04em; }
+.vcard ol, .vcard ul { margin:0; padding-left:20px; } .vcard li { margin:4px 0; } .vcard .tag { align-self:flex-start; margin:0; }
+.devline { background:var(--lcd); color:var(--lcd-fg); border-radius:6px; padding:9px 12px; font:600 14px var(--display); letter-spacing:.05em; margin:10px 0 0; }
 .drop { border:2px dashed var(--line); border-radius:6px; padding:22px; text-align:center; color:var(--muted); margin-top:14px; cursor:pointer; background:var(--bg); }
 .drop.over { border-color:var(--accent); color:var(--fg); }
 .log { background:var(--lcd); color:var(--lcd-fg); border-radius:6px; padding:12px; font:500 12.5px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; max-height:340px; overflow:auto; margin:12px 0 0; }
@@ -108,22 +113,30 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
   <p class="lede">Install plugins from the catalog, or zips you already have, on your MPC or Force. This page runs on your computer only. Nothing about your device is saved.</p>
 </header>
 
-<section id="which" class="guide">
-  <h2>Which one do I need?</h2>
-  <ul>
-    <li><b>Basic user: one-prompt install stick (MPC OS 3.9.1 and earlier only)</b>: <i>the simplest. Pick this if you are on 3.9.1 or earlier.</i>
+<section id="which">
+  <h2>Which MPC OS is on your MPC?</h2>
+  <p class="sub">On the MPC: Preferences &gt; Info shows the version.</p>
+  <div class="vcards">
+    <div class="vcard rec">
+      <span class="tag ok">No setup on the MPC</span>
+      <b>MPC OS 3.10.1 or later</b>
+      <ol>
+        <li>Preferences &gt; Enhancements: turn on <b>Enable Enhancements</b> and <b>VST2 Support</b>, wait a few seconds, restart.</li>
+        <li>Put the <b>Plugin Manager</b> on a USB stick (below), plug it in, restart.</li>
+        <li>Add it to a track (External VST Plugins) and open the address it shows on your phone or computer: install plugins, move old ones, add ROMs.</li>
+      </ol>
+      <div class="row"><button class="primary" type="button" id="go-310">Make the Plugin Manager stick</button></div>
+      <button class="linkbtn" type="button" id="go-310-plugins">No Wi-Fi? Put plugins straight onto the stick</button>
+    </div>
+    <div class="vcard">
+      <b>MPC OS 3.9.1 or earlier</b>
       <ul>
-        <li>Plug it in, confirm <b>one prompt</b>, and MPC restarts with the OpenMPC Plugin Manager VST installed. No network needed for the install.</li>
-      </ul></li>
-    <li><b>Plugin manager stick (all MPC OS versions, including 3.10)</b>: <i>browse and install plugins on the MPC's own screen. Pick this if you are on 3.10 or want the full catalog.</i>
-      <ul>
-        <li>Nothing to set up on your MPC and no computer connection. Needs the MPC online (Wi-Fi or Ethernet).</li>
-      </ul></li>
-    <li><b>For developers: SSH (turning it on from a stick: MPC OS 3.9.1 and earlier only)</b>: <i>for modded units that already have root SSH, or to turn SSH on from a stick.</i>
-      <ul>
-        <li>The <b>Install over SSH</b> tab installs plugins, addins, your own zips and patches from this computer, with remove, update and backup tools.</li>
-      </ul></li>
-  </ul>
+        <li><b>With SSH</b> (a modded unit): install from this computer over Wi-Fi.</li>
+        <li><b>Without SSH</b>: a stick that installs the Plugin Manager with one prompt, or one that turns SSH on.</li>
+      </ul>
+      <div class="row"><button class="primary" type="button" id="go-ssh">I have SSH: connect</button><button type="button" id="go-stick">Make a USB stick</button></div>
+    </div>
+  </div>
 </section>
 
 <div class="ktabs" id="modetabs" role="tablist" aria-label="Mode">
@@ -142,9 +155,10 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
     <button class="primary" id="connect" type="submit">Connect</button>
   </form>
   <p class="msg" id="connmsg" role="status" aria-live="polite"></p>
+  <p class="devline" id="devline" hidden></p>
 </section>
 
-<section id="mig" class="off">
+<section id="mig" class="off" hidden>
   <h2>MPC OS 3.10.1: move your plugins to VST2 Plugins</h2>
   <p class="sub">On MPC OS 3.10.1 and later the plugin browser lists only plugins in a <code>VST2 Plugins</code> folder (Preferences, Enhancements: turn on <b>VST2 Support</b> first). Plugins installed before are still there, and saved projects still load them, but you can't pick them from the browser. <b>Check</b> shows what would be copied; <b>Move</b> copies every installed plugin folder, your ROMs and files included, into <code>VST2 Plugins</code> on the same drive and restarts MPC. Nothing is deleted and <code>MPC.settings</code> is not edited. On older MPC OS this does nothing.</p>
   <div class="row"><button id="mig-check" type="button">Check</button><button class="primary" id="mig-move" type="button">Move…</button></div>
@@ -242,7 +256,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
   <ul>
     <li><b>What it is:</b> MPC OS 3.10.1 loads plugins from a folder named <code>VST2 Plugins</code> on any drive. This writes the plugins you pick into that folder on a USB stick or SD card. Nothing on the MPC is modified.</li>
     <li><b>Works on:</b> MPC OS <b>3.10.1 or later</b>, Gen1 MPC (Live, Live II, One, X, Key) and Gen2 (Live III, One G2, Key(s) G2). Not the Force yet (no 3.10.1 for it): use the sections below.</li>
-    <li><b>Tip:</b> include the <b>OpenMPC Plugin Manager VST</b> (ticked below). From then on you can browse and install the rest on the MPC itself, over Wi-Fi.</li>
+    <li><b>Tip:</b> include the <b>OpenMPC Plugin Manager VST</b> (ticked below), or press <b>Just the Plugin Manager</b>. From then on you install the rest on the MPC itself, or from its web page on your phone or computer.</li>
   </ul>
 </section>
 <section>
@@ -478,12 +492,21 @@ function setConnected(c, info, problems) {
   S.connected = c; S.problems = problems || []; S.libc = c && info ? (info.libc || "") : ""; S.arch = c && info ? (info.arch || "") : "";
   $("mig").classList.toggle("off", !c); $("s2").classList.toggle("off", !c); $("s3").classList.toggle("off", !c); $("s4").classList.toggle("off", !c); $("s5").classList.toggle("off", !c); $("s6").classList.toggle("off", !c); $("s7").classList.toggle("off", !c); $("sf").classList.toggle("off", !c);
   S.patches = null; drawPatches();
+  $("s7").hidden = !!(c && info && info.vst2);   /* device patches: not re-tested on MPC OS 3.10.1, so not offered there */
+  $("mig").hidden = !(c && info && info.vst2 && info.legacyCount);   /* only on 3.10.1 with plugins installed the old way */
+  if (!c) $("devline").hidden = true;
   if (c) {
     var n = (info.installed || []).length;
     S.roots = info.roots || []; S.drives = info.drives || []; var pr = S.roots.filter(function (r) { return r.primary && !r.noExec; })[0] || S.roots.filter(function (r) { return !r.noExec; })[0] || S.roots[0]; S.root = pr ? pr.path : "";
     var places = S.roots.map(function (r) { return r.label + " (" + (r.fs ? r.fs + ", " : "") + gb(r.freeKB) + " free)"; }).join("; ");
     var m = "Connected to " + info.host + " (" + (info.arch || "?") + "). " + n + " plugin folder" + (n === 1 ? "" : "s") + " found. Plugin locations: " + (places || info.synths) + ". Device key " + info.fingerprint + ".";
     if (S.problems.length) msg($("connmsg"), m + " Cannot install here: " + S.problems.join("; ") + ".", "err"); else msg($("connmsg"), m, "ok");
+    S.vst2 = info.vst2 || "";
+    var dl = [info.model || (info.arch === "aarch64" ? "Gen2 MPC" : "MPC or Force"), info.mpcOS ? "MPC OS " + info.mpcOS : "",
+      S.vst2 === "on" ? "VST2 Support on" : S.vst2 === "off" ? "VST2 Support OFF" : "", info.legacyCount ? info.legacyCount + " plugin" + (info.legacyCount === 1 ? "" : "s") + " to move" : "",
+      info.manager ? "Plugin Manager " + info.manager : "no Plugin Manager"].filter(Boolean).join("  \u00b7  ");
+    text($("devline"), dl); $("devline").hidden = false;
+    if (S.vst2 === "off") msg($("connmsg"), "VST2 Support is off: on the MPC open Preferences > Enhancements, turn it on, wait a few seconds, restart MPC, then connect again.", "err");
     drawWhere(); loadCatalog(); loadDevice(); loadUnreg(); loadBackups();
   }
   refresh();
@@ -975,6 +998,12 @@ function setMode(m) {
 }
 $("mode-install").addEventListener("click", function () { setMode("install"); });
 $("mode-stick").addEventListener("click", function () { setMode("stick"); });
+/* the start cards: open the right part of the page */
+function openPart(id) { var d = $(id); if (d && d.tagName === "DETAILS") d.open = true; if (d) d.scrollIntoView({ behavior: "smooth", block: "start" }); }
+$("go-310").addEventListener("click", function () { setMode("stick"); openPart("v2"); setTimeout(function () { $("v2-mgr").focus({ preventScroll: true }); }, 400); });
+$("go-310-plugins").addEventListener("click", function () { setMode("stick"); openPart("v2"); });
+$("go-ssh").addEventListener("click", function () { setMode("install"); openPart("s1"); $("host").focus({ preventScroll: true }); });
+$("go-stick").addEventListener("click", function () { setMode("stick"); openPart("l1"); });
 
 var BR = { mode: "dir", target: null, dir: "" };
 function openBrowse(mode, target, start) {
