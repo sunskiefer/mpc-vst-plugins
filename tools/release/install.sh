@@ -56,7 +56,8 @@ fi
 # MPC draws a plugin's skin only if its folder is under a listed content location (the plugin loads either way; device test, MPC 3.10.0, docs/NOTES.md 2026-10-27).
 # Compare whole entries (not a substring: /sdcard/Synths-old must not count), ignoring CR and a trailing slash, which MPC accepts.
 WANT=$(printf %s "$SYNTHS" | sed 's|/*$||')
-if ! sed -n 's/.*<Location>\(.*\)<\/Location>.*/\1/p' "$SETTINGS" | tr -d '\r' | sed 's|/*$||' | grep -qxF -- "$WANT"; then
+# MPC OS 3.10.1+ loads plugins (skins included) from <drive>/VST2 Plugins, which is not a content location: no warning there.
+if [ "${WANT##*/}" != "VST2 Plugins" ] && ! sed -n 's/.*<Location>\(.*\)<\/Location>.*/\1/p' "$SETTINGS" | tr -d '\r' | sed 's|/*$||' | grep -qxF -- "$WANT"; then
     echo "WARNING: $SYNTHS is not one of MPC's content locations (SynthContentLocations in $SETTINGS)." >&2
     echo "         The plugin will load, but with NO SKIN. Install into a listed Synths folder with -t, or add this folder to the list" >&2
     echo "         (MPC stopped, MPC.settings backed up) and start MPC again." >&2

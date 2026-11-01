@@ -1390,6 +1390,14 @@ class InstallerTest(Base):
             self.assertEqual(r.returncode, 0, r.stderr)            # warns, does not refuse: the plugin loads either way
             self.assertEqual(warn in r.stderr, not listed, (locs, r.stderr))
 
+    def test_no_content_location_warning_for_a_vst2_plugins_folder(self):
+        """MPC OS 3.10.1 loads plugins and their skins from <drive>/VST2 Plugins, which is never a content location."""
+        self.with_locations("/usr/share/Akai/Content/Synths")
+        vst2 = os.path.join(os.path.dirname(self.synths), "VST2 Plugins")
+        r = self.run_script("install.sh", "-t", vst2)   # the last -t wins
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn("is not one of MPC's content locations", r.stderr)
+
     def legacy(self, *parts):
         return os.path.join(self.legacy_root, "sdcard", "vst", *parts)
 
