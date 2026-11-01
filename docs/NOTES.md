@@ -2086,6 +2086,16 @@ Fixes (offline-tested; not yet on a device): the manager's keys get the same 250
   `KNOWNPLUGINS` made MPC crash at start (SEGV, restarts until systemd gave up). Edit the plugin list as whole elements, keep CRLF.
 - **Force:** no 3.10.1 image yet (board `ada2` is not in the Gen1 image's board list); the Force stays on the MPC.settings route.
 
+## 2026-11-02: MPC OS 3.10.1 draws the skin of an old Synths copy over the VST2 Plugins one (Live III, 3.10.1.6, device)
+
+- With a plugin in both `/nvme/VST2 Plugins/<folder>/` (the copy MPC runs: MPC.settings and plugin.json point there) and an older
+  copy of the same folder in `/nvme/Synths/<folder>/`, MPC drew the **old copy's `Plugin Skins`**: the Plugin Manager 1.0.0 showed
+  its 0.2.4 copy's thumbnails, every card with another plugin's picture. Renaming the old copy's `Plugin Skins` and restarting MPC
+  fixed it at once; the new skin was then drawn from `VST2 Plugins`.
+- So a plugin moved to VST2 Plugins and then updated would show its old skin. `tools/vst2_migrate.sh` now renames the old copy's
+  `Plugin Skins` to `Plugin Skins.vst2-moved` (nothing deleted) after a move, for plugins moved before, and after every install's
+  `--json` run. On the test unit that was 41 plugins. Saved projects that name the old path still load (and draw the new skin).
+
 ## 2026-11-01: a plugin can serve a web page on the local network (Live III, MPC OS 3.10.1.6, device)
 
 - MPC runs as root (`/usr/bin/MPC`, thread "MPC 3 Main") and the kernel has no iptables/nftables support: nothing filters incoming
