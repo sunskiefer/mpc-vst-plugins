@@ -47,10 +47,27 @@ ul.list .t .d { display:block; color:var(--muted); font-size:13px; }
 .uf .tag.maybe { color:var(--accent); border-color:var(--accent); } .uf .tag.bad { color:var(--err, #d44); border-color:var(--err, #d44); }
 .uf input[type=file] { max-width:100%; } .uf .row button { margin-left:8px; }
 
-.vcards { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-top:8px; }
-.vcard { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; }
-.vcard.rec { border:2px solid var(--accent); } .vcard > b { font:700 22px/1.1 var(--display); text-transform:uppercase; letter-spacing:.04em; }
-.vcard ol, .vcard ul { margin:0; padding-left:20px; } .vcard li { margin:4px 0; } .vcard .tag { align-self:flex-start; margin:0; }
+.hrow { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; } .hrow .linkbtn { margin-top:10px; white-space:nowrap; }
+.dots { display:flex; gap:6px; margin:0 0 14px; } .dots i { height:4px; flex:1; background:var(--line); border-radius:2px; } .dots i.on { background:var(--accent); }
+section.wz { padding:24px 24px 20px; }
+h2.q { font-size:26px; letter-spacing:.03em; margin-bottom:6px; }
+.opts { display:grid; gap:10px; }
+.opt { display:flex; gap:14px; align-items:center; justify-content:space-between; text-align:left; width:100%; background:#fff; border:1px solid var(--line); border-radius:8px;
+  padding:14px 16px; font:400 15px/1.4 var(--text); letter-spacing:0; text-transform:none; color:var(--fg); cursor:pointer; }
+.opt:hover { border-color:var(--fg); } .opt b { display:block; font-size:16px; font-weight:700; } .opt small { display:block; color:var(--muted); font-size:13px; }
+.opt .tag { margin:0; flex:none; }
+.models { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:8px; } .models .opt { font-weight:600; }
+.grp { font:600 11px var(--display); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; }
+.wnav { display:flex; justify-content:space-between; align-items:center; margin-top:18px; }
+ol.plan { counter-reset:s; list-style:none; padding:0; margin:4px 0 18px; }
+ol.plan li { counter-increment:s; display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-top:1px solid var(--line); }
+ol.plan li::before { content:counter(s); flex:0 0 26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; display:grid; place-items:center; font:700 14px var(--display); }
+ol.plan li > span { flex:1; } ol.plan li small { flex:none; color:var(--muted); font-size:12px; white-space:nowrap; padding-top:3px; }
+details.others { margin-top:16px; border-top:1px solid var(--line); padding-top:12px; } details.others summary { cursor:pointer; color:var(--muted); margin-bottom:8px; }
+.wzfor { display:none; margin:0 0 12px; } .fromwiz .wzfor { display:flex; gap:12px; align-items:center; }
+.fromwiz #v2-archq, .fromwiz > section.guide { display:none; }
+.toolbar { display:flex; justify-content:space-between; margin:0 0 8px; }
+.ktabs[hidden] { display:none; }
 .devline { background:var(--lcd); color:var(--lcd-fg); border-radius:6px; padding:9px 12px; font:600 14px var(--display); letter-spacing:.05em; margin:10px 0 0; }
 .drop { border:2px dashed var(--line); border-radius:6px; padding:22px; text-align:center; color:var(--muted); margin-top:14px; cursor:pointer; background:var(--bg); }
 .drop.over { border-color:var(--accent); color:var(--fg); }
@@ -109,36 +126,70 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 <div class="wrap">
 <div id="newver" class="small" hidden style="background:var(--panel);border:1px solid var(--accent);border-radius:6px;padding:10px 14px;margin-top:16px"></div>
 <header>
-  <h1>OpenMPC Plugins &amp; Tools Installer</h1>
-  <p class="lede">Get the OpenMPC Plugin Manager and community plugins onto your MPC or Force: a USB stick for any MPC OS, or installs over Wi-Fi with SSH, plus tools for ROMs, removals and backups. This page runs on your computer only. Nothing about your device is saved.</p>
+  <div class="hrow"><h1>OpenMPC Plugins &amp; Tools Installer</h1><button type="button" class="linkbtn" id="to-tools">All tools</button></div>
+  <p class="lede">Get the OpenMPC Plugin Manager and community plugins onto your MPC. Answer a few questions and it shows you the way. This runs on your computer only.</p>
 </header>
 
-<section id="which">
-  <h2>Which MPC OS is on your MPC?</h2>
-  <p class="sub">On the MPC: Preferences &gt; Info shows the version.</p>
-  <div class="vcards">
-    <div class="vcard rec">
-      <span class="tag ok">No setup on the MPC</span>
-      <b>MPC OS 3.10.1 or later</b>
-      <ol>
-        <li>Preferences &gt; Enhancements: turn on <b>Enable Enhancements</b> and <b>VST2 Support</b>, wait a few seconds, restart.</li>
-        <li>Put the <b>Plugin Manager</b> on a USB stick (below), plug it in, restart.</li>
-        <li>Add it to a track (External VST Plugins) and open the address it shows on your phone or computer: install plugins, move old ones, add ROMs.</li>
-      </ol>
-      <div class="row"><button class="primary" type="button" id="go-310">Make the Plugin Manager stick</button></div>
-      <button class="linkbtn" type="button" id="go-310-plugins">No Wi-Fi? Put plugins straight onto the stick</button>
-      <button class="linkbtn" type="button" id="go-310-ssh">Developer mode on? Install from this computer over Wi-Fi (SSH)</button>
+<div id="wiz">
+  <div class="dots" id="wiz-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <section class="wz" id="wz-model">
+    <h2 class="q">Which MPC do you have?</h2>
+    <p class="sub">A couple of questions, then the steps for your MPC.</p>
+    <div class="grp">Original models</div>
+    <div class="models">
+      <button type="button" class="opt" data-gen="armv7">MPC Live / Live II</button><button type="button" class="opt" data-gen="armv7">MPC One / One+</button>
+      <button type="button" class="opt" data-gen="armv7">MPC X / X SE</button><button type="button" class="opt" data-gen="armv7">MPC Key 61 / Key 37</button>
     </div>
-    <div class="vcard">
-      <b>MPC OS 3.9.1 or earlier</b>
-      <ul>
-        <li><b>With SSH</b> (a modded unit): install from this computer over Wi-Fi.</li>
-        <li><b>Without SSH</b>: a stick that installs the Plugin Manager with one prompt, or one that turns SSH on.</li>
-      </ul>
-      <div class="row"><button class="primary" type="button" id="go-ssh">I have SSH: connect</button><button type="button" id="go-stick">I don't have SSH: make a USB stick</button></div>
+    <div class="grp">2025 and later</div>
+    <div class="models">
+      <button type="button" class="opt" data-gen="aarch64">MPC Live III</button><button type="button" class="opt" data-gen="aarch64">MPC One G2</button>
+      <button type="button" class="opt" data-gen="aarch64">MPC Key G2</button><button type="button" class="opt" data-gen="aarch64">MPC XL</button>
     </div>
-  </div>
-</section>
+    <div class="grp">Other</div>
+    <div class="models"><button type="button" class="opt" data-gen="force">Akai Force</button></div>
+  </section>
+  <section class="wz" id="wz-os" hidden>
+    <h2 class="q">Which MPC OS is on it?</h2>
+    <p class="sub">On the MPC: Menu &gt; Preferences &gt; Info shows the version.</p>
+    <div class="opts">
+      <button type="button" class="opt" data-os="new"><span><b>3.10.1 or later</b><small>Preferences has an Enhancements page</small></span></button>
+      <button type="button" class="opt" data-os="old"><span><b>3.9.1 or earlier</b></span></button>
+      <button type="button" class="opt" id="wz-unsure"><span><b>I'm not sure</b></span></button>
+    </div>
+    <p class="callout" id="wz-oshelp" hidden>Press <b>Menu</b>, tap <b>Preferences</b>, then <b>Info</b>: the number after Version is the MPC OS.
+      If Preferences has an <b>Enhancements</b> page, it is 3.10.1 or later.</p>
+    <div class="wnav"><button type="button" class="wback">Back</button></div>
+  </section>
+  <section class="wz" id="wz-wifi" hidden>
+    <h2 class="q">Is your MPC on Wi-Fi?</h2>
+    <p class="sub">On the same network as your phone or computer. Menu &gt; Preferences &gt; Wi-Fi turns it on.</p>
+    <div class="opts">
+      <button type="button" class="opt" data-net="wifi"><span><b>Yes, or it can be</b><small>Install plugins from your phone or computer, any time</small></span><span class="tag ok">Easiest</span></button>
+      <button type="button" class="opt" data-net="none"><span><b>No</b><small>Pick plugins here and carry them over on a USB stick</small></span></button>
+    </div>
+    <div class="wnav"><button type="button" class="wback">Back</button></div>
+  </section>
+  <section class="wz" id="wz-ssh" hidden>
+    <h2 class="q">Can you log in to it over SSH?</h2>
+    <p class="sub">Only if you, or a mod, set this up before. If you don't know what SSH is, the answer is no.</p>
+    <div class="opts">
+      <button type="button" class="opt" data-net="nossh"><span><b>No, or not sure</b><small id="wz-nossh-d">A USB stick installs the Plugin Manager for you</small></span><span class="tag ok">Easiest</span></button>
+      <button type="button" class="opt" data-net="ssh"><span><b>Yes</b><small>Install from this computer over Wi-Fi</small></span></button>
+    </div>
+    <div class="wnav"><button type="button" class="wback">Back</button></div>
+  </section>
+  <section class="wz" id="wz-plan" hidden>
+    <p class="small" id="wz-for"></p>
+    <h2 class="q" id="wz-title"></h2>
+    <p class="sub" id="wz-sub"></p>
+    <ol class="plan" id="wz-steps"></ol>
+    <button type="button" class="primary" id="wz-go"></button>
+    <details class="others" id="wz-others"><summary>Other ways</summary><div class="opts" id="wz-alts"></div></details>
+    <div class="wnav"><button type="button" class="wback">Back</button><button type="button" class="linkbtn" id="wz-restart">Start over</button></div>
+  </section>
+</div>
+<div id="toolsview" hidden>
+<div class="toolbar"><button type="button" class="linkbtn" id="to-setup">&larr; Back to your steps</button><button type="button" class="linkbtn" id="to-all" hidden>Show all tools</button></div>
 
 <div class="ktabs" id="modetabs" role="tablist" aria-label="Mode">
   <button type="button" id="mode-stick" role="tab" aria-selected="true">USB sticks (no connection to the MPC)</button>
@@ -260,7 +311,8 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
   </ul>
 </section>
 <section>
-  <fieldset class="where"><legend>Your MPC</legend>
+  <p class="wzfor" id="v2-for"></p>
+  <fieldset class="where" id="v2-archq"><legend>Your MPC</legend>
     <label class="whereopt"><input type="radio" name="v2-arch" value="armv7" checked><span>Gen1 (32-bit)<small>MPC Live, Live II, One, One+, X, X SE, Key 61, Key 37</small></span></label>
     <label class="whereopt"><input type="radio" name="v2-arch" value="aarch64"><span>Gen2 (64-bit)<small>MPC Live III, One G2, Key G2, XL</small></span></label>
   </fieldset>
@@ -295,7 +347,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 <section class="guide">
   <ul>
     <li><b>What it is:</b> the simplest way. A stick that installs the <b>OpenMPC Plugin Manager VST</b> for you. Confirm one prompt and MPC restarts with it installed. No SSH, no network, no manager screens to learn. <i>Private beta.</i></li>
-    <li><b>Which MPC OS are you on?</b>
+    <li id="l1-osq"><b>Which MPC OS are you on?</b>
       <label><input type="radio" name="l1-os" value="old"> 3.9.1 or earlier</label>
       <label><input type="radio" name="l1-os" value="new"> 3.10</label>
       <label><input type="radio" name="l1-os" value="unsure"> Not sure</label></li>
@@ -401,6 +453,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 </details>
 </div>
 
+</div>
 <footer>Community-provided software. Installing runs a script as root on your device and edits MPC's settings (a backup is made first). Downloads are checked against the catalog's checksums before anything is copied.</footer>
 </div>
 
@@ -949,11 +1002,109 @@ $("mode-install").addEventListener("click", function () { setMode("install"); })
 $("mode-stick").addEventListener("click", function () { setMode("stick"); });
 /* the start cards: open the right part of the page */
 function openPart(id) { var d = $(id); if (d && d.tagName === "DETAILS") d.open = true; if (d) d.scrollIntoView({ behavior: "smooth", block: "start" }); }
-$("go-310").addEventListener("click", function () { setMode("stick"); openPart("v2"); setTimeout(function () { $("v2-mgr").focus({ preventScroll: true }); }, 400); });
-$("go-310-plugins").addEventListener("click", function () { setMode("stick"); $("v2-more").open = true; openPart("v2"); });
-$("go-310-ssh").addEventListener("click", function () { setMode("install"); openPart("s1"); $("host").focus({ preventScroll: true }); });
-$("go-ssh").addEventListener("click", function () { setMode("install"); openPart("s1"); $("host").focus({ preventScroll: true }); });
-$("go-stick").addEventListener("click", function () { setMode("stick"); openPart("l1"); });
+/* The start: a few questions (model, MPC OS, Wi-Fi or SSH), then the plan for that answer. Its button opens the one part of
+ * the page below that does it (focus), the rest stays behind "All tools". Answers are kept in this browser only. */
+var WZ = { gen: "", model: "", os: "", net: "", hist: [] };
+var WZ_SCREENS = ["wz-model", "wz-os", "wz-wifi", "wz-ssh", "wz-plan"], WZ_STEP = { "wz-model": 1, "wz-os": 2, "wz-wifi": 3, "wz-ssh": 3, "wz-plan": 4 };
+function wzSave() { try { localStorage.setItem("openmpc-setup", JSON.stringify({ gen: WZ.gen, model: WZ.model, os: WZ.os, net: WZ.net })); } catch (e) {} }
+function wzShow(id, back) {
+  var cur = WZ_SCREENS.filter(function (x) { return !$(x).hidden; })[0];
+  if (!back && cur && cur !== id) WZ.hist.push(cur);
+  WZ_SCREENS.forEach(function (x) { $(x).hidden = x !== id; });
+  Array.prototype.forEach.call($("wiz-dots").children, function (d, i) { d.className = i < WZ_STEP[id] ? "on" : ""; });
+}
+function showSetup() { $("toolsview").hidden = true; $("wiz").hidden = false; window.scrollTo(0, 0); }
+/* the existing parts: mode "stick" or "install"; part: the details/section to open alone ("" = everything) */
+function showTools(mode, part) {
+  $("wiz").hidden = true; $("toolsview").hidden = false;
+  $("to-setup").hidden = !WZ.os; $("to-all").hidden = !part;
+  $("modetabs").hidden = !!part;
+  $("v2").classList.remove("fromwiz");
+  setMode(mode);
+  Array.prototype.forEach.call(document.querySelectorAll("#stick-mode > details"), function (d) { d.hidden = !!part && d.id !== part; });
+  if (part) openPart(part); else window.scrollTo(0, 0);
+}
+function wzOpt(label, small, fn) {
+  var b = el("button", "opt"); b.type = "button";
+  var t = el("span"); t.appendChild(el("b", null, label)); t.appendChild(el("small", null, small)); b.appendChild(t);
+  b.addEventListener("click", fn); return b;
+}
+function goV2(arch, plugins) {   /* the VST2 Plugins stick for this MPC: the build is known from the model */
+  Array.prototype.forEach.call(document.getElementsByName("v2-arch"), function (r) { r.checked = r.value === arch; });
+  v2Draw(); $("v2-more").open = !!plugins;
+  var f = $("v2-for"); f.textContent = ""; f.appendChild(el("span", null, "For your " + WZ.model + " (the " + (arch === "aarch64" ? "Gen2" : "Gen1") + " build)."));
+  var c = el("button", "linkbtn", "Change"); c.type = "button"; c.onclick = function () { WZ.hist = []; showSetup(); wzShow("wz-model", true); }; f.appendChild(c);
+  showTools("stick", "v2"); $("v2").classList.add("fromwiz");
+}
+function goSSH() { showTools("install", ""); openPart("s1"); $("host").focus({ preventScroll: true }); }
+function goL1() {
+  var r = document.querySelector('input[name="l1-os"][value="old"]'); r.checked = true; r.dispatchEvent(new Event("change"));
+  $("l1-osq").hidden = true; showTools("stick", "l1");
+}
+function goSSHStick() { showTools("stick", "dadv"); }
+function wzPlan() {
+  var arch = WZ.gen === "aarch64" ? "aarch64" : "armv7", force = WZ.gen === "force", P;
+  var HERE = "on this computer", MPC = "on the MPC";
+  if (WZ.os === "new" && force) P = { t: "Not ready for the Force yet", s: "The Force on 3.10.1 or later isn't supported yet. Plugins for older Force OS still install with SSH.",
+    steps: [], go: "Show all tools", fn: function () { showTools("stick", ""); }, alts: [] };
+  else if (WZ.net === "wifi") P = { t: "Use the Plugin Manager", s: "Put it on a USB stick once. After that you install everything from your phone or computer.",
+    steps: [["Make the stick", HERE], ["Preferences > Enhancements: turn on Enable Enhancements and VST2 Support, plug in the stick, restart", MPC],
+            ["Add the Plugin Manager to a track and open the address it shows, on your phone or computer", MPC]],
+    go: "Make the stick", fn: function () { goV2(arch, false); },
+    alts: [["My MPC has no Wi-Fi", "Put plugins and their ROMs straight onto the stick", function () { goV2(arch, true); }],
+           ["Developer mode is on (SSH)", "Install from this computer over Wi-Fi", goSSH]] };
+  else if (WZ.net === "none") P = { t: "Plugins on a stick", s: "Pick plugins here; a USB stick carries them, and their ROMs, to the MPC.",
+    steps: [["Pick plugins and write the stick", HERE], ["Preferences > Enhancements: turn on Enable Enhancements and VST2 Support", MPC], ["Plug in the stick and restart", MPC]],
+    go: "Pick plugins", fn: function () { goV2(arch, true); },
+    alts: [["Just the Plugin Manager", "For when the MPC gets Wi-Fi later", function () { goV2(arch, false); }]] };
+  else if (WZ.net === "nossh" && force) P = { t: "Turn on SSH with a stick", s: "A stick turns on SSH (you confirm one prompt on the Force); then install from this computer over Wi-Fi.",
+    steps: [["Make the stick (it needs the Force's update file)", HERE], ["Plug it in and confirm the prompt", MPC], ["Connect from this computer and install plugins", HERE]],
+    go: "Make the stick", fn: goSSHStick, alts: [] };
+  else if (WZ.net === "nossh") P = { t: "Plugin Manager stick", s: "A stick that installs the Plugin Manager: you confirm one prompt and MPC restarts with it.",
+    steps: [["Make the stick", HERE], ["Plug it in and choose Open on the prompt", MPC], ["Add the Plugin Manager to a track and install plugins from its screen", MPC]],
+    go: "Make the stick", fn: goL1,
+    alts: [["I want SSH on my MPC", "A stick that turns SSH on, for installing from this computer", goSSHStick]] };
+  else P = { t: "Install over Wi-Fi", s: "Connect to the MPC from this computer, pick plugins, install.",
+    steps: [["Connect with the MPC's IP address", HERE], ["Pick plugins", HERE], ["Install: MPC restarts with them", HERE]],
+    go: "Connect", fn: goSSH, alts: [] };
+  text($("wz-for"), WZ.model + " \u00b7 MPC OS " + (WZ.os === "new" ? "3.10.1 or later" : "3.9.1 or earlier"));
+  text($("wz-title"), P.t); text($("wz-sub"), P.s);
+  var ol = $("wz-steps"); ol.textContent = ""; ol.hidden = !P.steps.length;
+  P.steps.forEach(function (x) { var li = el("li"); li.appendChild(el("span", null, x[0])); li.appendChild(el("small", null, x[1])); ol.appendChild(li); });
+  text($("wz-go"), P.go); $("wz-go").onclick = P.fn;
+  var al = $("wz-alts"); al.textContent = ""; $("wz-others").hidden = !P.alts.length; $("wz-others").open = false;
+  P.alts.forEach(function (x) { al.appendChild(wzOpt(x[0], x[1], x[2])); });
+  wzSave(); wzShow("wz-plan");
+}
+Array.prototype.forEach.call(document.querySelectorAll("#wz-model .opt"), function (b) {
+  b.addEventListener("click", function () {
+    WZ.gen = b.dataset.gen; WZ.model = b.textContent;
+    text($("wz-nossh-d"), WZ.gen === "force" ? "A USB stick turns SSH on" : "A USB stick installs the Plugin Manager for you");
+    wzShow("wz-os");
+  });
+});
+Array.prototype.forEach.call(document.querySelectorAll("#wz-os .opt[data-os]"), function (b) {
+  b.addEventListener("click", function () {
+    WZ.os = b.dataset.os;
+    if (WZ.os === "new" && WZ.gen === "force") { WZ.net = ""; wzPlan(); } else wzShow(WZ.os === "new" ? "wz-wifi" : "wz-ssh");
+  });
+});
+$("wz-unsure").addEventListener("click", function () { $("wz-oshelp").hidden = false; });
+Array.prototype.forEach.call(document.querySelectorAll("#wiz .opt[data-net]"), function (b) {
+  b.addEventListener("click", function () { WZ.net = b.dataset.net; wzPlan(); });
+});
+Array.prototype.forEach.call(document.querySelectorAll("#wiz .wback"), function (b) {
+  b.addEventListener("click", function () { if (WZ.hist.length) wzShow(WZ.hist.pop(), true); });
+});
+$("wz-restart").addEventListener("click", function () { WZ.hist = []; WZ.net = ""; try { localStorage.removeItem("openmpc-setup"); } catch (e) {} wzShow("wz-model", true); });
+$("to-tools").addEventListener("click", function () { showTools(S.mode2 || "stick", ""); });
+$("to-all").addEventListener("click", function () { showTools(S.mode2 || "stick", ""); });
+$("to-setup").addEventListener("click", function () { $("l1-osq").hidden = false; showSetup(); });
+(function () {   /* a returning user lands on their plan */
+  var a = null; try { a = JSON.parse(localStorage.getItem("openmpc-setup") || "null"); } catch (e) {}
+  if (a && a.gen && a.os) { WZ.gen = a.gen; WZ.model = a.model || ""; WZ.os = a.os; WZ.net = a.net || ""; WZ.hist = ["wz-model"]; wzPlan(); }
+  else wzShow("wz-model", true);
+})();
 
 var BR = { mode: "dir", target: null, dir: "" };
 function openBrowse(mode, target, start) {

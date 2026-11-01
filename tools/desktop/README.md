@@ -45,11 +45,22 @@ Windows): pick a mounted USB stick there and Build writes the stick straight ont
 
 ## The start screen
 
-Two cards by MPC OS version. **3.10.1 or later:** the steps (Enhancements, VST2 Support, restart), a button to the
-**Just the Plugin Manager** stick (then use the Plugin Manager's web page; no SSH or Developer mode), and a link to the plugin
-stick for an MPC without Wi-Fi. **3.9.1 or earlier:** connect over SSH, or make a stick. After connecting, one line names the
-model, MPC OS, VST2 Support, plugins still to move and the Plugin Manager version (read in the same SSH round trip as the rest);
-on 3.10.1 device patches are not offered and the move box shows only when there is something to move.
+A few questions, one per screen: **which MPC** (model tiles; this also picks the Gen1 or Gen2 build), **which MPC OS** (3.10.1 or
+later, 3.9.1 or earlier, or "not sure", which says where to look), then **Wi-Fi?** (3.10.1) or **SSH?** (3.9.1 or earlier). The answer is a
+plan: three numbered steps marked "on this computer" or "on the MPC", one button, and the alternatives under **Other ways**.
+
+| MPC OS | Answer | Plan (button opens) | Other ways |
+|---|---|---|---|
+| 3.10.1+ | Wi-Fi | Plugin Manager stick, then its web page (the 3.10.1 stick, build preset) | plugins on the stick; Developer mode SSH |
+| 3.10.1+ | no Wi-Fi | plugins (and ROMs) straight onto the stick | just the Plugin Manager |
+| 3.9.1 or earlier | no SSH | the one-prompt Plugin Manager stick (Force: the turn-on-SSH stick) | the turn-on-SSH stick |
+| 3.9.1 or earlier | SSH | Install over Wi-Fi (Connect) | |
+
+The Force on 3.10.1 or later is not supported yet and says so. The button shows only that part of the page; **All tools** (top right)
+shows every section and the USB stick / Install over Wi-Fi (SSH) tabs. The answers are kept in the browser (localStorage), so the app
+opens on the plan next time; **Start over** clears them. After connecting, one line names the model, MPC OS, VST2 Support, plugins still
+to move and the Plugin Manager version (read in the same SSH round trip as the rest); on 3.10.1 device patches are not offered and the
+move box shows only when there is something to move.
 
 ## MPC OS 3.10.1 and later: plugin stick
 
