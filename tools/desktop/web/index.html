@@ -127,6 +127,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
       </ol>
       <div class="row"><button class="primary" type="button" id="go-310">Make the Plugin Manager stick</button></div>
       <button class="linkbtn" type="button" id="go-310-plugins">No Wi-Fi? Put plugins straight onto the stick</button>
+      <button class="linkbtn" type="button" id="go-310-ssh">Developer mode on? Install from this computer over Wi-Fi (SSH)</button>
     </div>
     <div class="vcard">
       <b>MPC OS 3.9.1 or earlier</b>
@@ -147,7 +148,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 <div id="install-mode" hidden>
 <section id="s1">
   <h2><span class="n">1</span>Connect to your device</h2>
-  <p class="sub">Your device needs SSH access as <b>root</b> (a modded unit). Use the IP address shown on the device or in your router.</p>
+  <p class="sub">Your device needs SSH access as <b>root</b>: <b>MPC OS 3.10.1</b> with Developer mode on (Preferences &gt; Enhancements &gt; Developer Panel, then Shift + Menu, mode Developer), or a modded unit on older MPC OS. Use the IP address shown in Preferences &gt; Wi-Fi or in your router.</p>
   <p class="sub">Plugins and patches are community-provided and run as root on your device. Use them at your own risk, with no warranty: they can crash MPC, lose unsaved work or, at worst, leave the device needing a reinstall of its OS. Save your project and back up first. Not affiliated with or endorsed by Akai Professional.</p>
   <form id="conn" class="row" autocomplete="off">
     <label class="f">IP address<input id="host" type="text" inputmode="decimal" placeholder="e.g. 192.168.1.20" spellcheck="false" required></label>
@@ -950,6 +951,7 @@ $("mode-stick").addEventListener("click", function () { setMode("stick"); });
 function openPart(id) { var d = $(id); if (d && d.tagName === "DETAILS") d.open = true; if (d) d.scrollIntoView({ behavior: "smooth", block: "start" }); }
 $("go-310").addEventListener("click", function () { setMode("stick"); openPart("v2"); setTimeout(function () { $("v2-mgr").focus({ preventScroll: true }); }, 400); });
 $("go-310-plugins").addEventListener("click", function () { setMode("stick"); $("v2-more").open = true; openPart("v2"); });
+$("go-310-ssh").addEventListener("click", function () { setMode("install"); openPart("s1"); $("host").focus({ preventScroll: true }); });
 $("go-ssh").addEventListener("click", function () { setMode("install"); openPart("s1"); $("host").focus({ preventScroll: true }); });
 $("go-stick").addEventListener("click", function () { setMode("stick"); openPart("l1"); });
 
