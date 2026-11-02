@@ -122,6 +122,9 @@ details.collapse > summary .badge + .hint { margin-left:12px; }
 footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 img.shot { display: block; max-width: 100%; height: auto; margin: 8px 0 4px; border: 1px solid #8884; border-radius: 6px; }
 #v2-ready { margin-top: 0; color: #2e7d32; }
+details.way { border: 1px solid #8884; border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+details.way summary { cursor: pointer; }
+details.way[open] summary { margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -137,18 +140,17 @@ img.shot { display: block; max-width: 100%; height: auto; margin: 8px 0 4px; bor
   <section class="wz" id="wz-model">
     <h2 class="q">Which MPC do you have?</h2>
     <p class="sub">A couple of questions, then the steps for your MPC.</p>
-    <div class="grp">Original models</div>
+    <div class="grp">Gen1</div>
     <div class="models">
       <button type="button" class="opt" data-gen="armv7">MPC Live / Live II</button><button type="button" class="opt" data-gen="armv7">MPC One / One+</button>
       <button type="button" class="opt" data-gen="armv7">MPC X / X SE</button><button type="button" class="opt" data-gen="armv7">MPC Key 61 / Key 37</button>
+      <button type="button" class="opt" data-gen="force">Akai Force</button>
     </div>
-    <div class="grp">2025 and later</div>
+    <div class="grp">Gen2</div>
     <div class="models">
       <button type="button" class="opt" data-gen="aarch64">MPC Live III</button><button type="button" class="opt" data-gen="aarch64">MPC One G2</button>
       <button type="button" class="opt" data-gen="aarch64">MPC Key G2</button><button type="button" class="opt" data-gen="aarch64">MPC XL</button>
     </div>
-    <div class="grp">Other</div>
-    <div class="models"><button type="button" class="opt" data-gen="force">Akai Force</button></div>
   </section>
   <section class="wz" id="wz-os" hidden>
     <h2 class="q">Which MPC OS is on it?</h2>
@@ -185,6 +187,7 @@ img.shot { display: block; max-width: 100%; height: auto; margin: 8px 0 4px; bor
     <h2 class="q" id="wz-title"></h2>
     <p class="sub" id="wz-sub"></p>
     <ol class="plan" id="wz-steps"></ol>
+    <div id="wz-ways"></div>
     <button type="button" class="primary" id="wz-go"></button>
     <details class="others" id="wz-others"><summary>Other ways</summary><div class="opts" id="wz-alts"></div></details>
     <div class="wnav"><button type="button" class="wback">Back</button><button type="button" class="linkbtn" id="wz-restart">Start over</button></div>
@@ -1052,6 +1055,12 @@ function wzPlan() {
   var HERE = "on this computer", MPC = "on the MPC";
   if (WZ.os === "new" && force) P = { t: "No MPC OS 3.10.1 for the Force yet", s: "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier (Menu > Preferences > Info shows it). Continue with that.",
     steps: [], go: "Continue with 3.9.1 or earlier", fn: function () { WZ.os = "old"; wzSave(); wzShow("wz-ssh"); }, alts: [] };
+  else if (WZ.os === "new") P = { t: "Put the Plugin Manager on your MPC", s: "Once it is on a track, you install everything else from its screen, or from your phone or computer. First, on the MPC: Preferences > Enhancements, turn on Enable Enhancements and VST2 Support, wait a few seconds. Then pick a way:",
+    steps: [], go: "", fn: null,
+    ways: [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode on the MPC and note its IP address", MPC], ["Connect from this computer and install the Plugin Manager", HERE], ["MPC restarts; turn Developer mode off again if you like", MPC]], "Install over Wi-Fi", goSSH],
+           ["With a USB cable", "Controller Mode", [["Put an SD card or USB drive in the MPC, connect the MPC to this computer", MPC], ["Menu, the computer icon: Controller Mode. The card or drive appears here", MPC], ["Write the Plugin Manager onto it, eject, tap Standalone on the MPC", HERE]], "Write the Plugin Manager", function () { goV2(arch, false); }],
+           ["With a USB stick or SD card", "", [["Write the Plugin Manager onto a stick or card", HERE], ["Put it in the MPC and restart", MPC]], "Write the Plugin Manager", function () { goV2(arch, false); }]],
+    alts: [["My MPC has no Wi-Fi", "Put plugins and their ROMs straight onto the stick", function () { goV2(arch, true); }]] };
   else if (WZ.net === "wifi") P = { t: "Use the Plugin Manager", s: "Put it on a USB stick once. After that you install everything from your phone or computer.",
     steps: [["Make the stick", HERE], ["Preferences > Enhancements: turn on Enable Enhancements and VST2 Support, plug in the stick, restart", MPC],
             ["Add the Plugin Manager to a track and open the address it shows, on your phone or computer", MPC]],
@@ -1073,7 +1082,14 @@ function wzPlan() {
   text($("wz-title"), P.t); text($("wz-sub"), P.s);
   var ol = $("wz-steps"); ol.textContent = ""; ol.hidden = !P.steps.length;
   P.steps.forEach(function (x) { var li = el("li"); li.appendChild(el("span", null, x[0])); li.appendChild(el("small", null, x[1])); ol.appendChild(li); });
-  text($("wz-go"), P.go); $("wz-go").onclick = P.fn;
+  text($("wz-go"), P.go || ""); $("wz-go").onclick = P.fn; $("wz-go").hidden = !P.fn;
+  var wy = $("wz-ways"); wy.textContent = "";
+  (P.ways || []).forEach(function (w) {
+    var d = el("details", "way"), sm = el("summary"); sm.appendChild(el("b", null, w[0])); if (w[1]) sm.appendChild(el("small", null, " (" + w[1] + ")"));
+    d.appendChild(sm); var o = el("ol", "plan");
+    w[2].forEach(function (x) { var li = el("li"); li.appendChild(el("span", null, x[0])); li.appendChild(el("small", null, x[1])); o.appendChild(li); });
+    d.appendChild(o); var b = el("button", "primary", w[3]); b.type = "button"; b.onclick = w[4]; d.appendChild(b); wy.appendChild(d);
+  });
   var al = $("wz-alts"); al.textContent = ""; $("wz-others").hidden = !P.alts.length; $("wz-others").open = false;
   P.alts.forEach(function (x) { al.appendChild(wzOpt(x[0], x[1], x[2])); });
   wzSave(); wzShow("wz-plan");
@@ -1088,7 +1104,7 @@ Array.prototype.forEach.call(document.querySelectorAll("#wz-model .opt"), functi
 Array.prototype.forEach.call(document.querySelectorAll("#wz-os .opt[data-os]"), function (b) {
   b.addEventListener("click", function () {
     WZ.os = b.dataset.os;
-    if (WZ.os === "new" && WZ.gen === "force") { WZ.net = ""; wzPlan(); } else wzShow(WZ.os === "new" ? "wz-wifi" : "wz-ssh");
+    if (WZ.os === "new") { WZ.net = ""; wzPlan(); } else wzShow("wz-ssh");
   });
 });
 $("wz-unsure").addEventListener("click", function () { $("wz-oshelp").hidden = false; });
