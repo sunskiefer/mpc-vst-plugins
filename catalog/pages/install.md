@@ -26,12 +26,12 @@ Prefer a computer? The [desktop installer app](#the-desktop-installer-app) insta
 ### 2. Download the Plugin Manager
 Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/plugin-manager-g2-v1.0.0) and download the zip for your MPC from **Assets**:
 
-| Your MPC | File ending in |
+| Your MPC | Download |
 |---|---|
-| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, Force | `-mpc-armv7.zip` |
-| **Second generation**: MPC Live III and newer | `-mpc-aarch64.zip` |
+| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, Force | `OpenMPC-Plugin-Manager-1.0.0-Gen1.zip` |
+| **Second generation**: MPC Live III and newer | `OpenMPC-Plugin-Manager-1.0.0-Gen2.zip` |
 
-Unzip it. You need the folder **`OpenMPC - VST - Plugin Manager G2`**, inside `portable`.
+Unzip it. You get one folder, **`OpenMPC - VST - Plugin Manager G2`**.
 
 ### 3. Copy it to the MPC
 Put the folder inside a folder called **`VST2 Plugins`** (exact name; create it if needed). Pick one way:
@@ -43,12 +43,13 @@ Put the folder inside a folder called **`VST2 Plugins`** (exact name; create it 
 4. Restart the MPC. You can turn Developer mode off again.
 :::
 
-::: details B. With a USB cable (Controller mode)
-TODO verify on 3.10.1 before publishing.
+::: details B. With a USB cable (Controller Mode)
+Your computer sees the SD card and USB drives that are in the MPC (not its built-in drive).
 
-1. Connect the MPC to your computer and switch it to **Controller mode**.
-2. Copy the folder into `VST2 Plugins` on the MPC's drive.
-3. Eject the drive, leave Controller mode and restart the MPC.
+1. Put an SD card or USB drive in the MPC and connect the MPC to your computer.
+2. **Menu**, then tap the computer icon (top right) to switch to **Controller Mode** (**Computer Mode** on the Force).
+3. Copy the folder into `VST2 Plugins` on that card or drive.
+4. Eject it on the computer, tap **Standalone** on the MPC and confirm. It restarts. Leave the card or drive in.
 :::
 
 ::: details C. With a USB stick or SD card
@@ -78,7 +79,7 @@ The easiest way is a Plugin Manager USB stick, made by the desktop installer app
 1. [Download and start the desktop installer app](#the-desktop-installer-app).
 2. Choose **MPC OS 3.9.1 or earlier → Make a USB stick → Plugin Manager**, and pick your stick. TODO check the labels against Installer 2.0.0.
 3. Put the stick in the MPC and accept the prompt. It installs the Plugin Manager.
-4. Add a track and choose the **OpenMPC Plugin Manager**. Browse and install on the MPC's screen, or open the address on its status line on your phone or computer. TODO confirm the 3.9.1 stick ships Manager 1.0.0 (web page).
+4. Add a track and choose the **OpenMPC Plugin Manager**. Browse and install on the MPC's screen, or open the address on its status line on your phone or computer.
 
 ## The desktop installer app
 A small app for Windows, Mac and Linux. It can:
