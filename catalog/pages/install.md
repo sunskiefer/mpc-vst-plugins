@@ -2,8 +2,65 @@
 title: Install a plugin
 nav: Install
 order: 10
-summary: Install, update and remove plugins on your MPC or Force with the MPC plugin installer app. The manual ways are at the bottom.
+summary: Install plugins on MPC OS 3.10.1 or later with the Plugin Manager, or on older MPC OS and the Force with the installer app.
 ---
+
+Which part of this page is for you depends on your MPC OS version (**Menu → Preferences → About** shows it).
+
+- **MPC OS 3.10.1 or later:** [install the Plugin Manager](#mpc-os-3-10-1-or-later), then install everything else from your phone or computer. No hacks and no computer program.
+- **MPC OS 3.9.1 or earlier, and the Force:** [use the installer app](#mpc-os-3-9-1-or-earlier-and-the-force).
+
+## MPC OS 3.10.1 or later
+MPC OS 3.10.1 loads third-party VST2 plugins from a **`VST2 Plugins`** folder on any of its drives. You put one plugin there by hand, the **OpenMPC Plugin Manager**, and it installs, updates and removes the rest from a web page on your phone or computer.
+
+### 1. Turn on VST2 Support
+On the MPC: **Menu → Preferences → Enhancements**. Turn on **Enable Enhancements**, then **VST2 Support**, and accept Akai's warning. Wait a few seconds (the setting is saved shortly after you change it), then restart the MPC.
+
+### 2. Download the Plugin Manager
+Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/plugin-manager-g2-v1.0.0) and download the zip for your MPC from **Assets**:
+
+| Your MPC | Download the file that ends with |
+|---|---|
+| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37 | `-mpc-armv7.zip` |
+| **Second generation**: MPC Live III and newer | `-mpc-aarch64.zip` |
+
+Unzip it. Inside, the folder you need is **`portable/OpenMPC - VST - Plugin Manager G2`**. Copy that whole folder (not its contents, and not the `portable` folder) in the next step.
+
+### 3. Put the folder in VST2 Plugins
+Pick one way, easiest first. In each, the result is a folder **`VST2 Plugins/OpenMPC - VST - Plugin Manager G2/`** on a drive the MPC can see. Create `VST2 Plugins` if it is not there yet; the name must match exactly.
+
+::: details A. Over Wi-Fi, with Developer mode
+Use this if your MPC is on Wi-Fi and you are happy to turn on Akai's **Developer mode** (it allows logging in as root over the network, with no password).
+
+1. Turn on Developer mode on the MPC, and note its IP address (in the network settings, or your router's list of devices).
+2. In any SFTP app (FileZilla, Cyberduck, WinSCP, or an app on your phone), connect to that address with the user **`root`** and an empty password.
+3. Copy the folder into **`/nvme/VST2 Plugins/`** on a second-generation MPC. On a first-generation MPC: TODO verify the internal drive's path before publishing.
+4. Restart the MPC. You can turn Developer mode off again afterwards: the Plugin Manager does not need it.
+:::
+
+::: details B. With a USB cable, in Controller mode
+TODO verify on 3.10.1 before publishing: does the computer see the internal drive and can it write `VST2 Plugins` there?
+
+1. Connect the MPC to your computer with a USB cable and switch it to **Controller mode**. Its internal drive appears on the computer.
+2. Copy the folder into `VST2 Plugins` at the top of that drive.
+3. Eject the drive on the computer, leave Controller mode, and restart the MPC.
+:::
+
+::: details C. With a USB stick or SD card
+1. On your computer, create a folder **`VST2 Plugins`** at the top of the stick or card, and copy the folder into it.
+2. Put the stick or card in the MPC and restart it. Leave it in: the MPC loads the Plugin Manager from it.
+
+The [installer app](#mpc-os-3-9-1-or-earlier-and-the-force) can also write the stick for you: start it, choose MPC OS 3.10.1, then **Write the Plugin Manager**.
+:::
+
+### 4. Open the Plugin Manager
+1. Add a track, open the plugin browser, choose **External VST Plugins → OpenMPC - Plugin Manager G2**. If it is not listed, check the folder name and that VST2 Support is on, then restart again.
+2. The Plugin Manager's status line at the bottom shows **On your phone or computer: http://…:8790**. Open that address in a browser on any phone, tablet or computer on the same Wi-Fi.
+3. The page lists the catalog. Install, update or remove plugins, move plugins you installed the old way into `VST2 Plugins`, choose the drive, add your own ROM files where a plugin needs them, then press **Apply**. The MPC restarts once; the page comes back when the project with the Plugin Manager reopens.
+
+> The web page has no password: anyone on your network can use it while the Plugin Manager is on a track. Other web sites cannot control it. Use it on a network you trust, and remove the Plugin Manager from the track when you are done.
+
+## MPC OS 3.9.1 or earlier, and the Force
 
 The easiest way to put plugins from the catalog on your MPC or Force is the **MPC plugin installer**: a small app you run on your computer. You pick plugins from a list (or drop zip files into it), press Install, and it does the rest: it checks every download, copies the plugins to your device, and restarts MPC once. You do not type any commands.
 
