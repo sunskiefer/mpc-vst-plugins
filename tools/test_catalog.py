@@ -1267,7 +1267,9 @@ class PagesTest(unittest.TestCase):
         self.assertNotIn('id="plugins-you-build-yourself"', inst)
         self.assertIn('href="build.html#plugins-you-build-yourself"', inst)   # a pointer, not the steps
         self.assertIn('id="with-termius-click-instead-of-type"', inst)
-        self.assertIn('id="check-that-you-can-reach-your-device"', inst)
+        self.assertIn('id="mpc-os-3-10-1-or-later"', inst)
+        self.assertIn('id="mpc-os-3-9-1-or-earlier"', inst)
+        self.assertIn('id="the-desktop-installer-app"', inst)
         self.assertNotIn("setup.html", inst + build)
         idx = catalog_site.render({"schema": 1, "generated": "x", "plugins": []}, pages)
         self.assertIn("Run this on your computer (needs Docker), not on the device.", idx)
