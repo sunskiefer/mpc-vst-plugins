@@ -7,7 +7,7 @@ summary: Put the OpenMPC Plugin Manager on your MPC once, then browse the catalo
 
 The **OpenMPC Plugin Manager** is a plugin that runs on your MPC. Once it is on a track you can browse the catalog and install, update and remove plugins, on the MPC's screen or from a web page on your phone or computer.
 
-You install it once. How depends on your MPC OS version (**Menu → Preferences → About**):
+You install it once. How depends on your MPC OS version (**Menu → Preferences → Info**):
 
 - [MPC OS 3.10.1 or later](#mpc-os-3-10-1-or-later)
 - [MPC OS 3.9.1 or earlier](#mpc-os-3-9-1-or-earlier)
@@ -77,8 +77,8 @@ Already had plugins before 3.10.1? MPC now only lists plugins in `VST2 Plugins`.
 The easiest way is a Plugin Manager USB stick, made by the desktop installer app.
 
 1. [Download and start the desktop installer app](#the-desktop-installer-app).
-2. Choose **MPC OS 3.9.1 or earlier → Make a USB stick → Plugin Manager**, and pick your stick. TODO check the labels against Installer 2.0.0.
-3. Put the stick in the MPC and accept the prompt. It installs the Plugin Manager.
+2. Choose **3.9.1 or earlier** and follow its questions to **Plugin Manager stick (one prompt)**. Pick an empty USB stick and press **Write stick…**.
+3. Save your project. Put the stick in the MPC and choose **Open** on the prompt. The MPC restarts with the Plugin Manager installed.
 4. Add a track and choose the **OpenMPC Plugin Manager**. Browse and install on the MPC's screen, or open the address on its status line on your phone or computer.
 
 ## The desktop installer app
