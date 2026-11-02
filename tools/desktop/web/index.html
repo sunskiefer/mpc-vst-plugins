@@ -346,7 +346,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 <summary><h2>MPC OS 3.9.1 or earlier, no SSH: Plugin Manager stick (one prompt)</h2><span class="hint">Show</span></summary>
 <section class="guide">
   <ul>
-    <li><b>What it is:</b> the simplest way. A stick that installs the <b>OpenMPC Plugin Manager VST</b> for you. Confirm one prompt and MPC restarts with it installed. No SSH, no network, no manager screens to learn. <i>Private beta.</i></li>
+    <li><b>What it is:</b> the simplest way. A stick that installs the <b>OpenMPC Plugin Manager VST</b> for you. Confirm one prompt and MPC restarts with it installed. No SSH, no network.</li>
     <li id="l1-osq"><b>Which MPC OS are you on?</b>
       <label><input type="radio" name="l1-os" value="old"> 3.9.1 or earlier</label>
       <label><input type="radio" name="l1-os" value="new"> 3.10</label>
@@ -386,7 +386,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
       </ul></li>
     <li><b>How it works:</b> MPC OS has its own stock "USB script" reader, built in by Akai (not a security hole). A stick with the right files on it makes MPC ask one on-screen question, then run a script as root. <i>Nothing happens until you confirm that prompt on the device's own screen.</i> The check the reader needs depends on your device's firmware, so this reads your own stock update image once (nothing from it is kept or sent anywhere).</li>
     <li><b>Works on:</b> Gen1 MPC (Live, One, X, Key), Force and Gen2 (Live III, One G2, Key(s) G2), <b>but only on MPC OS up to 3.9.1</b>.
-      <div class="callout"><i>Akai closed this route in MPC OS 3.10. A stick built here will not work on a device already updated past that; the easy stick above is the only no-SSH option there.</i></div></li>
+      <div class="callout"><i>Akai closed this route in MPC OS 3.10. A stick built here will not work on MPC OS 3.10 or later: there, use the MPC OS 3.10.1 Plugin Manager stick instead.</i></div></li>
     <li><b>Gen2 devices specifically:</b> their storage can't be made to remember changes the way Gen1 and Force can, so SSH and the addins' settings are undone by every reboot. <i>Reinsert the stick and confirm the prompt again after each restart.</i></li>
   </ul>
 </section>
