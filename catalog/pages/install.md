@@ -7,14 +7,11 @@ summary: Put the OpenMPC Plugin Manager on your MPC once, then browse the catalo
 
 The **OpenMPC Plugin Manager** is a plugin that runs on your MPC. Once it is on a track you can browse the catalog and install, update and remove plugins, on the MPC's screen or from a web page on your phone or computer.
 
-You install it once. How depends on your MPC OS version (**Menu → Preferences → Info**):
-
-- [MPC OS 3.10.1 or later](#mpc-os-3-10-1-or-later)
-- [MPC OS 3.9.1 or earlier](#mpc-os-3-9-1-or-earlier)
-
-Prefer a computer? The [desktop installer app](#the-desktop-installer-app) installs the Plugin Manager and other plugins too.
+You install it once. Answer two questions below for your steps, or open the full instructions under them.
 
 ::: guide
+
+::: folds
 
 ## MPC OS 3.10.1 or later
 

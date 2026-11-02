@@ -1,7 +1,7 @@
 """A small Markdown to HTML converter for the catalog site's guide pages (catalog/pages/*.md). Standard library only.
 
 Supports: `#`..`###` headings (with ids), paragraphs, `-`/`*` and `1.` lists (one level, wrapped lines allowed),
-fenced code blocks, `>` callouts, pipe tables, images (`![alt](img/x.png)` on its own line; img/ or https only), a step-by-step guide (a line `::: guide`, filled by guide.js; the page below it stays the full text), collapsible sections (a line `::: details Title`, the content, then a line
+fenced code blocks, `>` callouts, pipe tables, images (`![alt](img/x.png)` on its own line; img/ or https only), every later ## section collapsed (a line `::: folds`), a step-by-step guide (a line `::: guide`, filled by guide.js; the page below it stays the full text), collapsible sections (a line `::: details Title`, the content, then a line
 `:::`; no nesting), and inline `code`, **bold**, *italic*, [links](url). Everything is
 HTML-escaped first, so page text can't inject markup; link targets must be http(s), relative, or #anchors.
 A page starts with front matter between `---` lines: title, nav (menu label), order (menu position), summary.
@@ -54,7 +54,27 @@ def _cells(line):
 IMAGE = re.compile(r"^!\[([^\]]*)\]\(((?:img/[A-Za-z0-9._-]+)|(?:https://[^\s)\"'<>]+))\)$")
 
 
+FOLDS = "<!--folds-->"
+H2 = re.compile(r'<h2 id="([^"]+)">(.*?)</h2>')
+
+
+def _fold_sections(html):
+    """After a `::: folds` line, every ## section is a collapsed <details> (its heading is the summary)."""
+    head, _, rest = html.partition(FOLDS)
+    if not _:
+        return html
+    bits = H2.split(rest)  # text, id, title, text, id, title, text ...
+    out = [head, bits[0]]
+    for k in range(1, len(bits), 3):
+        out.append('<details class="fold sec" id="%s"><summary><h2>%s</h2></summary>%s</details>' % (bits[k], bits[k + 1], bits[k + 2]))
+    return "".join(out)
+
+
 def render(src):
+    return _fold_sections(_render(src))
+
+
+def _render(src):
     lines = src.splitlines()
     out, i, para = [], 0, []
 
@@ -64,7 +84,11 @@ def render(src):
             para.clear()
     while i < len(lines):
         ln = lines[i]
-        if ln.strip() == "::: guide":
+        if ln.strip() == "::: folds":
+            flush()
+            out.append(FOLDS)
+            i += 1
+        elif ln.strip() == "::: guide":
             flush()
             out.append('<div id="guide" class="guide" hidden></div>')
             i += 1

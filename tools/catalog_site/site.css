@@ -284,3 +284,4 @@ footer { margin-top: 36px; color: var(--muted); font-size: 12px; border-top: 1px
 .doc .gback{background:none;border:1px solid var(--line);border-radius:8px;padding:7px 14px;cursor:pointer;font:inherit;color:var(--fg)}
 .doc .gfor{color:var(--muted);font-size:13px}
 .doc .gcard li,.doc .gcard p{max-width:none}
+.doc details.sec>summary h2{display:inline;margin:0;padding:0;border:0;font-size:20px}

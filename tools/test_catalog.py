@@ -1307,6 +1307,13 @@ class PagesTest(unittest.TestCase):
         self.assertNotIn('="javascript', html)
         self.assertEqual(html.count("<img"), 2)
 
+    def test_folds(self):
+        html = catalog_md.render("intro\n\n::: folds\n\n## A b\n\nx\n\n## C\n\ny")
+        self.assertIn('<p>intro</p>', html)
+        self.assertIn('<details class="fold sec" id="a-b"><summary><h2>A b</h2></summary>', html)
+        self.assertEqual(html.count("<details"), 2)
+        self.assertNotIn("<details", catalog_md.render("## A\n\nx"))
+
     def test_install_guide(self):
         self.assertIn('<div id="guide" class="guide" hidden></div>', catalog_md.render("x\n\n::: guide\n\ny"))
         pages = catalog_site.load_pages(os.path.join(HERE, "..", "catalog", "pages"))
