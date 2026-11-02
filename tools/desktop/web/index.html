@@ -1045,8 +1045,8 @@ function goSSHStick() { showTools("stick", "dadv"); }
 function wzPlan() {
   var arch = WZ.gen === "aarch64" ? "aarch64" : "armv7", force = WZ.gen === "force", P;
   var HERE = "on this computer", MPC = "on the MPC";
-  if (WZ.os === "new" && force) P = { t: "Not ready for the Force yet", s: "The Force on 3.10.1 or later isn't supported yet. Plugins for older Force OS still install with SSH.",
-    steps: [], go: "Show all tools", fn: function () { showTools("stick", ""); }, alts: [] };
+  if (WZ.os === "new" && force) P = { t: "No MPC OS 3.10.1 for the Force yet", s: "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier (Menu > Preferences > Info shows it). Continue with that.",
+    steps: [], go: "Continue with 3.9.1 or earlier", fn: function () { WZ.os = "old"; wzSave(); wzShow("wz-ssh"); }, alts: [] };
   else if (WZ.net === "wifi") P = { t: "Use the Plugin Manager", s: "Put it on a USB stick once. After that you install everything from your phone or computer.",
     steps: [["Make the stick", HERE], ["Preferences > Enhancements: turn on Enable Enhancements and VST2 Support, plug in the stick, restart", MPC],
             ["Add the Plugin Manager to a track and open the address it shows, on your phone or computer", MPC]],
@@ -1057,9 +1057,6 @@ function wzPlan() {
     steps: [["Pick plugins and write the stick", HERE], ["Preferences > Enhancements: turn on Enable Enhancements and VST2 Support", MPC], ["Plug in the stick and restart", MPC]],
     go: "Pick plugins", fn: function () { goV2(arch, true); },
     alts: [["Just the Plugin Manager", "For when the MPC gets Wi-Fi later", function () { goV2(arch, false); }]] };
-  else if (WZ.net === "nossh" && force) P = { t: "Turn on SSH with a stick", s: "A stick turns on SSH (you confirm one prompt on the Force); then install from this computer over Wi-Fi.",
-    steps: [["Make the stick (it needs the Force's update file)", HERE], ["Plug it in and confirm the prompt", MPC], ["Connect from this computer and install plugins", HERE]],
-    go: "Make the stick", fn: goSSHStick, alts: [] };
   else if (WZ.net === "nossh") P = { t: "Plugin Manager stick", s: "A stick that installs the Plugin Manager: you confirm one prompt and MPC restarts with it.",
     steps: [["Make the stick", HERE], ["Plug it in and choose Open on the prompt", MPC], ["Add the Plugin Manager to a track and install plugins from its screen", MPC]],
     go: "Make the stick", fn: goL1,
@@ -1079,7 +1076,7 @@ function wzPlan() {
 Array.prototype.forEach.call(document.querySelectorAll("#wz-model .opt"), function (b) {
   b.addEventListener("click", function () {
     WZ.gen = b.dataset.gen; WZ.model = b.textContent;
-    text($("wz-nossh-d"), WZ.gen === "force" ? "A USB stick turns SSH on" : "A USB stick installs the Plugin Manager for you");
+    text($("wz-nossh-d"), "A USB stick installs the Plugin Manager for you");
     wzShow("wz-os");
   });
 });
