@@ -28,7 +28,7 @@ Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/re
 
 | Your MPC | Download |
 |---|---|
-| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, Force | `OpenMPC-Plugin-Manager-1.0.0-Gen1.zip` |
+| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37 | `OpenMPC-Plugin-Manager-1.0.0-Gen1.zip` |
 | **Second generation**: MPC Live III and newer | `OpenMPC-Plugin-Manager-1.0.0-Gen2.zip` |
 
 Unzip it. You get one folder, **`OpenMPC - VST - Plugin Manager G2`**.
@@ -39,7 +39,7 @@ Put the folder inside a folder called **`VST2 Plugins`** (exact name; create it 
 ::: details A. Over Wi-Fi (Developer mode)
 1. Turn on **Developer mode** on the MPC and note its IP address.
 2. In an SFTP app (FileZilla, Cyberduck, WinSCP or a phone app), connect to that address as **`root`**, no password.
-3. Copy the folder into **`/nvme/VST2 Plugins/`** (first generation: TODO verify path before publishing).
+3. Copy the folder into **`VST2 Plugins`** on the internal drive: **`/nvme/VST2 Plugins/`** on a second-generation MPC, **`/sdcard/VST2 Plugins/`** on a first-generation one.
 4. Restart the MPC. You can turn Developer mode off again.
 :::
 

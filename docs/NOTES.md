@@ -2161,3 +2161,8 @@ Fixes (offline-tested; not yet on a device): the manager's keys get the same 250
 Offline only: `VST3_TARGET=windows` in `tools/build_vst3.sh` and `tools/test_vst3.sh` cross-builds the wrapper with mingw-w64
 and runs the host test under Wine 11 (passes for `poc/uiprobe`). Not tried on real Windows or in a DAW; no editor on Windows;
 the Maschine engine does not compile (`dlfcn.h`). Details: docs/DESKTOP_VST3.md, "Windows".
+
+## 2026-11-02: Gen1 internal drive on MPC OS 3.10.1 (offline, firmware only)
+The Gen1 3.10.1 image (`sme0`) bind-mounts `/sdcard` on `/media/az01-internal-sd` (the user's internal drive) and `/data` on
+`/media/az01-internal` (settings). So `VST2 Plugins` on a Gen1 internal drive is `/sdcard/VST2 Plugins/`; Gen2 is `/nvme/VST2 Plugins/`.
+Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Force (`ada2`).
