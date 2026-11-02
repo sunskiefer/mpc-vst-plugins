@@ -11,7 +11,7 @@ MPC OS **3.10.1** adds official support for third-party VST2 plugins: turn on **
 MPC lists every plugin folder in a **`VST2 Plugins`** folder at the root of any drive (internal, SD card, USB) under
 **External VST Plugins**. No SSH, no root, no settings edits. Every plugin in the catalog works this way.
 
-- **New to this?** [Getting started](docs/GETTING_STARTED.md): put the **OpenMPC Plugin Manager VST** on a USB stick (one click
+- **New to this?** [Install the Plugin Manager](https://open-mpc.github.io/install.html) (or [Getting started](docs/GETTING_STARTED.md)): put the **OpenMPC Plugin Manager VST** on a USB stick (one click
   in the installer app, or copy its folder yourself), add it to a track, and open the address it shows on your phone or computer:
   browse the catalog, install, update, move old installs and add ROMs from there, or on the MPC's own screen.
 - **Already have plugins installed** (with the installer, the Plugin Manager or a stick)? On 3.10.1 the plugin browser only lists
@@ -40,13 +40,16 @@ plugins for MPC OS, with each plugin's current version, license, source link and
   most downloaded. Every version shows its date and SHA-256, and what it was tested on. Each plugin is **Verified** (the newest release was tested on real hardware and the test is recorded; shown per generation as Verified Gen1 and/or Verified Gen2), **Listed** (it passed the catalog's automatic release checks, but no hardware test is recorded) or **Experimental** (new or unproven, hidden unless you ask for it). None of these is a security review: nobody reads each plugin's code, so stick to developers you trust. Plugins one developer
   publishes as a set from one repo (the Airwindows ports, for example) are one **collection** card: View all lists them by kind, each
   with its own version and install tick, plus Pick all. There is an Atom feed (`feed.xml`) of new releases.
-- **Install with the installer app.** The [MPC plugin installer](https://github.com/open-mpc/mpc-vst-plugins/releases/latest) is a
+- **Install with the Plugin Manager.** The **OpenMPC Plugin Manager** runs on your MPC: browse the catalog and install,
+  update and remove plugins on its screen or from a web page on your phone or computer. Put it on once:
+  [Install the Plugin Manager](https://open-mpc.github.io/install.html) (MPC OS 3.10.1 and earlier versions).
+- **Or with the installer app.** The [MPC plugin installer](https://github.com/open-mpc/mpc-vst-plugins/releases/latest) is a
   small Windows, Mac and Linux app: connect to your device, tick plugins from the catalog (or drop in zips, including
   build-yourself ones), and it checks each download, installs the batch with one MPC restart and backs up your settings
   first. It can also remove plugins (keeping your own files), install to an SD card or USB drive, register plugin folders
-  MPC does not know about, and clean up old settings backups. Needs root SSH access. Source in
+  MPC does not know about, and clean up old settings backups. It also makes Plugin Manager sticks. Installing over Wi-Fi needs root SSH (3.9.1 or earlier) or Developer mode (3.10.1). Source in
   [tools/desktop](tools/desktop/README.md).
-- **Guides on the site:** [install a downloaded plugin](https://open-mpc.github.io/install.html),
+- **Guides on the site:** [install the Plugin Manager](https://open-mpc.github.io/install.html),
   [build a plugin](https://open-mpc.github.io/build.html), the
   [release workflow](https://open-mpc.github.io/workflow.html) and
   [how to get yours listed](https://open-mpc.github.io/workflow.html#list-it-in-the-catalog).

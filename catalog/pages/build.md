@@ -14,7 +14,7 @@ You do not need to be a programmer. The commands are examples: for anything you 
 - **Git** and **Python 3.**
 - **Docker.** The builds run inside it, so nothing else has to be installed by hand.
 - Several GB of free disk space (Docker downloads build images the first time) and a few minutes.
-- To put the result on a device: the [installer app](install.html) and root SSH access to your device.
+- To put the result on a device: the [installer app](install.html#the-desktop-installer-app) and root SSH access to your device.
 
 ## Get your computer ready
 A check follows each step.
@@ -58,7 +58,7 @@ In detail:
 2. **Set up your computer.** You need Docker, git and Python 3, and a Linux-style shell: macOS, Ubuntu, or Ubuntu in WSL on Windows. "Get your computer ready" above walks through it, with a check after each step. This is a one-time job; every later build reuses it.
 3. **Get the plugin's source on your computer.** This is the `git clone` step in the plugin's README: run `git clone --recursive https://github.com/<owner>/<plugin-repo>.git`, then `cd <plugin-repo>`. The card's Source link shows the repo. `--recursive` matters: it fetches the parts the build needs.
 4. **Run the build command** from the plugin's card, with the path to your own file in quotes. It builds inside Docker and takes a few minutes (some take longer; the first run also downloads what it needs). Leave the computer awake and watch the output. It stops at the first error and names the step, and it refuses to finish if its self-check fails, rather than giving you a build that is not verified. After fixing a problem, run the same command again: finished work is reused.
-5. **Install it.** The build leaves a zip in the plugin's `dist/` folder. Start the [installer app](install.html), connect, and drop that zip into the box in step 2 of the page, then press Install. (If the build command has a `-d <device-ip>` option, adding it installs straight onto the device instead.) Save your project first: MPC restarts.
+5. **Install it.** The build leaves a zip in the plugin's `dist/` folder. Start the [installer app](install.html#the-desktop-installer-app), connect, and drop that zip into the box in step 2 of the page, then press Install. (If the build command has a `-d <device-ip>` option, adding it installs straight onto the device instead.) Save your project first: MPC restarts.
 6. **Keep the result to yourself.** It contains data derived from your firmware. Install it on your own devices only and never share or upload it.
 
 To update later, pull the latest source (`git pull --recurse-submodules`) and run the build command again.
@@ -132,7 +132,7 @@ Only now does a device come in. Follow the [release workflow](workflow.html): me
 |---|---|
 | `docker: permission denied` | Your user is not in the `docker` group yet. Run the `usermod` command above, then log out and back in. |
 | `Cannot connect to the Docker daemon` | Docker is not running. Start Docker Desktop, or on Linux `sudo systemctl start docker`. |
-| `ssh: connect to host ... timed out`, or `Permission denied` from `ssh` | See "Check that you can reach your device" on the [Install](install.html) page. |
+| `ssh: connect to host ... timed out`, or `Permission denied` from `ssh` | Check the IP address and that root SSH is on; see "Something else went wrong" on the [Install](install.html#troubleshooting-mpc-os-3-9-1-or-earlier) page. |
 | A build stops with an error about its self-check | Your OS file or your tools differ from what the plugin was built against, and the build refuses to make an unverified plugin. Check the file name and version on the plugin's card. |
 
 ## Where to read more
