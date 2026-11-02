@@ -2,11 +2,12 @@ package main
 
 import (
 	"crypto/subtle"
-	_ "embed"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,6 +18,11 @@ import (
 
 //go:embed web/index.html
 var indexHTML []byte
+
+// Screenshots for the stick steps (public, static, no device data): served without the token, still behind the host/origin checks.
+//
+//go:embed web/img
+var imgFS embed.FS
 
 // App is the local web server. It listens on 127.0.0.1 only and every request must carry the random token the app printed, so
 // nothing else on the network, and no web page open in the browser, can drive it. Nothing about the device is written to disk.
@@ -93,6 +99,7 @@ func (a *App) fetchPatches() ([]Patch, error) {
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", a.index)
+	mux.Handle("/img/", http.FileServerFS(mustSub(imgFS, "web")))
 	mux.HandleFunc("/api/state", a.state)
 	mux.HandleFunc("/api/version", a.versionAPI)
 	mux.HandleFunc("/api/connect", a.connect)
@@ -136,13 +143,17 @@ func (a *App) guard(next http.Handler) http.Handler {
 		h.Set("Cache-Control", "no-store")
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("Referrer-Policy", "no-referrer")
-		h.Set("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'")
+		h.Set("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'")
 		if !a.hosts[r.Host] { // a page reaching us through a rebound DNS name has another Host
 			http.Error(w, "unexpected host", http.StatusForbidden)
 			return
 		}
 		if o := r.Header.Get("Origin"); o != "" && !a.hosts[strings.TrimPrefix(o, "http://")] {
 			http.Error(w, "unexpected origin", http.StatusForbidden)
+			return
+		}
+		if strings.HasPrefix(r.URL.Path, "/img/") && r.Method == http.MethodGet {
+			next.ServeHTTP(w, r)
 			return
 		}
 		got := r.Header.Get("X-MPC-Token")
@@ -979,4 +990,12 @@ func (a *App) patchRun(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 	writeJSON(w, 200, map[string]string{"job": j.ID})
+}
+
+func mustSub(f fs.FS, dir string) fs.FS {
+	sub, err := fs.Sub(f, dir)
+	if err != nil {
+		panic(err)
+	}
+	return sub
 }

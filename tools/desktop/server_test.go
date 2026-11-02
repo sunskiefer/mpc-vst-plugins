@@ -81,6 +81,16 @@ func TestGuardRefusesEverythingWithoutTheToken(t *testing.T) {
 	if r, _ := h.do("GET", "/api/state", nil, nil); r.StatusCode != 200 {
 		t.Errorf("token accepted: %d", r.StatusCode)
 	}
+	// the stick-step screenshots load from an <img> (no token header); nothing else under /img/ and nothing but GET
+	if r, b := h.do("GET", "/img/address-line.png", nil, map[string]string{"X-MPC-Token": "nope"}); r.StatusCode != 200 || !strings.HasPrefix(string(b), "\x89PNG") {
+		t.Errorf("screenshot without token: %d", r.StatusCode)
+	}
+	if r, _ := h.do("POST", "/img/address-line.png", nil, map[string]string{"X-MPC-Token": "nope"}); r.StatusCode != 403 {
+		t.Errorf("POST to /img/ without token: %d", r.StatusCode)
+	}
+	if r, _ := h.do("GET", "/img/../api/state", nil, map[string]string{"X-MPC-Token": "nope"}); r.StatusCode == 200 {
+		t.Errorf("/img/.. reached the API without a token")
+	}
 }
 
 func TestGuardRefusesAForeignHostOrOrigin(t *testing.T) {
