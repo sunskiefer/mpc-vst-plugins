@@ -307,6 +307,9 @@ def main():
         raise SystemExit("unsupported catalog schema %r" % catalog.get("schema"))
     os.makedirs(a.out, exist_ok=True)
     pages = load_pages(a.pages)
+    img = os.path.join(a.pages, "img")
+    if os.path.isdir(img):
+        shutil.copytree(img, os.path.join(a.out, "img"), dirs_exist_ok=True)
     patches_doc = None
     if os.path.isfile(a.patches):   # the installer app reads it from next to catalog.json; a manifest that fails its checks is not published
         import patch_check

@@ -1297,6 +1297,13 @@ class PagesTest(unittest.TestCase):
         self.assertTrue(html.index("</details>") < html.index("After"))
         self.assertEqual(html.count("<details"), 1)
 
+    def test_images(self):
+        html = catalog_md.render('![A "shot" <x>](img/a-1.png)\n\n![b](https://e.io/b.webp)\n\n![c](javascript:alert(1))\n\n![d](../secret.png)\n\nx ![e](img/e.png) inline')
+        self.assertIn('<figure class="shot"><img src="img/a-1.png" alt="A &quot;shot&quot; &lt;x&gt;" loading="lazy"></figure>', html)
+        self.assertIn('<img src="https://e.io/b.webp"', html)
+        self.assertNotIn('="javascript', html)
+        self.assertEqual(html.count("<img"), 2)
+
     def test_repo_pages_render_with_nav(self):
         pages = catalog_site.load_pages(os.path.join(HERE, "..", "catalog", "pages"))
         self.assertGreaterEqual(len(pages), 3)

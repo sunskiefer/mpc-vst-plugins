@@ -16,6 +16,8 @@ MPC OS 3.10.1 loads third-party VST2 plugins from a **`VST2 Plugins`** folder on
 ### 1. Turn on VST2 Support
 On the MPC: **Menu → Preferences → Enhancements**. Turn on **Enable Enhancements**, then **VST2 Support**, and accept Akai's warning. Wait a few seconds (the setting is saved shortly after you change it), then restart the MPC.
 
+![Preferences, Enhancements on an MPC: Enable Enhancements and VST2 Support ticked](img/310-enhancements.png)
+
 ### 2. Download the Plugin Manager
 Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/plugin-manager-g2-v1.0.0) and download the zip for your MPC from **Assets**:
 
@@ -56,7 +58,11 @@ The [installer app](#mpc-os-3-9-1-or-earlier-and-the-force) can also write the s
 ### 4. Open the Plugin Manager
 1. Add a track, open the plugin browser, choose **External VST Plugins → OpenMPC - Plugin Manager G2**. If it is not listed, check the folder name and that VST2 Support is on, then restart again.
 2. The Plugin Manager's status line at the bottom shows **On your phone or computer: http://…:8790**. Open that address in a browser on any phone, tablet or computer on the same Wi-Fi.
+
+![The Plugin Manager's status line on the MPC, with the web address under the plugin count](img/310-manager-address-line.png)
 3. The page lists the catalog. Install, update or remove plugins, move plugins you installed the old way into `VST2 Plugins`, choose the drive, add your own ROM files where a plugin needs them, then press **Apply**. The MPC restarts once; the page comes back when the project with the Plugin Manager reopens.
+
+![The Plugin Manager's web page on a phone: Discover, Installed and Updates tabs over the catalog cards](img/310-web-page-phone.webp)
 
 > The web page has no password: anyone on your network can use it while the Plugin Manager is on a track. Other web sites cannot control it. Use it on a network you trust, and remove the Plugin Manager from the track when you are done.
 

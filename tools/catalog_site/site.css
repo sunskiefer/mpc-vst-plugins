@@ -137,6 +137,9 @@ footer { margin-top: 36px; color: var(--muted); font-size: 12px; border-top: 1px
 .doc pre code { background: none; border: 0; padding: 0; color: inherit; font-size: 13px; line-height: 1.55; overflow-wrap: normal; }
 .doc blockquote { margin: 16px 0; padding: 10px 14px; border-left: 3px solid var(--amber); background: color-mix(in srgb, var(--amber) 12%, var(--panel)); border-radius: 0 var(--radius) var(--radius) 0; }
 .doc blockquote p { margin: 4px 0; }
+.doc figure.shot { margin: 14px 0; }
+.doc figure.shot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--line, #8884); border-radius: var(--radius); }
+.doc figure.shot img[src*="phone"] { max-width: 320px; }
 .tablewrap { overflow-x: auto; margin: 14px 0; }
 .doc table { border-collapse: collapse; width: 100%; font-size: 14px; }
 .doc th, .doc td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }

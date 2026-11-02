@@ -1,7 +1,7 @@
 """A small Markdown to HTML converter for the catalog site's guide pages (catalog/pages/*.md). Standard library only.
 
 Supports: `#`..`###` headings (with ids), paragraphs, `-`/`*` and `1.` lists (one level, wrapped lines allowed),
-fenced code blocks, `>` callouts, pipe tables, collapsible sections (a line `::: details Title`, the content, then a line
+fenced code blocks, `>` callouts, pipe tables, images (`![alt](img/x.png)` on its own line; img/ or https only), collapsible sections (a line `::: details Title`, the content, then a line
 `:::`; no nesting), and inline `code`, **bold**, *italic*, [links](url). Everything is
 HTML-escaped first, so page text can't inject markup; link targets must be http(s), relative, or #anchors.
 A page starts with front matter between `---` lines: title, nav (menu label), order (menu position), summary.
@@ -50,6 +50,10 @@ def _cells(line):
     return [c.strip() for c in line.strip().strip("|").split("|")]
 
 
+# A line of its own: ![alt text](img/name.png). Only relative paths under img/ (copied from <pages>/img/) or https URLs.
+IMAGE = re.compile(r"^!\[([^\]]*)\]\(((?:img/[A-Za-z0-9._-]+)|(?:https://[^\s)\"'<>]+))\)$")
+
+
 def render(src):
     lines = src.splitlines()
     out, i, para = [], 0, []
@@ -70,6 +74,11 @@ def render(src):
                 i += 1
             i += 1
             out.append('<details class="fold" id="%s"><summary>%s</summary>%s</details>' % (slug(title), inline(title), render("\n".join(inner))))
+        elif IMAGE.match(ln.strip()):
+            flush()
+            alt, src = IMAGE.match(ln.strip()).groups()
+            out.append('<figure class="shot"><img src="%s" alt="%s" loading="lazy"></figure>' % (escape(src), escape(alt)))
+            i += 1
         elif ln.startswith("```"):
             flush()
             i += 1
