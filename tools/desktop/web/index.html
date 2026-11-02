@@ -307,7 +307,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
 <section class="guide">
   <ul>
     <li><b>What it is:</b> writes the <b>OpenMPC Plugin Manager VST</b> into a <code>VST2 Plugins</code> folder on a USB stick or SD card. On the MPC you add it to a track and install everything else from its screen, or from its web page on your phone or computer. Nothing on the MPC is modified.</li>
-    <li><b>Works on:</b> MPC OS <b>3.10.1 or later</b>, Gen1 MPC (Live, Live II, One, X, Key) and Gen2 (Live III, One G2, Key(s) G2).</li>
+    <li><b>Works on:</b> MPC OS <b>3.10.1 or later</b>, Gen1 MPC (Live, Live II, One, X, Key) and Gen2 (Live III, One G2, Key G2, XL).</li>
   </ul>
 </section>
 <section>
@@ -385,14 +385,14 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
         <li>Optionally also opens the <b>plugin manager</b>, as in the section above (tick the box below). A stick holds only one autorun, so a stick that turns on SSH has to carry the manager itself if you want both.</li>
       </ul></li>
     <li><b>How it works:</b> MPC OS has its own stock "USB script" reader, built in by Akai (not a security hole). A stick with the right files on it makes MPC ask one on-screen question, then run a script as root. <i>Nothing happens until you confirm that prompt on the device's own screen.</i> The check the reader needs depends on your device's firmware, so this reads your own stock update image once (nothing from it is kept or sent anywhere).</li>
-    <li><b>Works on:</b> Gen1 MPC (Live, One, X, Key), Force and Gen2 (Live III, One G2, Key(s) G2), <b>but only on MPC OS up to 3.9.1</b>.
+    <li><b>Works on:</b> Gen1 MPC (Live, One, X, Key), Force and Gen2 (Live III, One G2, Key G2, XL), <b>but only on MPC OS up to 3.9.1</b>.
       <div class="callout"><i>Akai closed this route in MPC OS 3.10. A stick built here will not work on MPC OS 3.10 or later: there, use the MPC OS 3.10.1 Plugin Manager stick instead.</i></div></li>
     <li><b>Gen2 devices specifically:</b> their storage can't be made to remember changes the way Gen1 and Force can, so SSH and the addins' settings are undone by every reboot. <i>Reinsert the stick and confirm the prompt again after each restart.</i></li>
   </ul>
 </section>
 <section id="st1">
   <h2><span class="n">1</span>Firmware</h2>
-  <p class="sub">This reads your device's own stock Akai update image to work out a one-time check it needs (nothing from this image is kept or sent anywhere). Use the exact image for your device: Gen1 MPC, Force, or Gen2 (Live III, One G2, Key(s) G2). <a href="https://www.akaipro.com/downloads-and-support/downloads/firmware/mpc/" target="_blank" rel="noopener">Get it from Akai</a> if you don't have it already, then point this at the downloaded file.</p>
+  <p class="sub">This reads your device's own stock Akai update image to work out a one-time check it needs (nothing from this image is kept or sent anywhere). Use the exact image for your device: Gen1 MPC, Force, or Gen2 (Live III, One G2, Key G2, XL). <a href="https://www.akaipro.com/downloads-and-support/downloads/firmware/mpc/" target="_blank" rel="noopener">Get it from Akai</a> if you don't have it already, then point this at the downloaded file.</p>
   <div class="row">
     <label class="f">Path to the firmware file (.img, or the MPC executable from one)<input id="st-fw" type="text" placeholder="e.g. /home/you/Downloads/MPC-3.9.1-Gen2-update.img" spellcheck="false"></label>
     <button id="st-fw-browse" type="button">Browse…</button>
@@ -425,7 +425,7 @@ footer { color:var(--muted); font-size:12.5px; margin-top:24px; }
     <p class="msg err"><b>Not recommended.</b> A password can be guessed or intercepted; a key can't. This also turns on
     password login for root over SSH, where before only a key would have worked: anyone who learns this password gets a
     root shell on your device. Only works on a device whose root can be made writable (most Gen1/Force units).
-    <b>Gen2 needs a key</b> (Live III, One G2, Key G2): their root is read-only, so a password can't be kept and the
+    <b>Gen2 needs a key</b> (Live III, One G2, Key G2, XL): their root is read-only, so a password can't be kept and the
     stick's SSH step fails.</p>
     <p class="msg err" id="st-gen2-warn" hidden><b>This firmware looks like a Gen2 one.</b> A password stick can't work on it, so the installer won't build one. Use a key.</p>
     <label class="f">Password<input id="st-sshpw" type="password" autocomplete="new-password" spellcheck="false"></label>

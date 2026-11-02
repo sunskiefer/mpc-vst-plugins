@@ -29,7 +29,7 @@ Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/re
 | Your MPC | Download |
 |---|---|
 | **First generation**: MPC Live, Live II, One, X, Key 61, Key 37 | `OpenMPC-Plugin-Manager-1.0.0-Gen1.zip` |
-| **Second generation**: MPC Live III and newer | `OpenMPC-Plugin-Manager-1.0.0-Gen2.zip` |
+| **Second generation**: MPC Live III, One G2, Key G2, XL | `OpenMPC-Plugin-Manager-1.0.0-Gen2.zip` |
 
 Unzip it. You get one folder, **`OpenMPC - VST - Plugin Manager G2`**.
 

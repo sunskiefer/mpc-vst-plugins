@@ -228,7 +228,7 @@ function osTag(v) {
 function tested2(v) { return !!(v && (v.tested || []).some(function (t) { return /gen\s*2/i.test(t.device || ""); })); }
 function genTag(v) {
   if (!v || !v.gen2) return "";
-  if (v.gen2_only) return '<span class="tag gen" title="' + esc("Built for Gen2 (aarch64) MPC devices only: MPC Live III and kin. " + (tested2(v) ? "Tested on a Gen2 unit." : "Not yet tested on a Gen2 unit.")) + '">Gen2 only</span>';
+  if (v.gen2_only) return '<span class="tag gen" title="' + esc("Built for Gen2 (aarch64) MPC devices only: MPC Live III, One G2, Key G2, XL. " + (tested2(v) ? "Tested on a Gen2 unit." : "Not yet tested on a Gen2 unit.")) + '">Gen2 only</span>';
   return '<span class="tag gen" title="' + esc("Also built for Gen2 (aarch64) MPC devices. " + (tested2(v) ? "Tested on a Gen2 unit." : "Not yet tested on a Gen2 unit.")) + '">Gen2 build</span>';
 }
 function genRow(v) {

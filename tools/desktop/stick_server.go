@@ -46,7 +46,7 @@ func looksGen2(path string) bool {
 	return string(h[:4]) == "\x7fELF" && h[18] == 183 && h[19] == 0 // EM_AARCH64, little endian
 }
 
-var errGen2Password = "a Gen2 (Live III, One G2, Key G2) can't keep an SSH password: its root is read-only. Use a key; the stick's SSH then lasts until the next reboot"
+var errGen2Password = "a Gen2 (Live III, One G2, Key G2, XL) can't keep an SSH password: its root is read-only. Use a key; the stick's SSH then lasts until the next reboot"
 
 func (a *App) stickScanStart(w http.ResponseWriter, r *http.Request) {
 	if !postOnly(w, r) {
