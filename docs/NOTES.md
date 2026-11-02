@@ -2166,6 +2166,3 @@ the Maschine engine does not compile (`dlfcn.h`). Details: docs/DESKTOP_VST3.md,
 The Gen1 3.10.1 image (`sme0`) bind-mounts `/sdcard` on `/media/az01-internal-sd` (the user's internal drive) and `/data` on
 `/media/az01-internal` (settings). So `VST2 Plugins` on a Gen1 internal drive is `/sdcard/VST2 Plugins/`; Gen2 is `/nvme/VST2 Plugins/`.
 Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Force (`ada2`).
-
-### 2026-11-03: Controller Mode shows the internal drive too (device, owner's test)
-- On a Live III in Controller Mode, the computer sees the MPC's internal drive as well as any SD card or USB drive in it, so a card is optional for the USB-cable way on 3.10.1. The Install page and the installer's 3.10.1 steps now say so.

@@ -44,12 +44,12 @@ Put the folder inside a folder called **`VST2 Plugins`** (exact name; create it 
 :::
 
 ::: details B. With a USB cable (Controller Mode)
-Your computer sees the MPC's internal drive, and any SD card or USB drive in it.
+Your computer sees the SD card and USB drives that are in the MPC (not its built-in drive).
 
-1. Connect the MPC to your computer. An SD card or USB drive in the MPC is optional.
+1. Put an SD card or USB drive in the MPC and connect the MPC to your computer.
 2. **Menu**, then tap the computer icon (top right) to switch to **Controller Mode** (**Computer Mode** on the Force).
-3. Copy the folder into `VST2 Plugins` on the internal drive (or a card or drive in the MPC).
-4. Eject it on the computer, tap **Standalone** on the MPC and confirm. It restarts. If you used a card or drive, leave it in.
+3. Copy the folder into `VST2 Plugins` on that card or drive.
+4. Eject it on the computer, tap **Standalone** on the MPC and confirm. It restarts. Leave the card or drive in.
 :::
 
 ::: details C. With a USB stick or SD card
