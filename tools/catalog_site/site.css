@@ -258,3 +258,16 @@ footer { margin-top: 36px; color: var(--muted); font-size: 12px; border-top: 1px
 .member .ver { padding: 4px 6px; font-size: 11px; }
 .member .tag { padding: 4px 6px; }
 .member .sum { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* Install page guide (guide.js) */
+.doc .guide{border:1px solid var(--line,#333);border-radius:10px;padding:14px 18px;margin:18px 0}
+.doc .guide h2{margin-top:0}
+.doc .gq{margin:10px 0}.doc .gqt{font-weight:600}
+.doc .gopts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+.doc .ggen{min-width:48px;font-weight:600;opacity:.8}
+.doc .gbtn{display:inline-block;padding:7px 12px;border-radius:8px;border:1px solid var(--line,#444);background:transparent;color:inherit;font:inherit;cursor:pointer;text-decoration:none}
+.doc .gbtn:hover{border-color:currentColor}
+.doc .gbtn.primary{background:var(--accent,#e8452c);border-color:transparent;color:#fff}
+.doc .linkbtn{background:none;border:0;color:var(--accent,#e8452c);cursor:pointer;font:inherit;text-decoration:underline;padding:0}
+.doc .gsmall{font-size:.92em;opacity:.85}.doc .gcrumbs{opacity:.85}
+.doc .gdl{margin:8px 0}

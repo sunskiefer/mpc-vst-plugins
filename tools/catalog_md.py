@@ -1,7 +1,7 @@
 """A small Markdown to HTML converter for the catalog site's guide pages (catalog/pages/*.md). Standard library only.
 
 Supports: `#`..`###` headings (with ids), paragraphs, `-`/`*` and `1.` lists (one level, wrapped lines allowed),
-fenced code blocks, `>` callouts, pipe tables, images (`![alt](img/x.png)` on its own line; img/ or https only), collapsible sections (a line `::: details Title`, the content, then a line
+fenced code blocks, `>` callouts, pipe tables, images (`![alt](img/x.png)` on its own line; img/ or https only), a step-by-step guide (a line `::: guide`, filled by guide.js; the page below it stays the full text), collapsible sections (a line `::: details Title`, the content, then a line
 `:::`; no nesting), and inline `code`, **bold**, *italic*, [links](url). Everything is
 HTML-escaped first, so page text can't inject markup; link targets must be http(s), relative, or #anchors.
 A page starts with front matter between `---` lines: title, nav (menu label), order (menu position), summary.
@@ -64,7 +64,11 @@ def render(src):
             para.clear()
     while i < len(lines):
         ln = lines[i]
-        if ln.startswith("::: details "):
+        if ln.strip() == "::: guide":
+            flush()
+            out.append('<div id="guide" class="guide" hidden></div>')
+            i += 1
+        elif ln.startswith("::: details "):
             flush()
             title = ln[len("::: details "):].strip()
             i += 1

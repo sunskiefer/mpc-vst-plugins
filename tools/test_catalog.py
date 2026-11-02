@@ -3,6 +3,7 @@
 tools/catalog_check.py accepts it and rejects tampered copies. No device, no toolchain: python3 tools/test_catalog.py"""
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -1305,6 +1306,18 @@ class PagesTest(unittest.TestCase):
         self.assertIn('<img src="https://e.io/b.webp"', html)
         self.assertNotIn('="javascript', html)
         self.assertEqual(html.count("<img"), 2)
+
+    def test_install_guide(self):
+        self.assertIn('<div id="guide" class="guide" hidden></div>', catalog_md.render("x\n\n::: guide\n\ny"))
+        pages = catalog_site.load_pages(os.path.join(HERE, "..", "catalog", "pages"))
+        html = catalog_site.render_page(next(p for p in pages if p["slug"] == "install"), pages)
+        self.assertEqual(html.count('id="guide"'), 1)
+        self.assertNotIn("/*GUIDE_JS*/", html)
+        js = open(os.path.join(HERE, "catalog_site", "guide.js")).read()
+        self.assertNotIn("innerHTML", js)
+        ids = set(re.findall(r'id="([^"]+)"', html))
+        for a in re.findall(r'"#([a-z0-9-]+)"', js):  # every link the guide gives lands on the page
+            self.assertIn(a, ids)
 
     def test_repo_pages_render_with_nav(self):
         pages = catalog_site.load_pages(os.path.join(HERE, "..", "catalog", "pages"))

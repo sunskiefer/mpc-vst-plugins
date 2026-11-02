@@ -14,6 +14,8 @@ You install it once. How depends on your MPC OS version (**Menu → Preferences 
 
 Prefer a computer? The [desktop installer app](#the-desktop-installer-app) installs the Plugin Manager and other plugins too.
 
+::: guide
+
 ## MPC OS 3.10.1 or later
 
 ### 1. Turn on VST2 Support

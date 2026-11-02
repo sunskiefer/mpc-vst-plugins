@@ -122,7 +122,7 @@ def render_page(page, pages):
     body = '<h1>%s</h1>\n<p class="lede">%s</p>\n%s' % (html_escape(page["title"]), catalog_md.inline(page["summary"]), page["html"] if "html" in page else catalog_md.render(page["body"]))
     tpl = read("page.template.html")
     for k, v in (("/*NAV*/", nav_html(pages, page["slug"])), ("/*TITLE*/", html_escape(page["title"])),
-                 ("/*DESC*/", html_escape(page["summary"], quote=True)), ("/*SITE_CSS*/", read("site.css")), ("/*BODY*/", body)):
+                 ("/*DESC*/", html_escape(page["summary"], quote=True)), ("/*SITE_CSS*/", read("site.css")), ("/*GUIDE_JS*/", read("guide.js")), ("/*BODY*/", body)):
         tpl = tpl.replace(k, v)
     return tpl
 
