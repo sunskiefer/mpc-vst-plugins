@@ -123,3 +123,8 @@ starts MPC once (`-n`: the caller does, as for `install.sh -n`). `--dry-run` pri
 MockbaMod's `vstscanner.sh` (`/media/*/Synths/*/plugin-meta.xml`) but not its whole-list rebuild, so entries from other tools survive.
 It is not shipped in the release zips yet; the device-side store script (docs/CATALOG.md, Phase 4) will call it after a batch of
 `install.sh -y -n`. Only the first `<PLUGIN>` in a `plugin-meta.xml` is read (the packages `release.py` builds have one).
+
+## Folder-only zips for MPC OS 3.10.1 (2026-11-02)
+`tools/folder_zip.py <release zip> <out zip>` writes a zip whose only entry is the plugin folder from `portable/` (it must contain
+`plugin.json`). Users on 3.10.1 unzip it and copy the folder into `VST2 Plugins`. The Plugin Manager release carries
+`OpenMPC-Plugin-Manager-<ver>-Gen1.zip` / `-Gen2.zip` made this way, next to the normal zips. Tests: `tools/test_folder_zip.py`.
