@@ -75,6 +75,10 @@ The catalog, its site and the installer app are live (see Done). Still open, in 
       installer app, the Plugin Manager and `mpc-store.sh list` still list members one by one (they can read `collections[]` in `catalog.json`).
 
 ## Companion apps (catalog)
+- [ ] **Plugin Manager: empty MPC's skin image cache on load, if needed.** Today it is emptied only by APPLY (apply.sh, before MPC
+      starts again) or a power cycle; the Manager just warns at 85%. On a Live III, reloading skin-heavy plugins many times filled the
+      cache to 100% and parts of skins drew black; APPLY cleared it (device, 2026-11-03). Build only if users hit it: e.g. delete
+      the `filmstrips/temp_*.img` files when the Manager loads and the volume is past 85% (see NOTES.md, 2026-10-28).
 - [ ] A custom domain for the site (the old `github.io` URL is hardcoded in `tools/mpc-store.sh`, the page template's `SITE` fallback, the desktop app and the README).
 
 - [x] **Installer app: version check** (built 2026-10-14, host tests only; in 0.5.5). Original ask: Tell the user when a newer `desktop-v*` release exists (asked for 2026-10-14). Ideas: compare the
