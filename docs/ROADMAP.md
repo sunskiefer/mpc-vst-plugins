@@ -90,6 +90,9 @@ The catalog, its site and the installer app are live (see Done). Still open, in 
 - [ ] **Rebuilding the Plugin Manager re-pins three things:** the folder zips in `catalog/downloads.json`, the 3.9.1 stick (its
       checksum file covers the zips; `tools/usb_g2/build_stick.py` needs a stock 3.9.1 firmware file) and `tools/desktop/g2stick-pin.json`.
       A script that does all three from one release would stop them drifting.
+- [ ] **SDK-format plugins on MPC OS 3.9.1** (for the catalog's `package.py` intake). Proven by hand on a Force (NOTES 2026-11-03):
+      copy the SDK folder into `Synths` and add a `pluginList-arm` entry made from `plugin.json`. Teach the Plugin Manager, the
+      installer and `catalog_check.py` to do this for a release that is only an SDK zip.
 - [ ] **Plugin Manager: empty MPC's skin image cache on load, if needed.** Today it is emptied only by APPLY (apply.sh, before MPC
       starts again) or a power cycle; the Manager just warns at 85%. On a Live III, reloading skin-heavy plugins many times filled the
       cache to 100% and parts of skins drew black; APPLY cleared it (device, 2026-11-03). Build only if users hit it: e.g. delete
