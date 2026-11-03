@@ -28,7 +28,11 @@ Wait a few seconds after changing it before restarting MPC: the setting is saved
 :::
 
 ::: details My new plugin doesn't show after I copied it.
-Restart MPC. A rescan in the VST2 manager finds it, but the plugin browser updates when MPC starts. Also check the folder is named `<Manufacturer> - VST - <Name>` and sits directly in `VST2 Plugins`, not in a subfolder.
+On a USB stick or SD card it shows as soon as you plug it in. Copied to the MPC's internal drive, it shows after you restart MPC. Also check the folder is named `<Manufacturer> - VST - <Name>` and sits directly in `VST2 Plugins`, not in a subfolder.
+:::
+
+::: details Does it work on MPC OS 2.x?
+No. The Plugin Manager, its stick and the installer app need MPC OS 3.x. On 2.x, install plugins whose catalog card says "MPC OS: 2.x and 3.x" by hand: see [MPC OS 2.x](install.html#mpc-os-2-x) on the Install page.
 :::
 
 ::: details Gen1 or Gen2 build?
@@ -36,7 +40,7 @@ Gen1 (32-bit): Live, Live II, One, X, Key 61/37. Gen2 (64-bit): Live III, One G2
 :::
 
 ::: details Can I keep plugins on a USB stick or SD card?
-Yes, any drive's `VST2 Plugins` folder works. The Plugin Manager's drive menu (tap the storage readout) chooses where new ones go.
+Yes, any drive's `VST2 Plugins` folder works, and a plugged-in stick shows straight away. Leave it in: if you unplug it while a track uses one of its plugins, that plugin stops and its screen goes black until you plug the stick back in. The Plugin Manager's drive menu (tap the storage readout) chooses where new ones go.
 :::
 
 ::: details What about the Force?

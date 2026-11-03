@@ -166,7 +166,7 @@ class Device(Tmp):
         df = self.p / "bin" / "df"
         df.write_text("#!/bin/sh\nfor last; do :; done\ncase \"$last\" in *sdcard*) AVAIL=${STUB_DF_SDCARD:-8000000} ;; *) AVAIL=${STUB_DF_AVAIL:-8000000} ;; esac\ncase \"$*\" in *P*) echo 'Filesystem 1024-blocks Used Available Capacity Mounted on'; echo \"/dev/mapper/a-long-device-name 9000000 1000 ${AVAIL} 1% /x\" ;; *) echo 'Filesystem 1K-blocks Used Available Use% Mounted on'; echo '/dev/mapper/a-long-device-name'; echo \"  9000000 1000 ${AVAIL} 1% /x\" ;; esac\n")
         df.chmod(0o755)
-        env = dict(os.environ, MPC_USB_TEST="1", MPC_G2_ARCH=arch, MPC_SETTINGS=str(settings), MPC_MOUNTS=str(mounts),
+        env = dict(os.environ, MPC_USB_TEST="1", MPC_G2_ARCH=arch, MPC_G2_GLIBC=getattr(self, "glibc", "2.39"), MPC_SETTINGS=str(settings), MPC_MOUNTS=str(mounts),
                    STUB_LOG=str(self.log), STUB_RC=str(rc), PATH=str(self.p / "bin") + os.pathsep + os.environ["PATH"])
         if candidates is not None:
             env["MPC_G2_CANDIDATES"] = " ".join(candidates)
@@ -192,6 +192,23 @@ class Device(Tmp):
         self.assertIn("PKG: aarch64", stub)
         self.assertIn("Done.", result)
         self.assertTrue((self.stick / "MPC.settings.backup").is_file())
+
+    def test_mpc_os_2x_is_refused_before_anything_changes(self):
+        # MPC OS 2.x ships glibc 2.32: the Plugin Manager is for 3.x, so nothing is installed and the result file says why
+        self.mounts, self.locations = [], []
+        sd = self.candidate("sdcard")
+        self.glibc = "2.32"
+        r, result = self.run_device([sd], arch="armv7")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("MPC OS 2.x (glibc 2.32", result)
+        self.assertIn("install 2.x-compatible plugins by hand", result)
+        self.assertIn("Nothing was installed.", result)
+        self.assertFalse(self.log.exists() and "ARGS:" in self.log.read_text())
+        self.assertFalse((self.stick / "MPC.settings.backup").exists())
+        self.glibc = "2.39"
+        r, result = self.run_device([sd], arch="armv7")
+        self.assertEqual(r.returncode, 0, result)
+        self.assertIn("MPC OS: 3.x (glibc 2.39)", result)
 
     def test_armv7_gets_the_armv7_package(self):
         self.mounts, self.locations = [], []

@@ -39,7 +39,7 @@
   function nav(c) {
     var n = el("div", "gnav");
     if (hist.length) { var b = el("button", "gback", "Back"); b.type = "button"; b.onclick = function () { S = JSON.parse(hist.pop()); draw(); }; n.appendChild(b); }
-    if (S.model) n.appendChild(el("span", "gfor", S.model + (S.os ? " · MPC OS " + (S.os === "new" ? "3.10.1 or later" : "3.9.1 or earlier") : "")));
+    if (S.model) n.appendChild(el("span", "gfor", S.model + (S.os ? " · MPC OS " + (S.os === "new" ? "3.10.1 or later" : S.os === "2x" ? "2.x" : "3.0 to 3.9.1") : "")));
     c.appendChild(n);
   }
   function installer(c, why) {
@@ -111,8 +111,13 @@
       c = card(2, 3, "Which MPC OS is on it?", "On the MPC: Menu > Preferences > Info shows the version.");
       var o = el("div", "gopts");
       o.appendChild(opt("3.10.1 or later", "Preferences has an Enhancements page", function () { S.os = "new"; }));
-      o.appendChild(opt("3.9.1 or earlier", "", function () { S.os = "old"; }));
+      o.appendChild(opt("3.0 to 3.9.1", "", function () { S.os = "old"; }));
+      o.appendChild(opt("2.x", "", function () { S.os = "2x"; }));
       c.appendChild(o);
+    } else if (S.os === "2x") {
+      c = card(3, 3, "MPC OS 2.x: install by hand", "The Plugin Manager, its stick and the installer app need MPC OS 3.x.");
+      var x2 = el("p", "gsub", "On 2.x, pick plugins whose catalog card says MPC OS: 2.x and 3.x, and install each one by hand over SSH. Or update the MPC to MPC OS 3.x first. ");
+      x2.appendChild(link("How to install by hand", "#mpc-os-2-x")); c.appendChild(x2);
     } else if (S.os === "new" && S.force) {
       c = card(3, 3, "No MPC OS 3.10.1 for the Force yet", "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier.");
       var f = el("div", "gopts"); f.appendChild(opt("Continue with 3.9.1 or earlier", "", function () { S.os = "old"; })); c.appendChild(f);

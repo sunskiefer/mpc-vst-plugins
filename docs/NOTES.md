@@ -2184,3 +2184,10 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
   Write to USB, installed and registered the Plugin Manager after one Open prompt; MPC restarted with it listed, and it loaded and worked.
   The stick's autorun.check is the same built from the Gen1, Gen2 and Force 3.9.1 update images. (The page first used the Eurikon USB
   manager stick by mistake: its Open only arms a SHIFT + MENU shortcut and installs nothing by itself.)
+
+### 2026-11-03: MPC OS 2.x is not supported by the Plugin Manager path (decision; stick check device-tested on a Force)
+- Decision (owner): the Plugin Manager, its USB stick and the installer's guided path are for MPC OS 3.x. On 2.x, plugins whose card
+  says "MPC OS: 2.x and 3.x" are installed by hand (Install page, "MPC OS 2.x"). The guide and the installer now ask 3.10.1+ / 3.0 to 3.9.1 / 2.x.
+- The 3.9.1 stick (`tools/usb_g2/run.sh`) refuses a 2.x MPC before changing anything: it runs glibc's own library (`/lib/libc.so.6`
+  prints "... version 2.39."), and below 2.39 reads as 2.x (2.x ships 2.32), the Plugin Manager's own rule. Checked on a Force (3.9.1:
+  reads 3.x; with the version forced to 2.32: refuses with the message). Not run on a real 2.x unit.

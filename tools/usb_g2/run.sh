@@ -41,6 +41,27 @@ case "${MPC_G2_ARCH:-$(uname -m)}" in
 esac
 echo "CPU: $arch"
 
+# MPC OS 2.x is not supported: the Plugin Manager and the catalog are for MPC OS 3.x (2.x needs 2.x-compatible plugins installed by hand,
+# docs/USB_STICK.md). The OS is read from the device's glibc, the same rule the Plugin Manager uses: 2.x ships 2.32, 3.x ships 2.39, so
+# below 2.39 reads as 2.x. glibc's own library prints its version when run; if it can't be read, the stick goes on and says so.
+glibc=${MPC_G2_GLIBC:-}
+if [ -z "$glibc" ]; then
+    for f in /lib/libc.so.6 /usr/lib/libc.so.6 /lib/arm-linux-gnueabihf/libc.so.6 /lib/aarch64-linux-gnu/libc.so.6; do
+        [ -x "$f" ] || continue
+        glibc=$("$f" 2>/dev/null | sed -n 's/.*version \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' | sed -n 1p)
+        [ -z "$glibc" ] || break
+    done
+fi
+if [ -n "$glibc" ]; then
+    major=${glibc%%.*}; minor=${glibc#*.}
+    if [ "$major" -lt 2 ] || { [ "$major" -eq 2 ] && [ "$minor" -lt 39 ]; }; then
+        fail "this MPC runs MPC OS 2.x (glibc $glibc; MPC OS 3.x has 2.39). The OpenMPC Plugin Manager needs MPC OS 3.x. On 2.x, install 2.x-compatible plugins by hand (see the Install page)"
+    fi
+    echo "MPC OS: 3.x (glibc $glibc)"
+else
+    echo "MPC OS: could not read the glibc version; going on"
+fi
+
 # the package for this CPU, and its checksum from the covered manifest
 [ -f "$work/payload.sha256" ] || fail "payload.sha256 is missing from the stick's runtime"
 lines=$(grep -c -E "[-]mpc-$arch[.]zip\$" "$work/payload.sha256" || true)

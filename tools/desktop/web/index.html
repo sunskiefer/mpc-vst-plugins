@@ -157,7 +157,8 @@ details.way[open] summary { margin-bottom: 6px; }
     <p class="sub">On the MPC: Menu &gt; Preferences &gt; Info shows the version.</p>
     <div class="opts">
       <button type="button" class="opt" data-os="new"><span><b>3.10.1 or later</b><small>Preferences has an Enhancements page</small></span></button>
-      <button type="button" class="opt" data-os="old"><span><b>3.9.1 or earlier</b></span></button>
+      <button type="button" class="opt" data-os="old"><span><b>3.0 to 3.9.1</b></span></button>
+      <button type="button" class="opt" data-os="2x"><span><b>2.x</b><small>Not supported: plugins are installed by hand</small></span></button>
       <button type="button" class="opt" id="wz-unsure"><span><b>I'm not sure</b></span></button>
     </div>
     <p class="callout" id="wz-oshelp" hidden>Press <b>Menu</b>, tap <b>Preferences</b>, then <b>Info</b>: the number after Version is the MPC OS.
@@ -1044,7 +1045,9 @@ function goSSHStick() { showTools("stick", "dadv"); }
 function wzPlan() {
   var arch = WZ.gen === "aarch64" ? "aarch64" : "armv7", force = WZ.gen === "force", P;
   var HERE = "on this computer", MPC = "on the MPC";
-  if (WZ.os === "new" && force) P = { t: "No MPC OS 3.10.1 for the Force yet", s: "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier (Menu > Preferences > Info shows it). Continue with that.",
+  if (WZ.os === "2x") P = { t: "MPC OS 2.x: install by hand", s: "The Plugin Manager, its stick and this app need MPC OS 3.x. On 2.x, pick plugins whose catalog card says MPC OS: 2.x and 3.x and install each one by hand over SSH (the Install page, MPC OS 2.x), or update the MPC to MPC OS 3.x first.",
+    steps: [], go: "", fn: null, alts: [] };
+  else if (WZ.os === "new" && force) P = { t: "No MPC OS 3.10.1 for the Force yet", s: "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier (Menu > Preferences > Info shows it). Continue with that.",
     steps: [], go: "Continue with 3.9.1 or earlier", fn: function () { WZ.os = "old"; wzSave(); wzShow("wz-ssh"); }, alts: [] };
   else if (WZ.os === "new") P = { t: "Put the Plugin Manager on your MPC", s: "Once it is on a track, you install everything else from its screen, or from your phone or computer.",
     steps: [["Menu > Preferences > Enhancements: tick Enable Enhancements and VST2 Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
@@ -1061,7 +1064,7 @@ function wzPlan() {
   else P = { t: "Install over Wi-Fi", s: "Connect to the MPC from this computer, pick plugins, install.",
     steps: [["Connect with the MPC's IP address", HERE], ["Pick plugins", HERE], ["Install", HERE, "Your settings are backed up first, then MPC restarts once with the new plugins."]],
     go: "Connect", fn: goSSH, alts: [] };
-  text($("wz-for"), WZ.model + " \u00b7 MPC OS " + (WZ.os === "new" ? "3.10.1 or later" : "3.9.1 or earlier"));
+  text($("wz-for"), WZ.model + " \u00b7 MPC OS " + (WZ.os === "new" ? "3.10.1 or later" : WZ.os === "2x" ? "2.x" : "3.0 to 3.9.1"));
   text($("wz-title"), P.t); text($("wz-sub"), P.s);
   var ol = $("wz-steps"); ol.textContent = ""; ol.hidden = !P.steps.length;
   function stepLi(x) { var li = el("li"), sp = el("span", null, x[0]); if (x[2]) sp.appendChild(el("em", "then", x[2])); li.appendChild(sp); li.appendChild(el("small", null, x[1])); return li; }
@@ -1088,7 +1091,7 @@ Array.prototype.forEach.call(document.querySelectorAll("#wz-model .opt"), functi
 Array.prototype.forEach.call(document.querySelectorAll("#wz-os .opt[data-os]"), function (b) {
   b.addEventListener("click", function () {
     WZ.os = b.dataset.os;
-    if (WZ.os === "new") { WZ.net = ""; wzPlan(); } else wzShow("wz-ssh");
+    if (WZ.os === "new" || WZ.os === "2x") { WZ.net = ""; wzPlan(); } else wzShow("wz-ssh");
   });
 });
 $("wz-unsure").addEventListener("click", function () { $("wz-oshelp").hidden = false; });
