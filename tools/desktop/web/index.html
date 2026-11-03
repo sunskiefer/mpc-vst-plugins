@@ -62,7 +62,7 @@ h2.q { font-size:26px; letter-spacing:.03em; margin-bottom:6px; }
 ol.plan { counter-reset:s; list-style:none; padding:0; margin:4px 0 18px; }
 ol.plan li { counter-increment:s; display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-top:1px solid var(--line); }
 ol.plan li::before { content:counter(s); flex:0 0 26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; display:grid; place-items:center; font:700 14px var(--display); }
-ol.plan li > span { flex:1; } ol.plan li small { flex:none; color:var(--muted); font-size:12px; white-space:nowrap; padding-top:3px; }
+ol.plan li > span { flex:1; } ol.plan em.then { display:block; font-style:normal; color:var(--muted); font-size:13px; margin-top:3px; } ol.plan li small { flex:none; color:var(--muted); font-size:12px; white-space:nowrap; padding-top:3px; }
 details.others { margin-top:16px; border-top:1px solid var(--line); padding-top:12px; } details.others summary { cursor:pointer; color:var(--muted); margin-bottom:8px; }
 .wzfor { display:none; margin:0 0 12px; } .fromwiz .wzfor { display:flex; gap:12px; align-items:center; }
 .fromwiz #v2-archq, .fromwiz > section.guide { display:none; }
@@ -162,15 +162,6 @@ details.way[open] summary { margin-bottom: 6px; }
     </div>
     <p class="callout" id="wz-oshelp" hidden>Press <b>Menu</b>, tap <b>Preferences</b>, then <b>Info</b>: the number after Version is the MPC OS.
       If Preferences has an <b>Enhancements</b> page, it is 3.10.1 or later.</p>
-    <div class="wnav"><button type="button" class="wback">Back</button></div>
-  </section>
-  <section class="wz" id="wz-wifi" hidden>
-    <h2 class="q">Is your MPC on Wi-Fi?</h2>
-    <p class="sub">On the same network as your phone or computer. Menu &gt; Preferences &gt; Wi-Fi turns it on.</p>
-    <div class="opts">
-      <button type="button" class="opt" data-net="wifi"><span><b>Yes, or it can be</b><small>Install plugins from your phone or computer, any time</small></span><span class="tag ok">Easiest</span></button>
-      <button type="button" class="opt" data-net="none"><span><b>No</b><small>Pick plugins here and carry them over on a USB stick</small></span></button>
-    </div>
     <div class="wnav"><button type="button" class="wback">Back</button></div>
   </section>
   <section class="wz" id="wz-ssh" hidden>
@@ -1013,7 +1004,7 @@ function openPart(id) { var d = $(id); if (d && d.tagName === "DETAILS") d.open 
 /* The start: a few questions (model, MPC OS, Wi-Fi or SSH), then the plan for that answer. Its button opens the one part of
  * the page below that does it (focus), the rest stays behind "All tools". Answers are kept in this browser only. */
 var WZ = { gen: "", model: "", os: "", net: "", hist: [] };
-var WZ_SCREENS = ["wz-model", "wz-os", "wz-wifi", "wz-ssh", "wz-plan"], WZ_STEP = { "wz-model": 1, "wz-os": 2, "wz-wifi": 3, "wz-ssh": 3, "wz-plan": 4 };
+var WZ_SCREENS = ["wz-model", "wz-os", "wz-ssh", "wz-plan"], WZ_STEP = { "wz-model": 1, "wz-os": 2, "wz-ssh": 3, "wz-plan": 4 };
 function wzSave() { try { localStorage.setItem("openmpc-setup", JSON.stringify({ gen: WZ.gen, model: WZ.model, os: WZ.os, net: WZ.net })); } catch (e) {} }
 function wzShow(id, back) {
   var cur = WZ_SCREENS.filter(function (x) { return !$(x).hidden; })[0];
@@ -1055,39 +1046,32 @@ function wzPlan() {
   var HERE = "on this computer", MPC = "on the MPC";
   if (WZ.os === "new" && force) P = { t: "No MPC OS 3.10.1 for the Force yet", s: "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier (Menu > Preferences > Info shows it). Continue with that.",
     steps: [], go: "Continue with 3.9.1 or earlier", fn: function () { WZ.os = "old"; wzSave(); wzShow("wz-ssh"); }, alts: [] };
-  else if (WZ.os === "new") P = { t: "Put the Plugin Manager on your MPC", s: "Once it is on a track, you install everything else from its screen, or from your phone or computer. First, on the MPC: Preferences > Enhancements, turn on Enable Enhancements and VST2 Support, wait a few seconds. Then pick a way:",
-    steps: [], go: "", fn: null,
-    ways: [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode on the MPC and note its IP address", MPC], ["Connect from this computer and install the Plugin Manager", HERE], ["MPC restarts; turn Developer mode off again if you like", MPC]], "Install over Wi-Fi", goSSH],
-           ["With a USB cable", "Controller Mode", [["Put an SD card or USB drive in the MPC, connect the MPC to this computer", MPC], ["Menu, the computer icon: Controller Mode. The card or drive appears here", MPC], ["Write the Plugin Manager onto it, eject, tap Standalone on the MPC", HERE]], "Write the Plugin Manager", function () { goV2(arch, false); }],
-           ["With a USB stick or SD card", "", [["Write the Plugin Manager onto a stick or card", HERE], ["Put it in the MPC and restart", MPC]], "Write the Plugin Manager", function () { goV2(arch, false); }]],
+  else if (WZ.os === "new") P = { t: "Put the Plugin Manager on your MPC", s: "Once it is on a track, you install everything else from its screen, or from your phone or computer.",
+    steps: [["Menu > Preferences > Enhancements: tick Enable Enhancements and VST2 Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
+            ["Put the Plugin Manager in a VST2 Plugins folder on the MPC. Pick a way below", HERE, "After the restart, MPC lists it in its plugin browser."],
+            ["Press Menu, add a new Plugin track, tap its plugin slot and browse to External VST Plugins > OpenMPC - Plugin Manager G2", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]], go: "", fn: null,
+    ways: [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode on the MPC and note its IP address", MPC, "This computer can now reach the MPC over Wi-Fi."], ["Connect from this computer and install the Plugin Manager", HERE, "MPC restarts with it. You can turn Developer mode off again afterwards."]], "Install over Wi-Fi", goSSH],
+           ["With a USB cable", "Controller Mode", [["Put an SD card or USB drive in the MPC and connect the MPC to this computer", MPC], ["Menu, the computer icon: Controller Mode", MPC, "The card or drive appears on this computer like a USB stick."], ["Write the Plugin Manager onto it, eject it, then tap Standalone on the MPC and confirm", HERE, "MPC restarts and finds the Plugin Manager. Leave the card or drive in."]], "Write the Plugin Manager", function () { goV2(arch, false); }],
+           ["With a USB stick or SD card", "", [["Write the Plugin Manager onto a stick or card", HERE], ["Put it in the MPC and restart", MPC, "MPC finds the Plugin Manager on it. Leave it in: the plugin runs from there."]], "Write the Plugin Manager", function () { goV2(arch, false); }]],
     alts: [["My MPC has no Wi-Fi", "Put plugins and their ROMs straight onto the stick", function () { goV2(arch, true); }]] };
-  else if (WZ.net === "wifi") P = { t: "Use the Plugin Manager", s: "Put it on a USB stick once. After that you install everything from your phone or computer.",
-    steps: [["Make the stick", HERE], ["Preferences > Enhancements: turn on Enable Enhancements and VST2 Support, plug in the stick, restart", MPC],
-            ["Add the Plugin Manager to a track and open the address it shows, on your phone or computer", MPC]],
-    go: "Make the stick", fn: function () { goV2(arch, false); },
-    alts: [["My MPC has no Wi-Fi", "Put plugins and their ROMs straight onto the stick", function () { goV2(arch, true); }],
-           ["Developer mode is on (SSH)", "Install from this computer over Wi-Fi", goSSH]] };
-  else if (WZ.net === "none") P = { t: "Plugins on a stick", s: "Pick plugins here; a USB stick carries them, and their ROMs, to the MPC.",
-    steps: [["Pick plugins and write the stick", HERE], ["Preferences > Enhancements: turn on Enable Enhancements and VST2 Support", MPC], ["Plug in the stick and restart", MPC]],
-    go: "Pick plugins", fn: function () { goV2(arch, true); },
-    alts: [["Just the Plugin Manager", "For when the MPC gets Wi-Fi later", function () { goV2(arch, false); }]] };
   else if (WZ.net === "nossh") P = { t: "Plugin Manager stick", s: "A stick that installs the Plugin Manager: you confirm one prompt and MPC restarts with it.",
-    steps: [["Make the stick", HERE], ["Plug it in and choose Open on the prompt", MPC], ["Add the Plugin Manager to a track and install plugins from its screen", MPC]],
+    steps: [["Make the stick", HERE, "Use an empty USB stick."], ["Save your project, plug the stick into the MPC and choose Open on the prompt", MPC, "The stick installs the Plugin Manager and MPC restarts by itself. You can then unplug the stick."], ["Create a new Plugin track, tap its plugin slot and choose OpenMPC Plugin Manager G2 from the plugin list", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]],
     go: "Make the stick", fn: goL1,
     alts: [["I want SSH on my MPC", "A stick that turns SSH on, for installing from this computer", goSSHStick]] };
   else P = { t: "Install over Wi-Fi", s: "Connect to the MPC from this computer, pick plugins, install.",
-    steps: [["Connect with the MPC's IP address", HERE], ["Pick plugins", HERE], ["Install: MPC restarts with them", HERE]],
+    steps: [["Connect with the MPC's IP address", HERE], ["Pick plugins", HERE], ["Install", HERE, "Your settings are backed up first, then MPC restarts once with the new plugins."]],
     go: "Connect", fn: goSSH, alts: [] };
   text($("wz-for"), WZ.model + " \u00b7 MPC OS " + (WZ.os === "new" ? "3.10.1 or later" : "3.9.1 or earlier"));
   text($("wz-title"), P.t); text($("wz-sub"), P.s);
   var ol = $("wz-steps"); ol.textContent = ""; ol.hidden = !P.steps.length;
-  P.steps.forEach(function (x) { var li = el("li"); li.appendChild(el("span", null, x[0])); li.appendChild(el("small", null, x[1])); ol.appendChild(li); });
+  function stepLi(x) { var li = el("li"), sp = el("span", null, x[0]); if (x[2]) sp.appendChild(el("em", "then", x[2])); li.appendChild(sp); li.appendChild(el("small", null, x[1])); return li; }
+  P.steps.forEach(function (x) { ol.appendChild(stepLi(x)); });
   text($("wz-go"), P.go || ""); $("wz-go").onclick = P.fn; $("wz-go").hidden = !P.fn;
   var wy = $("wz-ways"); wy.textContent = "";
   (P.ways || []).forEach(function (w) {
     var d = el("details", "way"), sm = el("summary"); sm.appendChild(el("b", null, w[0])); if (w[1]) sm.appendChild(el("small", null, " (" + w[1] + ")"));
     d.appendChild(sm); var o = el("ol", "plan");
-    w[2].forEach(function (x) { var li = el("li"); li.appendChild(el("span", null, x[0])); li.appendChild(el("small", null, x[1])); o.appendChild(li); });
+    w[2].forEach(function (x) { o.appendChild(stepLi(x)); });
     d.appendChild(o); var b = el("button", "primary", w[3]); b.type = "button"; b.onclick = w[4]; d.appendChild(b); wy.appendChild(d);
   });
   var al = $("wz-alts"); al.textContent = ""; $("wz-others").hidden = !P.alts.length; $("wz-others").open = false;
@@ -1120,7 +1104,8 @@ $("to-all").addEventListener("click", function () { showTools(S.mode2 || "stick"
 $("to-setup").addEventListener("click", function () { $("l1-osq").hidden = false; showSetup(); });
 (function () {   /* a returning user lands on their plan */
   var a = null; try { a = JSON.parse(localStorage.getItem("openmpc-setup") || "null"); } catch (e) {}
-  if (a && a.gen && a.os) { WZ.gen = a.gen; WZ.model = a.model || ""; WZ.os = a.os; WZ.net = a.net || ""; WZ.hist = ["wz-model"]; wzPlan(); }
+  if (a && a.gen && a.os) { WZ.gen = a.gen; WZ.model = a.model || ""; WZ.os = a.os; WZ.net = a.net || ""; WZ.hist = ["wz-model"];
+    if (WZ.os === "old" && WZ.net !== "nossh" && WZ.net !== "ssh") { WZ.net = ""; WZ.hist.push("wz-os"); wzShow("wz-ssh"); } else wzPlan(); }
   else wzShow("wz-model", true);
 })();
 

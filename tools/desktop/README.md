@@ -45,17 +45,19 @@ Windows): pick a mounted USB stick there and Build writes the stick straight ont
 
 ## The start screen
 
-A few questions, one per screen: **which MPC** (model tiles; this also picks the Gen1 or Gen2 build), **which MPC OS** (3.10.1 or
-later, 3.9.1 or earlier, or "not sure", which says where to look), then **Wi-Fi?** (3.10.1) or **SSH?** (3.9.1 or earlier). The answer is a
-plan: three numbered steps marked "on this computer" or "on the MPC", one button, and the alternatives under **Other ways**.
+A few questions, one per screen: **which MPC** (model tiles, grouped Gen1 (with the Force) and Gen2; this also picks the build),
+**which MPC OS** (3.10.1 or later, 3.9.1 or earlier, or "not sure", which says where to look), then on 3.9.1 or earlier **SSH?**.
+The answer is a plan: numbered steps marked "on this computer" or "on the MPC", each with a line saying what happens next, and
+the alternatives under **Other ways**. The wording matches the catalog site's Install page guide (`tools/catalog_site/guide.js`):
+change both together.
 
-| MPC OS | Answer | Plan (button opens) | Other ways |
+| MPC OS | Answer | Plan | Other ways |
 |---|---|---|---|
-| 3.10.1+ | Wi-Fi | Plugin Manager stick, then its web page (the 3.10.1 stick, build preset) | plugins on the stick; Developer mode SSH |
-| 3.10.1+ | no Wi-Fi | plugins (and ROMs) straight onto the stick | just the Plugin Manager |
+| 3.10.1+ | (no question) | turn on VST2 Support, then three collapsed ways to put the Plugin Manager in `VST2 Plugins`: over Wi-Fi (Developer mode), USB cable (Controller Mode), stick or card | plugins (and ROMs) straight onto the stick |
 | 3.9.1 or earlier | no SSH | the one-prompt Plugin Manager stick (Force: the turn-on-SSH stick) | the turn-on-SSH stick |
 | 3.9.1 or earlier | SSH | Install over Wi-Fi (Connect) | |
 
+An answer saved by an older version (the removed 3.9.1 Wi-Fi question) asks the SSH question again.
 The Force on 3.10.1 or later is not supported yet and says so. The button shows only that part of the page; **All tools** (top right)
 shows every section and the USB stick / Install over Wi-Fi (SSH) tabs. The answers are kept in the browser (localStorage), so the app
 opens on the plan next time; **Start over** clears them. After connecting, one line names the model, MPC OS, VST2 Support, plugins still
