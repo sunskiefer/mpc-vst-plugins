@@ -27,12 +27,14 @@ import argparse
 import datetime
 import fnmatch
 import glob
+import hashlib
 import json
 import os
 import re
 import sys
 import urllib.error
 import urllib.parse
+import zipfile
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -783,6 +785,28 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
             rec["conflicts"] = list(m["conflicts"] if "conflicts" in m else e.get("conflicts", []))
             rec["tested"] = [{k: t.get(k, "") for k in ("device", "firmware", "date")} for t in tested
                              if str(t["version"]).lstrip("v") == rec["version"]]
+            # MPC OS 3.10.1: is every build an Akai plugin folder (plugin.json naming its .so)? Then the per-build zip's portable
+            # folder copies straight into "VST2 Plugins". Tested on 3.10.x: a tested.json entry whose firmware says so.
+            folders = {vst2_folder(zpath)} | ({vst2_folder(z64)} if "aarch64" in rec["assets"] and not gen2_only else set())
+            if len(folders) == 1 and None not in folders:
+                rec["vst2"] = {"folder": folders.pop()}
+            if any(re.match(r"\s*v?3\.(1\d|[2-9]\d)", str(t.get("firmware", ""))) for t in rec["tested"]):
+                rec["tested_310"] = True
+            # the release's Akai SDK-format zip (tools/sdk_zip.py), when it has one: one folder for every MPC
+            sdk = [x for x in rel.get("assets", []) if x["name"].endswith("-mpc-sdk.zip")]
+            if len(sdk) == 1 and rec.get("vst2"):
+                zs = os.path.join(cache, "%s-%s.zip" % (e["id"], sdk[0]["id"]))
+                try:
+                    if not os.path.exists(zs):
+                        src.download(sdk[0], zs)
+                    errs = sdk_check(zs, rec["vst2"]["folder"])
+                except Exception as ex:
+                    errs = ["download failed: %s" % ex]
+                if errs:
+                    rec["warnings"] = rec["warnings"] + ["SDK zip not listed: " + "; ".join(errs)]
+                else:
+                    rec["assets"]["sdk"] = {"url": sdk[0]["browser_download_url"], "size": os.path.getsize(zs),
+                                            "sha256": hashlib.sha256(open(zs, "rb").read()).hexdigest()}
             versions.append(rec)
         # A failing release is "superseded" when a release published after it passes and is not yanked: the catalog
         # already serves the fix, and an old tag can't be rebuilt, so it is history, not something to report.
@@ -970,6 +994,42 @@ def apply_dependencies(plugins, problems):
                              "absent": sorted(absent.get((p["id"], ver), ()))})
             v.pop("_lost", None)
     return any_change
+
+
+def vst2_folder(zpath):
+    """MPC OS 3.10.1 readiness of one release zip: the portable folder's name if it has a plugin.json naming a .so that is in the
+    folder (Akai's plugin folder format, docs/CATALOG.md "MPC OS 3.10.1"), else None."""
+    try:
+        with zipfile.ZipFile(zpath) as z:
+            names = set(z.namelist())
+            pjs = [n for n in names if n.count("/") == 3 and n.split("/")[1] == "portable" and n.endswith("/plugin.json")]
+            if len(pjs) != 1:
+                return None
+            pre = pjs[0][: -len("plugin.json")]
+            pj = json.loads(z.read(pjs[0]))
+            files = [pj[k] for k in ("file32", "file64", "file") if isinstance(pj.get(k), str)]
+            if not files or any(f.startswith("/") or ".." in f.split("/") or pre + f not in names for f in files):
+                return None
+            return pre.split("/")[2]
+    except (zipfile.BadZipFile, ValueError, KeyError, OSError):
+        return None
+
+
+def sdk_check(zpath, folder):
+    """Errors in an SDK-format zip (tools/sdk_zip.py) that should hold one folder named folder, with binaries for its builds."""
+    try:
+        with zipfile.ZipFile(zpath) as z:
+            names = set(z.namelist())
+            tops = {n.split("/")[0] for n in names}
+            if tops != {folder}:
+                return ["the SDK zip should hold only %r, it holds %s" % (folder, sorted(tops)[:3])]
+            pj = json.loads(z.read(folder + "/plugin.json"))
+            bins = [pj[k] for k in ("file32", "file64") if isinstance(pj.get(k), str)]
+            if not bins or any(folder + "/" + b not in names for b in bins):
+                return ["the SDK zip's plugin.json names binaries that are not in it"]
+    except (zipfile.BadZipFile, ValueError, KeyError, OSError) as ex:
+        return ["the SDK zip can't be read: %s" % ex]
+    return []
 
 
 def tag_prefix(tag):

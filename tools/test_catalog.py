@@ -769,6 +769,39 @@ class BuildTest(Base):
         return {"tag_name": tag, "prerelease": pre, "draft": False, "published_at": at, "body": "notes",
                 "assets": [{"id": aid, "name": name, "browser_download_url": "https://x/" + name, "download_count": 3}]}
 
+    def test_310_ready_sdk_zip_and_tested_on_310(self):
+        """A release whose builds are Akai plugin folders gets vst2.folder; its -mpc-sdk.zip is listed under assets.sdk after a check;
+        a tested.json entry on MPC OS 3.10.x sets tested_310 (docs/CATALOG.md "MPC OS 3.10.1")."""
+        import sdk_zip
+        z7 = self.build("1.0.0")
+        z64 = self.build("1.0.0", machine=183, elf_class=2)
+        sdk = os.path.join(self.tmp, "Test-Synth-1.0.0-mpc-sdk.zip")
+        sdk_zip.sdk_zip(sdk, [z7, z64])
+        rel = self.rel("v1.0.0", 1, name="Test-Synth-1.0.0-mpc-armv7.zip")
+        rel["assets"] += [{"id": 2, "name": "Test-Synth-1.0.0-mpc-aarch64.zip", "browser_download_url": "https://x/a64.zip"},
+                          {"id": 3, "name": "Test-Synth-1.0.0-mpc-sdk.zip", "browser_download_url": "https://x/sdk.zip"}]
+
+        class GH(FakeGitHub):
+            def tested(self, repo):
+                return [{"version": "1.0.0", "device": "MPC Live III (Gen2)", "firmware": "3.10.1", "date": "2026-11-05"}]
+        cat, problems = catalog_build.build([self.ENTRY], GH({"acme/test-synth": [rel]}, {1: z7, 2: z64, 3: sdk}),
+                                            os.path.join(self.tmp, "cache"), set())
+        v = cat["plugins"][0]["versions"][0]
+        self.assertEqual(v["vst2"], {"folder": "Acme - VST - Test Synth"})
+        self.assertEqual(v["assets"]["sdk"]["url"], "https://x/sdk.zip")
+        self.assertEqual(len(v["assets"]["sdk"]["sha256"]), 64)
+        self.assertTrue(v["tested_310"])
+        self.assertEqual(set(v["assets"]), {"armv7", "aarch64", "sdk"})
+        # an SDK zip that holds the wrong folder is not listed, and says why
+        bad = os.path.join(self.tmp, "bad-mpc-sdk.zip")
+        with zipfile.ZipFile(bad, "w") as zb:
+            zb.writestr("Other - VST - X/plugin.json", "{}")
+        cat, _ = catalog_build.build([self.ENTRY], FakeGitHub({"acme/test-synth": [rel]}, {1: z7, 2: z64, 3: bad}),
+                                     os.path.join(self.tmp, "cache2"), set())
+        v = cat["plugins"][0]["versions"][0]
+        self.assertNotIn("sdk", v["assets"]); self.assertNotIn("tested_310", v)
+        self.assertTrue(any("SDK zip not listed" in w for w in v["warnings"]), v["warnings"])
+
     def test_build_keeps_good_versions_and_reports_bad(self):
         good, newer = self.build("1.0.0"), self.build("1.1.0")
         bad = self.tamper(self.build("1.2.0"), "portable/Acme - VST - Test Synth/test_synth.so", lambda d: d + b"x")
