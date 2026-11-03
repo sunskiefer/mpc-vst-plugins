@@ -400,3 +400,13 @@ not have yet (`patches.json` until the mirror job copies it) comes from the old 
 `sd88me.github.io` (`ORG_MIGRATION.md`, steps 2 and 3).
 Helper files and `patches.json` come from the same folder as the catalog that worked. Releases published before this change only
 know the old address.
+
+## Old clients and catalog changes (`tools/compat/run.sh`)
+Plugin Managers and desktop installers already in users' hands read the live catalog, so a change to its format must not change
+what they show. `tools/compat/run.sh BASELINE.json CANDIDATE.json [BASELINE.tsv CANDIDATE.tsv]` runs each released client's own
+code from its git tag (Plugin Manager G2 0.2.0 and 0.2.5 on a Gen2 and a Gen1 stand-in device, through `tools/compat/old_manager.c`:
+every card and its details page on Discover, Installed and Updates; desktop installers 0.5.5 and 1.1.2: their `parseCatalog` and
+`ForArch` for both builds) on the published catalog and on the candidate, and diffs what they show; it also checks `catalog.tsv`'s
+header and column count. Docker (gcc:12, golang:1.26). Checked offline 2026-11-03: the live catalog against itself is the same for
+every client; new fields at plugin and version level are the same; one plugin without its downloads, and tags turned into a string,
+are both reported. Run it before any catalog format change (the SDK-format work); a deliberate change diffs only where intended.
