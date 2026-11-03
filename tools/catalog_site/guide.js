@@ -140,9 +140,13 @@
       [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode and note the MPC's IP address", MPC, "Your computer can now open the MPC's files over Wi-Fi."],
           ["Connect with a file app (WinSCP, Cyberduck, FileZilla) as root, no password", HERE],
           [["Copy the folder into ", el("code", null, S.gen === 2 ? "/nvme/VST2 Plugins/" : "/sdcard/VST2 Plugins/"), ", then restart the MPC"], HERE, "After the restart, MPC lists the Plugin Manager in its plugin browser."]], "#a-over-wi-fi-developer-mode"],
-       ["With a USB cable", "Controller Mode", [["Put an SD card or USB drive in the MPC and connect the MPC to your computer", MPC],
+       ["With a USB cable", "Controller Mode", /Live III|XL/.test(S.model) ? [   /* only these mount their internal drives (Akai's support articles) */
+          ["Connect the MPC to your computer with a USB cable", MPC],
+          ["Menu, the computer icon: Controller Mode", MPC, "Two drives appear on your computer: MPC User (the MPC's internal drive) and MPC Content."],
+          ["Copy the folder into VST2 Plugins on the MPC User drive, eject it, then tap Standalone on the MPC and confirm", HERE, "If the Plugin Manager isn't in the plugin browser yet, restart the MPC: the internal drive is read at start-up."]]
+        : [["Put an SD card or USB drive in the MPC and connect the MPC to your computer", MPC, "This MPC's internal drive doesn't show on a computer, only a card or drive in it."],
           ["Menu, the computer icon: Controller Mode", MPC, "The card or drive appears on your computer like a USB stick."],
-          ["Copy the folder into VST2 Plugins on it, eject it, then tap Standalone on the MPC and confirm", HERE, "MPC restarts and finds the Plugin Manager. Leave the card or drive in."]], "#b-with-a-usb-cable-controller-mode"],
+          ["Copy the folder into VST2 Plugins on it, eject it, then tap Standalone on the MPC and confirm", HERE, "MPC finds the Plugin Manager on it. Leave the card or drive in."]], "#b-with-a-usb-cable-controller-mode"],
        ["With a USB stick or SD card", "", [["Make a folder called VST2 Plugins on the stick or card and copy the folder into it", HERE],
           ["Plug it into the MPC", MPC, "No restart needed: the Plugin Manager shows up in the plugin browser within a few seconds. Leave it in: the plugin runs from there. Don't unplug it while a track uses the Plugin Manager: the plugin stops and its screen goes black until you plug it back in."]], "#c-with-a-usb-stick-or-sd-card"]].forEach(function (w) {
         var d = el("details", "gway"), s = el("summary"); s.appendChild(el("b", null, w[0])); if (w[1]) s.appendChild(el("small", null, " (" + w[1] + ")"));

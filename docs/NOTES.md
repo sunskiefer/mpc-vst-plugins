@@ -2191,3 +2191,12 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
 - The 3.9.1 stick (`tools/usb_g2/run.sh`) refuses a 2.x MPC before changing anything: it runs glibc's own library (`/lib/libc.so.6`
   prints "... version 2.39."), and below 2.39 reads as 2.x (2.x ships 2.32), the Plugin Manager's own rule. Checked on a Force (3.9.1:
   reads 3.x; with the version forced to 2.32: refuses with the message). Not run on a real 2.x unit.
+
+### 2026-11-03: Controller Mode and internal drives (Akai support articles; device test pending)
+- Akai's support articles "MPC Live III | Internal Drives" and "Understanding the MPC's internal drive": only the **MPC Live III and
+  MPC XL** mount their internal drives on a computer in Controller Mode, as **MPC Content** (39.9 GB: Demos, Expansions, Synths) and
+  **MPC User** (79.2 GB: Features, MPC Documents, Splice; "Internal" on the MPC). Gen1 internal drives do not mount; the One G2 and Key G2
+  are not listed. Don't format either drive.
+- On our Live III, `/nvme` is `nvme0n1p2`, exFAT, 79.2 GB: the **MPC User** drive, with `VST2 Plugins` at its root. So on a Live III / XL
+  the USB-cable way copies into `VST2 Plugins` on MPC User (no card); everyone else needs a card or drive in the MPC. Guide, installer and
+  Install page now say so per model. Open: in the owner's first try (Live III, MPC OS 3.10.1) no drive appeared on the PC.
