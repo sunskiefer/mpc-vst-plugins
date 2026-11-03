@@ -334,7 +334,7 @@ details.way[open] summary { margin-bottom: 6px; }
     <ol>
       <li>Preferences, <b>Enhancements</b>: turn on <b>Enable Enhancements</b> and <b>VST2 Support</b> (read the warning). Wait a few seconds, so the setting is saved.
         <img class="shot" src="/img/enhancements.png" alt="Preferences, Enhancements on an MPC: Enable Enhancements and VST2 Support ticked" width="640" height="400" loading="lazy"></li>
-      <li><b>Insert</b> the stick and <b>restart MPC</b>.</li>
+      <li><b>Plug in</b> the stick. No restart needed: MPC finds it within a few seconds.</li>
       <li>Add a track: <b>External VST Plugins &gt; Plugin Manager</b>. Its status line shows an address like <code>http://192.168.1.40:8790</code>: open it on a phone or computer on the same Wi-Fi to install plugins, move old ones and add ROMs. Save your project with the Plugin Manager on a track and the page comes back after each restart.
         <img class="shot" src="/img/address-line.png" alt="The Plugin Manager status line with its web address" width="1279" height="75" loading="lazy"></li>
     </ol>
@@ -1048,11 +1048,11 @@ function wzPlan() {
     steps: [], go: "Continue with 3.9.1 or earlier", fn: function () { WZ.os = "old"; wzSave(); wzShow("wz-ssh"); }, alts: [] };
   else if (WZ.os === "new") P = { t: "Put the Plugin Manager on your MPC", s: "Once it is on a track, you install everything else from its screen, or from your phone or computer.",
     steps: [["Menu > Preferences > Enhancements: tick Enable Enhancements and VST2 Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
-            ["Put the Plugin Manager in a VST2 Plugins folder on the MPC. Pick a way below", HERE, "After the restart, MPC lists it in its plugin browser."],
+            ["Put the Plugin Manager in a VST2 Plugins folder on the MPC. Pick a way below", HERE, "MPC lists it in its plugin browser. On a stick or card that is as soon as you plug it in."],
             ["Press Menu, add a new Plugin track, tap its plugin slot and browse to External VST Plugins > OpenMPC - Plugin Manager G2", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]], go: "", fn: null,
     ways: [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode on the MPC and note its IP address", MPC, "This computer can now reach the MPC over Wi-Fi."], ["Connect from this computer and install the Plugin Manager", HERE, "MPC restarts with it. You can turn Developer mode off again afterwards."]], "Install over Wi-Fi", goSSH],
            ["With a USB cable", "Controller Mode", [["Put an SD card or USB drive in the MPC and connect the MPC to this computer", MPC], ["Menu, the computer icon: Controller Mode", MPC, "The card or drive appears on this computer like a USB stick."], ["Write the Plugin Manager onto it, eject it, then tap Standalone on the MPC and confirm", HERE, "MPC restarts and finds the Plugin Manager. Leave the card or drive in."]], "Write the Plugin Manager", function () { goV2(arch, false); }],
-           ["With a USB stick or SD card", "", [["Write the Plugin Manager onto a stick or card", HERE], ["Put it in the MPC and restart", MPC, "MPC finds the Plugin Manager on it. Leave it in: the plugin runs from there."]], "Write the Plugin Manager", function () { goV2(arch, false); }]],
+           ["With a USB stick or SD card", "", [["Write the Plugin Manager onto a stick or card", HERE], ["Plug it into the MPC", MPC, "No restart needed: the Plugin Manager shows up in the plugin browser within a few seconds. Leave it in: the plugin runs from there."]], "Write the Plugin Manager", function () { goV2(arch, false); }]],
     alts: [["My MPC has no Wi-Fi", "Put plugins and their ROMs straight onto the stick", function () { goV2(arch, true); }]] };
   else if (WZ.net === "nossh") P = { t: "Plugin Manager stick", s: "A stick that installs the Plugin Manager: you confirm one prompt and MPC restarts with it.",
     steps: [["Make the stick", HERE, "Use an empty USB stick."], ["Save your project, plug the stick into the MPC and choose Open on the prompt", MPC, "The stick installs the Plugin Manager and MPC restarts by itself. You can then unplug the stick."], ["Create a new Plugin track, tap its plugin slot and choose OpenMPC Plugin Manager G2 from the plugin list", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]],

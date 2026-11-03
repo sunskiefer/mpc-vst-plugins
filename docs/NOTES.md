@@ -2169,3 +2169,9 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
 
 ### 2026-11-03: Open: does Controller Mode show the internal drive on 3.10.1?
 - The Live III and Force manuals say Controller Mode (Computer Mode on the Force) gives the computer the SD card, USB and added SATA drives, not the internal drive; the Install page and the installer follow that. The owner will test on a Live III; if the internal drive shows and `VST2 Plugins` written there loads, make the card optional in both places.
+
+### 2026-11-03: a VST2 Plugins stick is picked up without a restart (device, owner's test)
+- On a Live III (MPC OS 3.10.1), a USB stick with `VST2 Plugins/OpenMPC - VST - Plugin Manager G2/` (written by the Install page's
+  Write to USB) showed up in the plugin browser as soon as it was plugged in, with no restart, and the Plugin Manager loaded from it.
+  The Install page guide and the installer now say "plug it in, no restart needed" for a stick or card. Not checked: whether a
+  folder copied to the internal drive over Wi-Fi (`/nvme/VST2 Plugins`) also appears without a restart; those steps still say restart.
