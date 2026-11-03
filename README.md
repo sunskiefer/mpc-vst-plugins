@@ -21,13 +21,8 @@ MPC lists every plugin folder in a **`VST2 Plugins`** folder at the root of any 
   porting existing engines ([docs/PORTING.md](docs/PORTING.md)), the **Skin Studio** for screen skins
   ([docs/SKIN_STUDIO.md](docs/SKIN_STUDIO.md)), host tests and CPU benchmarks, and the catalog, which lists SDK-built plugins too.
 - **Force:** no 3.10.1 for the Force yet; everything below (the installer app, the Plugin Manager, sticks) keeps working on it.
-
-> **MPC OS 2.x and 3.x.** Plugins here are built and tested on **MPC OS 3.x**. On **MPC OS 2.x** a plugin loads and its
-> Q-Links work, but its touchscreen page only appears if the plugin's skin is written in the older format 2.x reads. The
-> catalog checks from its files whether each release can work on 2.x, and marks one tested on a 2.x unit **MPC OS 2.x tested**
-> (3.x, the standard, gets no badge); the installers warn before putting a 3.x-only plugin on a device that looks like 2.x.
-> A 3.x-only plugin becomes 2.x-capable when its developer re-releases it with a compatible skin
-> (how, and what the catalog checks: [MPC OS 2.x vs 3.x](#mpc-os-2x-vs-3x) below).
+- **MPC OS 2.x:** the Plugin Manager and its stick need MPC OS 3.x. On 2.x, install plugins marked 2.x-compatible over SSH, with the
+  installer app or by hand ([MPC OS 2.x vs 3.x](#mpc-os-2x-vs-3x)).
 
 ## Plugin catalog
 
