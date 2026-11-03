@@ -136,7 +136,7 @@
           ["Menu, the computer icon: Controller Mode", MPC, "The card or drive appears on your computer like a USB stick."],
           ["Copy the folder into VST2 Plugins on it, eject it, then tap Standalone on the MPC and confirm", HERE, "MPC restarts and finds the Plugin Manager. Leave the card or drive in."]], "#b-with-a-usb-cable-controller-mode"],
        ["With a USB stick or SD card", "", [["Make a folder called VST2 Plugins on the stick or card and copy the folder into it", HERE],
-          ["Plug it into the MPC", MPC, "No restart needed: the Plugin Manager shows up in the plugin browser within a few seconds. Leave it in: the plugin runs from there."]], "#c-with-a-usb-stick-or-sd-card"]].forEach(function (w) {
+          ["Plug it into the MPC", MPC, "No restart needed: the Plugin Manager shows up in the plugin browser within a few seconds. Leave it in: the plugin runs from there. Don't unplug it while a track uses the Plugin Manager: the plugin stops and its screen goes black."]], "#c-with-a-usb-stick-or-sd-card"]].forEach(function (w) {
         var d = el("details", "gway"), s = el("summary"); s.appendChild(el("b", null, w[0])); if (w[1]) s.appendChild(el("small", null, " (" + w[1] + ")"));
         d.appendChild(s); d.appendChild(plan(w[2]));
         var m = el("p", "gsub"); m.appendChild(link("More detail", w[3])); d.appendChild(m); c.appendChild(d);
