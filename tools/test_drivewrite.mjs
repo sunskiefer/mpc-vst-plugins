@@ -37,3 +37,9 @@ await test("stick refuses a drive with files", async () => { const d = new Dir("
 await test("stick refuses a different zip", async () => { await assert.rejects(DW.stickZip(stick, new Dir("S"), { ...pin, sha256: "0".repeat(64) }), /checksum/); });
 await test("stick refuses a zip missing a needed file", async () => { await assert.rejects(DW.stickZip(stick, new Dir("S"), { ...pin, need: ["autorun/autorun.check"] }), /missing/); });
 console.log(t, "passed");
+await test("folder zip with a pinned checksum", async () => {
+  const z = zip({ [F + "/plugin.json"]: "{}" }), sha = await DW.sha256(await z.arrayBuffer());
+  await DW.folderZip(z, new Dir("S"), null, sha);
+  await assert.rejects(DW.folderZip(z, new Dir("S"), null, "0".repeat(64)), /checksum/);
+});
+console.log(t, "passed");

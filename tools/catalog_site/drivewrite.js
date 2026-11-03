@@ -94,8 +94,26 @@ var DriveWrite = (function () {
   function pick() { return window.showDirectoryPicker({ id: "mpc-drive", mode: "readwrite" }); }
 
   /* file: the downloaded folder zip; root: a directory handle (the drive). Resolves to the folder name. */
-  function folderZip(file, root, progress) {
-    return file.arrayBuffer().then(function (buf) {
+  function checked(buf, sha) {
+    if (!sha) return Promise.resolve(buf);
+    return sha256(buf).then(function (h) { if (h !== sha) throw new Error("The download didn't match its checksum. Reload the page and try again."); return buf; });
+  }
+  /* The file at a path on this site (same origin), with a progress callback; resolves to a file-like {arrayBuffer}. */
+  function download(path, progress) {
+    return fetch(path, { cache: "no-cache" }).then(function (r) {
+      if (!r.ok) throw new Error("Couldn't download " + path + " (" + r.status + ").");
+      var total = +r.headers.get("content-length") || 0, got = 0, chunks = [], rd = r.body.getReader();
+      function pump() {
+        return rd.read().then(function (x) {
+          if (x.done) { var b = new Blob(chunks); return { fromSite: true, arrayBuffer: function () { return b.arrayBuffer(); } }; }
+          chunks.push(x.value); got += x.value.length; if (progress) progress(got, total); return pump();
+        });
+      }
+      return pump();
+    });
+  }
+  function folderZip(file, root, progress, sha) {
+    return file.arrayBuffer().then(function (b) { return checked(b, sha); }).then(function (buf) {
       var es = readZip(buf), folder = pluginFolder(es);
       return dirIn(root, ["VST2 Plugins"]).then(function (v) {
         return v.removeEntry(folder, { recursive: true }).catch(function () {}).then(function () { return writeAll(v, es, [], progress); });
@@ -117,6 +135,6 @@ var DriveWrite = (function () {
       });
     });
   }
-  return { supported: supported, pick: pick, readZip: readZip, pluginFolder: pluginFolder, folderZip: folderZip, stickZip: stickZip, sha256: sha256 };
+  return { supported: supported, pick: pick, download: download, readZip: readZip, pluginFolder: pluginFolder, folderZip: folderZip, stickZip: stickZip, sha256: sha256 };
 })();
 if (typeof module !== "undefined") module.exports = DriveWrite;

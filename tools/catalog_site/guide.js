@@ -50,33 +50,47 @@
   }
 
   var EASY = /*EASY_PIN*/null;
-  /* steps: [label, fn(file, root, progress) -> Promise<message>]; a file box, a drive picker, and the result */
-  function writer(c, title, zipName, hint, run) {
+  var DL = null;   /* dl/downloads.json: the files this site publishes (tools/site_downloads.py); none on a local preview */
+  /* The write box: with a file on this site, one button (choose the drive; the page downloads and writes). Otherwise, or as a
+     fallback, choose a zip you downloaded, then the drive. run(file, root, progress) resolves to the message to show. */
+  function writer(c, title, dl, zipName, hint, run) {
     var box = el("div", "gwrite");
     box.appendChild(el("b", null, title));
     if (typeof DriveWrite === "undefined" || !DriveWrite.supported()) {
       box.appendChild(el("p", "gsub", "Writing from this page needs Chrome or Edge on a computer. Use one of the ways below instead."));
       c.appendChild(box); return;
     }
-    var f = null, st = el("p", "gstatus"), pickZip = el("button", "gback", "1. Choose the downloaded " + zipName), pickDrive = el("button", "gbtn", "2. Choose the drive and write");
-    pickZip.type = pickDrive.type = "button"; pickDrive.disabled = true;
-    var inp = el("input"); inp.type = "file"; inp.accept = ".zip"; inp.hidden = true;
-    inp.onchange = function () { f = inp.files[0] || null; pickDrive.disabled = !f; st.className = "gstatus"; st.textContent = f ? "Zip: " + f.name : ""; };
-    pickZip.onclick = function () { inp.click(); };
-    pickDrive.onclick = function () {
+    var st = el("p", "gstatus");
+    function go(getFile, btns) {
       DriveWrite.pick().then(function (root) {
-        st.className = "gstatus"; st.textContent = "Writing to " + root.name + "…"; pickDrive.disabled = true;
-        return run(f, root, function (d, n) { st.textContent = "Writing to " + root.name + ": " + d + " of " + n + " files"; }).then(function (msg) {
-          st.className = "gstatus ok"; st.textContent = msg + " Eject the drive before you unplug it.";
-        });
+        btns.forEach(function (b) { b.disabled = true; });
+        st.className = "gstatus"; st.textContent = "Getting the files…";
+        return getFile(function (d, n) { st.textContent = "Downloading: " + Math.round(d / 1048576) + (n ? " of " + Math.round(n / 1048576) : "") + " MB"; }).then(function (file) {
+          st.textContent = "Writing to " + root.name + "…";
+          return run(file, root, function (d, n) { st.textContent = "Writing to " + root.name + ": " + d + " of " + n + " files"; });
+        }).then(function (msg) { st.className = "gstatus ok"; st.textContent = msg + " Eject the drive before you unplug it."; });
       }).catch(function (e) {
         if (e && e.name === "AbortError") return;
         st.className = "gstatus bad"; st.textContent = (e && e.message) || String(e);
-      }).then(function () { pickDrive.disabled = !f; });
-    };
-    var row = el("div", "gwrow"); row.appendChild(pickZip); row.appendChild(pickDrive);
-    box.appendChild(el("p", "gsub", hint)); box.appendChild(row); box.appendChild(inp); box.appendChild(st);
-    c.appendChild(box);
+      }).then(function () { btns.forEach(function (b) { b.disabled = b.dataset.need === "file" && !f; }); });
+    }
+    var f = null, row = el("div", "gwrow"), all = [];
+    box.appendChild(el("p", "gsub", hint));
+    if (dl) {
+      var one = el("button", "gbtn", "Choose the drive and write"); one.type = "button"; all.push(one);
+      one.onclick = function () { go(function (p) { return DriveWrite.download(dl.path, p); }, all); };
+      row.appendChild(one); box.appendChild(row);
+    }
+    var inp = el("input"); inp.type = "file"; inp.accept = ".zip"; inp.hidden = true;
+    var pz = el("button", "gback", "1. Choose the downloaded " + zipName), pd = el("button", dl ? "gback" : "gbtn", "2. Choose the drive and write");
+    pz.type = pd.type = "button"; pd.disabled = true; pd.dataset.need = "file"; all.push(pd);
+    inp.onchange = function () { f = inp.files[0] || null; pd.disabled = !f; st.className = "gstatus"; st.textContent = f ? "Zip: " + f.name : ""; };
+    pz.onclick = function () { inp.click(); };
+    pd.onclick = function () { go(function () { return Promise.resolve(f); }, all); };
+    var r2 = el("div", "gwrow"); r2.appendChild(pz); r2.appendChild(pd); r2.appendChild(inp);
+    if (dl) { var fb = el("details", "gothers"); fb.appendChild(el("summary", null, "Or use a zip you downloaded")); fb.appendChild(r2); box.appendChild(fb); }
+    else box.appendChild(r2);
+    box.appendChild(st); c.appendChild(box);
   }
 
   function draw() {
@@ -106,9 +120,10 @@
         [["Download ", link("OpenMPC-Plugin-Manager-1.0.0-" + g + ".zip", PM + g + ".zip"), " and unzip it: one folder, OpenMPC - VST - Plugin Manager G2"], HERE],
         ["Copy that whole folder into a VST2 Plugins folder on the MPC. Pick a way below", HERE],
         ["Add a track: External VST Plugins > OpenMPC - Plugin Manager G2. Install from its screen, or open the address it shows on your phone", MPC]]));
-      writer(c, "Copy it from this page (Chrome or Edge)", "Plugin Manager zip",
-        "Plug in a USB stick or SD card, or connect the MPC in Controller Mode. Choose the zip, then the drive: this page puts the folder in VST2 Plugins on it.",
-        function (file, root, prog) { return DriveWrite.folderZip(file, root, prog).then(function (folder) {
+      var pdl = DL && DL["pm-gen" + S.gen];
+      writer(c, "Write it to a USB stick from this page (Chrome or Edge)", pdl, "Plugin Manager zip",
+        "Plug in a USB stick or SD card, or connect the MPC in Controller Mode, then choose that drive. This page puts the folder in VST2 Plugins on it.",
+        function (file, root, prog) { return DriveWrite.folderZip(file, root, prog, file.fromSite ? pdl.sha256 : null).then(function (folder) {
           return "Done: VST2 Plugins/" + folder + " is on " + root.name + ". Put it in the MPC (or tap Standalone) and restart."; }); });
       c.appendChild(el("p", "gsub", "Or copy it yourself:"));
       [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode and note the MPC's IP address", MPC],
@@ -128,8 +143,8 @@
     } else {
       c = card(3, 3, "Plugin Manager stick", "A stick that installs the Plugin Manager: you confirm one prompt and MPC restarts with it.");
       if (EASY) {
-        var dl = el("div", "gdl"); dl.appendChild(link("Download the Plugin Manager stick zip (" + EASY.version + ")", EASY.url, "gbtn")); c.appendChild(dl);
-        writer(c, "Write the stick from this page (Chrome or Edge)", "stick zip", "Use an empty, freshly formatted USB stick. Choose the zip you just downloaded, then the stick.",
+        if (!(DL && DL["pm-stick"])) { var dl = el("div", "gdl"); dl.appendChild(link("Download the Plugin Manager stick zip (" + EASY.version + ")", EASY.url, "gbtn")); c.appendChild(dl); }
+        writer(c, "Write the stick from this page (Chrome or Edge)", DL && DL["pm-stick"], "stick zip", "Use an empty, freshly formatted USB stick, then choose it.",
           function (file, root, prog) { return DriveWrite.stickZip(file, root, EASY, prog).then(function (n) { return "Done: " + n + " files on " + root.name + "."; }); });
         c.appendChild(plan([["Save your project, plug the stick in and choose Open on the prompt", MPC],
           ["Add the Plugin Manager to a track and install plugins from its screen, or from your phone", MPC]]));
@@ -147,4 +162,6 @@
   }
   root.hidden = false;
   draw();
+  if (typeof fetch === "function") fetch("dl/downloads.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) { if (d) { DL = d; draw(); } }).catch(function () {});
 })();
