@@ -57,7 +57,10 @@
     var box = el("div", "gwrite");
     box.appendChild(el("b", null, title));
     if (typeof DriveWrite === "undefined" || !DriveWrite.supported()) {
-      box.appendChild(el("p", "gsub", "Writing from this page needs Chrome or Edge on a computer. Use one of the ways below instead."));
+      var brave = navigator.brave && typeof navigator.brave.isBrave === "function";
+      var m = el("p", "gsub", brave ? "Brave turns this off. To use it, open " : "Writing from this page needs Chrome or Edge on a computer. Use one of the ways below instead.");
+      if (brave) { m.appendChild(el("code", null, "brave://flags/#file-system-access-api")); m.appendChild(document.createTextNode(", set it to Enabled and relaunch Brave. Or use one of the ways below.")); }
+      box.appendChild(m);
       c.appendChild(box); return;
     }
     var st = el("p", "gstatus");
