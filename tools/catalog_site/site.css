@@ -289,3 +289,4 @@ footer { margin-top: 36px; color: var(--muted); font-size: 12px; border-top: 1px
 .doc .gwrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.doc .gwrow .gbtn{margin:0;border:0;cursor:pointer;font:600 15px Roboto,sans-serif}
 .doc .gwrow .gbtn:disabled{opacity:.45;cursor:default}
 .doc .gstatus{margin:8px 0 0;font-size:14px}.doc .gstatus.ok{color:#1d7a3a;font-weight:600}.doc .gstatus.bad{color:var(--accent);font-weight:600}
+.doc .gthen{display:block;font-style:normal;color:var(--muted);font-size:13.5px;margin-top:3px}

@@ -79,17 +79,17 @@ var DriveWrite = (function () {
       });
     }, Promise.resolve()).then(function () { return files.length; });
   }
-  function isEmpty(root) {
+  function contents(root) {
     var it = root.values(), seen = [];
     function next() {
       return it.next().then(function (r) {
         if (r.done) return seen;
         var n = r.value.name;
         if (n.charAt(0) !== "." && !HOUSEKEEPING[n.toLowerCase()]) seen.push(n);
-        return seen.length ? seen : next();
+        return seen.length >= 3 ? seen : next();
       });
     }
-    return next().then(function (s) { return s.length === 0; });
+    return next();   /* up to three names that make the drive "not empty", to say why */
   }
   function pick() { return window.showDirectoryPicker({ id: "mpc-drive", mode: "readwrite" }); }
 
@@ -128,8 +128,8 @@ var DriveWrite = (function () {
         var es = readZip(buf);
         es.forEach(function (x) { parts(x.name); });
         pin.need.forEach(function (n) { if (!es.some(function (x) { return x.name === n; })) throw new Error("The stick zip is missing " + n + "."); });
-        return isEmpty(root).then(function (empty) {
-          if (!empty) throw new Error("That drive isn't empty. Pick an empty, freshly formatted USB stick.");
+        return contents(root).then(function (found) {
+          if (found.length) throw new Error("That drive isn't empty (it has " + found.join(", ") + "). The stick runs on the MPC, so it must hold only its own files: pick an empty, freshly formatted USB stick.");
           return writeAll(root, es, [], progress);
         });
       });

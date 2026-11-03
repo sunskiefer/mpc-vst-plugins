@@ -33,7 +33,7 @@ await test("stick zip onto an empty drive (housekeeping ignored)", async () => {
   const d = new Dir("S"); d.k.set("System Volume Information", new Dir("x")); d.k.set(".Trashes", new Dir("x"));
   assert.equal(await DW.stickZip(stick, d, pin), 3); assert.equal(d.k.get("autorun").k.get("open.sh").toString(), "#!/bin/sh");
 });
-await test("stick refuses a drive with files", async () => { const d = new Dir("S"); d.k.set("Samples", new Dir("x")); await assert.rejects(DW.stickZip(stick, d, pin), /isn't empty/); assert.equal(d.k.size, 1); });
+await test("stick refuses a drive with files", async () => { const d = new Dir("S"); d.k.set("Samples", new Dir("x")); await assert.rejects(DW.stickZip(stick, d, pin), /isn.t empty \(it has Samples\)/); assert.equal(d.k.size, 1); });
 await test("stick refuses a different zip", async () => { await assert.rejects(DW.stickZip(stick, new Dir("S"), { ...pin, sha256: "0".repeat(64) }), /checksum/); });
 await test("stick refuses a zip missing a needed file", async () => { await assert.rejects(DW.stickZip(stick, new Dir("S"), { ...pin, need: ["autorun/autorun.check"] }), /missing/); });
 console.log(t, "passed");
