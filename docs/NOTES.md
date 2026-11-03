@@ -2175,5 +2175,5 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
   Write to USB) showed up in the plugin browser as soon as it was plugged in, with no restart, and the Plugin Manager loaded from it.
   The Install page guide and the installer now say "plug it in, no restart needed" for a stick or card. Not checked: whether a
   folder copied to the internal drive over Wi-Fi (`/nvme/VST2 Plugins`) also appears without a restart; those steps still say restart.
-- Unplugging the stick removes the plugin from the plugin browser at once, again with no restart (same test). Plugging it back in shows it again straight away. Pulling the stick while a track uses the plugin stops it and its screen goes black (the guide and
+- Unplugging the stick removes the plugin from the plugin browser at once, again with no restart (same test). Plugging it back in shows it again straight away. Pulling the stick while a track uses the plugin stops it and its screen goes black; plugging it back in brings the track back (the guide and
   installer now warn about this). Not yet known: whether a saved project finds it again after re-plugging.

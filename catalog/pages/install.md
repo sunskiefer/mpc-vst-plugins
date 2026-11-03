@@ -53,7 +53,7 @@ Your computer sees the SD card and USB drives that are in the MPC (not its built
 
 ::: details C. With a USB stick or SD card
 1. Copy the folder into `VST2 Plugins` on the stick or card.
-2. Plug it into the MPC. No restart needed: it shows up within a few seconds. Leave it in: the plugin runs from the stick, and if you unplug it while a track uses it, the plugin stops and its screen goes black.
+2. Plug it into the MPC. No restart needed: it shows up within a few seconds. Leave it in: the plugin runs from the stick, and if you unplug it while a track uses it, the plugin stops and its screen goes black until you plug it back in.
 
 Or let the [desktop installer app](#the-desktop-installer-app) write the stick: **MPC OS 3.10.1 → Write the Plugin Manager**.
 :::
