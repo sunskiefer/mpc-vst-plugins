@@ -65,11 +65,16 @@ jobs:
       - name: Copy the Install page's downloads into the site (pinned, catalog/downloads.json)
         if: ${{ github.event_name != 'pull_request' }}
         run: python3 tools/site_downloads.py
+      - name: Redirect copy for this repo's own Pages address
+        # open-mpc.github.io/mpc-vst-plugins/ (this repo's Pages) is not where users go: the site is at open-mpc.github.io/ (mirror-org).
+        # Serve the catalog files there (anything that kept the old path still reads them) and pages that redirect to the root.
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        run: python3 tools/catalog_mirror.py --site catalog/dist/site --out catalog/dist/repo-pages --new-base https://open-mpc.github.io/
       - name: Upload the Pages artifact
         if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         uses: actions/upload-pages-artifact@v3
         with:
-          path: catalog/dist/site
+          path: catalog/dist/repo-pages
       - name: Upload catalog.json and problems.json
         if: ${{ github.event_name != 'pull_request' }}
         uses: actions/upload-artifact@v4

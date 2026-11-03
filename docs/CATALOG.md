@@ -410,3 +410,7 @@ every card and its details page on Discover, Installed and Updates; desktop inst
 header and column count. Docker (gcc:12, golang:1.26). Checked offline 2026-11-03: the live catalog against itself is the same for
 every client; new fields at plugin and version level are the same; one plugin without its downloads, and tags turned into a string,
 are both reported. Run it before any catalog format change (the SDK-format work); a deliberate change diffs only where intended.
+
+**This repo's own Pages address** (`open-mpc.github.io/mpc-vst-plugins/`, 2026-11-03): not where users go (the site is
+`open-mpc.github.io/`, the `mirror-org` job). The `catalog.yml` Pages deploy now publishes `tools/catalog_mirror.py`'s copy there: the
+catalog data files, and every page as a redirect to the same page at the root. It used to publish a full duplicate site.
