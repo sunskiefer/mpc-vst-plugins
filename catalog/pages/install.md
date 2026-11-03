@@ -81,10 +81,10 @@ The easiest way is a Plugin Manager USB stick, made by the desktop installer app
 4. Add a track and choose the **OpenMPC Plugin Manager**. Browse and install on the MPC's screen, or open the address on its status line on your phone or computer.
 
 ## MPC OS 2.x
-The Plugin Manager, its USB stick and the desktop installer app are for **MPC OS 3.x**, and the stick refuses a 2.x MPC. On 2.x you install plugins by hand:
+The Plugin Manager and its USB stick are for **MPC OS 3.x**, and the stick refuses a 2.x MPC. On 2.x you install plugins over SSH (root SSH access to the MPC):
 
 1. In the [catalog](index.html), pick plugins whose card says **MPC OS: 2.x and 3.x**. Plugins made only for 3.x don't show their screen on 2.x.
-2. Install each one [by hand with ssh and scp](#by-hand-with-ssh-and-scp-download-copy-run) or [fully by hand](#fully-by-hand-without-the-installer-script). Both need root SSH on the MPC.
+2. Install them with the [desktop installer app](#the-desktop-installer-app) over Wi-Fi: choose **2.x**, then **Connect** with the MPC's IP address and pick plugins. It warns you before installing a plugin made only for 3.x. Or install each one [by hand with ssh and scp](#by-hand-with-ssh-and-scp-download-copy-run) or [fully by hand](#fully-by-hand-without-the-installer-script).
 
 Or update the MPC to MPC OS 3.x, then use the steps above.
 

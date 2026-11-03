@@ -115,9 +115,12 @@
       o.appendChild(opt("2.x", "", function () { S.os = "2x"; }));
       c.appendChild(o);
     } else if (S.os === "2x") {
-      c = card(3, 3, "MPC OS 2.x: install by hand", "The Plugin Manager, its stick and the installer app need MPC OS 3.x.");
-      var x2 = el("p", "gsub", "On 2.x, pick plugins whose catalog card says MPC OS: 2.x and 3.x, and install each one by hand over SSH. Or update the MPC to MPC OS 3.x first. ");
-      x2.appendChild(link("How to install by hand", "#mpc-os-2-x")); c.appendChild(x2);
+      c = card(3, 3, "MPC OS 2.x: install over SSH", "The Plugin Manager and its stick need MPC OS 3.x. On 2.x you install plugins over SSH (root SSH access to the MPC).");
+      c.appendChild(plan([["In the catalog, pick plugins whose card says MPC OS: 2.x and 3.x", HERE, "Plugins made only for 3.x don't show their screen on 2.x."],
+        ["Install them with the desktop installer app over Wi-Fi: choose 2.x, then Connect with the MPC's IP address and pick plugins", HERE, "It warns you before installing a plugin made only for 3.x. MPC restarts once."]]));
+      installer(c, "The desktop installer app installs over SSH.");
+      var x2 = el("p", "gsub", "Or update the MPC to MPC OS 3.x first, or install by hand: ");
+      x2.appendChild(link("MPC OS 2.x", "#mpc-os-2-x")); c.appendChild(x2);
     } else if (S.os === "new" && S.force) {
       c = card(3, 3, "No MPC OS 3.10.1 for the Force yet", "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier.");
       var f = el("div", "gopts"); f.appendChild(opt("Continue with 3.9.1 or earlier", "", function () { S.os = "old"; })); c.appendChild(f);

@@ -32,7 +32,7 @@ On a USB stick or SD card it shows as soon as you plug it in. Copied to the MPC'
 :::
 
 ::: details Does it work on MPC OS 2.x?
-No. The Plugin Manager, its stick and the installer app need MPC OS 3.x. On 2.x, install plugins whose catalog card says "MPC OS: 2.x and 3.x" by hand: see [MPC OS 2.x](install.html#mpc-os-2-x) on the Install page.
+The Plugin Manager and its stick don't: they need MPC OS 3.x. On 2.x, install plugins whose catalog card says "MPC OS: 2.x and 3.x" over SSH, with the desktop installer app or by hand: see [MPC OS 2.x](install.html#mpc-os-2-x) on the Install page.
 :::
 
 ::: details Gen1 or Gen2 build?
