@@ -1047,7 +1047,8 @@ function wzPlan() {
   var HERE = "on this computer", MPC = "on the MPC";
   if (WZ.os === "2x") P = { t: "MPC OS 2.x: install over Wi-Fi", s: "The Plugin Manager and its stick need MPC OS 3.x. On 2.x this app installs plugins over SSH (you need root SSH access to the MPC). Pick plugins marked MPC OS 2.x and 3.x.",
     steps: [["Connect with the MPC's IP address", HERE], ["Pick plugins marked MPC OS 2.x and 3.x", HERE, "The app warns you before installing a plugin made only for 3.x."], ["Install", HERE, "Your settings are backed up first, then MPC restarts once with the new plugins."]],
-    go: "Connect", fn: goSSH, alts: [] };
+    go: "Connect", fn: goSSH,
+    alts: [["I don't have SSH yet", "A stick that turns SSH on, built from your own firmware file (not yet tested on MPC OS 2.x)", goSSHStick]] };
   else if (WZ.os === "new" && force) P = { t: "No MPC OS 3.10.1 for the Force yet", s: "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier (Menu > Preferences > Info shows it). Continue with that.",
     steps: [], go: "Continue with 3.9.1 or earlier", fn: function () { WZ.os = "old"; wzSave(); wzShow("wz-ssh"); }, alts: [] };
   else if (WZ.os === "new") P = { t: "Put the Plugin Manager on your MPC", s: "Once it is on a track, you install everything else from its screen, or from your phone or computer.",

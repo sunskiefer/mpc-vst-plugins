@@ -84,7 +84,7 @@ The easiest way is a Plugin Manager USB stick, made by the desktop installer app
 The Plugin Manager and its USB stick are for **MPC OS 3.x**, and the stick refuses a 2.x MPC. On 2.x you install plugins over SSH (root SSH access to the MPC):
 
 1. In the [catalog](index.html), pick plugins whose card says **MPC OS: 2.x and 3.x**. Plugins made only for 3.x don't show their screen on 2.x.
-2. Install them with the [desktop installer app](#the-desktop-installer-app) over Wi-Fi: choose **2.x**, then **Connect** with the MPC's IP address and pick plugins. It warns you before installing a plugin made only for 3.x. Or install each one [by hand with ssh and scp](#by-hand-with-ssh-and-scp-download-copy-run) or [fully by hand](#fully-by-hand-without-the-installer-script).
+2. Install them with the [desktop installer app](#the-desktop-installer-app) over Wi-Fi: choose **2.x**, then **Connect** with the MPC's IP address and pick plugins. It warns you before installing a plugin made only for 3.x. No SSH yet? The installer app can make a stick that turns it on, from your own firmware file: answer **I don't have SSH yet** (not yet tested on MPC OS 2.x). Or install each one [by hand with ssh and scp](#by-hand-with-ssh-and-scp-download-copy-run) or [fully by hand](#fully-by-hand-without-the-installer-script).
 
 Or update the MPC to MPC OS 3.x, then use the steps above.
 
