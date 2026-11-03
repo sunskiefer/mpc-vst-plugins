@@ -2178,3 +2178,9 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
   plugged in, not the internal folder, so the Wi-Fi way keeps its restart step. After a restart it was listed and loaded.
 - Unplugging the stick removes the plugin from the plugin browser at once, again with no restart (same test). Plugging it back in shows it again straight away. Pulling the stick while a track uses the plugin stops it and its screen goes black; plugging it back in brings the track back (the guide and
   installer now warn about this). Not yet known: whether a saved project finds it again after re-plugging.
+
+### 2026-11-03: the 3.9.1 Plugin Manager stick 1.0.0, written by the Install page (device, owner's test)
+- Force on MPC OS 3.9.1: our own G2 stick (tools/usb_g2/build_stick.py, Plugin Manager 1.0.0), written from the Install page's
+  Write to USB, installed and registered the Plugin Manager after one Open prompt; MPC restarted with it listed, and it loaded and worked.
+  The stick's autorun.check is the same built from the Gen1, Gen2 and Force 3.9.1 update images. (The page first used the Eurikon USB
+  manager stick by mistake: its Open only arms a SHIFT + MENU shortcut and installs nothing by itself.)
