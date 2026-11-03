@@ -10,7 +10,7 @@ F = "Acme - VST - Wob"
 def release(d, arch, extra=None, so=b"ELF", pj_extra=None):
     key = {"armv7": "file32", "aarch64": "file64"}[arch]
     pj = dict({"name": "Wob", "manufacturer": "Acme", "uid": "AcWb", key: "wob.so"}, **(pj_extra or {}))
-    files = {"plugin.json": json.dumps(pj), "wob.so": so + arch.encode(), "Plugin Skins/TUI.json": "[]", "version.xml": "<v/>",
+    files = {"plugin.json": json.dumps(pj), "wob.so": so + arch.encode(), "Plugin Skins/TUI.json": "[]", "version.xml": "<v/>", "plugin-meta.xml": "<PLUGIN file=\"%payload-path%/x/wob.so\"/>",
              "mpc-plugin.json": json.dumps({"id": "wob", "version": "1.0", "arch": arch, "max_glibc": "2.%d" % len(arch)})}
     files.update(extra or {})
     p = os.path.join(d, "Wob-1.0-mpc-%s.zip" % arch)
@@ -33,7 +33,7 @@ class T(unittest.TestCase):
         pj = json.loads(z.read(F + "/plugin.json"))
         self.assertEqual((pj["file32"], pj["file64"], pj["uid"]), ("wob-arm32.so", "wob-arm64.so", "AcWb"))
         self.assertEqual(z.read(F + "/wob-arm32.so"), b"ELFarmv7"); self.assertEqual(z.read(F + "/wob-arm64.so"), b"ELFaarch64")
-        self.assertNotIn(F + "/wob.so", z.namelist()); self.assertIn(F + "/Plugin Skins/TUI.json", z.namelist())
+        self.assertNotIn(F + "/wob.so", z.namelist()); self.assertNotIn(F + "/plugin-meta.xml", z.namelist()); self.assertIn(F + "/Plugin Skins/TUI.json", z.namelist())
         self.assertEqual(z.getinfo(F + "/wob-arm64.so").external_attr >> 16, 0o755)
         m = json.loads(z.read(F + "/mpc-plugin.json"))
         self.assertEqual((m["arch"], m["builds"]), ("universal", {"aarch64": {"max_glibc": "2.7"}, "armv7": {"max_glibc": "2.5"}}))

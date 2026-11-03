@@ -18,7 +18,8 @@ Manager's themes), so a .so in VST/ would look for its presets, ROMs and skins i
 This writes that zip, whose only top-level entry is the folder. Every other file must be the same in both builds (else the
 plugin needs per-build files and stays per-build: the tool says which files and stops). mpc-plugin.json (our manifest, which the
 Plugin Manager reads to recognise an installed plugin) is kept, with "arch": "universal" and each build's max_glibc under "builds".
-A Gen1-only or Gen2-only release gives a folder with just that binary. Modes and dates are kept. Standard library only.
+plugin-meta.xml (the MPC OS 3.9.1 plugin-list entry, which names the .so as it was) is left out: the SDK zip is for MPC OS
+3.10.1 and later; 3.9.1 installs the per-build zips. A Gen1-only or Gen2-only release gives a folder with just that binary. Modes and dates are kept. Standard library only.
 Our Plugin Manager and installers keep installing the per-build zips; this is the download for copying by hand and for SDK tools.
 """
 import json
@@ -27,7 +28,7 @@ import sys
 import zipfile
 
 ARCH = {"armv7": ("file32", "arm32"), "aarch64": ("file64", "arm64")}
-SKIP = {"plugin.json", "mpc-plugin.json"}
+SKIP = {"plugin.json", "mpc-plugin.json", "plugin-meta.xml"}   # plugin-meta.xml: MPC OS 3.9.1 registration, naming the old .so name
 
 
 def read_release(path):
