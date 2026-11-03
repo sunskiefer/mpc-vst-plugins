@@ -118,10 +118,11 @@ def nav_html(pages, current):
 
 
 def easy_pin():
-    """The 3.9.1 Plugin Manager stick the desktop installer writes (tools/desktop/easystick-pin.json), for the page's guide."""
-    pin = json.load(open(os.path.join(HERE, "desktop", "easystick-pin.json")))
+    """The 3.9.1 Plugin Manager stick the desktop installer writes (tools/desktop/g2stick-pin.json: our own autorun stick, one prompt
+    installs and registers the Plugin Manager), for the page's guide."""
+    pin = json.load(open(os.path.join(HERE, "desktop", "g2stick-pin.json")))
     return json.dumps({"url": pin["url"], "sha256": pin["sha256"], "version": pin["version"],
-                       "need": ["autorun/autorun.json", "autorun/autorun.check", "autorun/open.sh", ".mpc-manager-id"]})
+                       "need": ["autorun/autorun.json", "autorun/autorun.check", "autorun/open.sh", "autorun/runtime/run.sh", "autorun/runtime/payload.sha256", ".mpc-g2-stick"]})
 
 
 def render_page(page, pages):

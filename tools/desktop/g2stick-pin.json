@@ -1,5 +1,5 @@
 {
-  "version": "0.2.4",
-  "url": "https://github.com/sd88me/mpc-vst-plugins/releases/download/g2-stick-v0.2.4/Plugin-Manager-G2-Stick-0.2.4.zip",
-  "sha256": "6e1b69de21e76e292b26b459e1ffcc027edccbf618f306da91051d3a9ff6db3d"
+  "version": "1.0.0",
+  "url": "https://github.com/open-mpc/mpc-vst-plugins/releases/download/g2-stick-v1.0.0/Plugin-Manager-G2-Stick-1.0.0.zip",
+  "sha256": "2165abc9e04fcbbcce60a0d9059092b5de784381f84366d34d2f8510aa451bff"
 }

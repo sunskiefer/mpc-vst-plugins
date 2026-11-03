@@ -7,6 +7,6 @@
     {"id": "pm-gen2", "file": "OpenMPC-Plugin-Manager-1.0.0-Gen2.zip", "version": "1.0.0",
      "url": "https://github.com/open-mpc/mpc-vst-plugins/releases/download/plugin-manager-g2-v1.0.0/OpenMPC-Plugin-Manager-1.0.0-Gen2.zip",
      "sha256": "280d579a375b6377145be09bc3164888034d5ffce538de66af9e377474e9f476"},
-    {"id": "pm-stick", "pin": "tools/desktop/easystick-pin.json"}
+    {"id": "pm-stick", "pin": "tools/desktop/g2stick-pin.json"}
   ]
 }

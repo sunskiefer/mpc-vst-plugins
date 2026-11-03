@@ -5,7 +5,7 @@
 
 The page can't download from GitHub Releases itself (no CORS there), but it can read files on its own site, so it writes these
 to a USB stick in one step. Each entry has a url and sha256, or a "pin" file in the desktop installer's format (the 3.9.1 stick,
-tools/desktop/easystick-pin.json), so the site and the installer can't drift. A release that isn't there yet (404) is skipped
+tools/desktop/g2stick-pin.json), so the site and the installer can't drift. A release that isn't there yet (404) is skipped
 with a warning and the page falls back to "choose a zip you downloaded"; a checksum mismatch stops the build. --cache reads
 and keeps the files in a folder (offline builds and tests). Writes dl/downloads.json, the list of what was published.
 Standard library only."""
@@ -19,7 +19,7 @@ import urllib.request
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 MAX = 64 << 20
-NEED = {"pm-stick": ["autorun/autorun.json", "autorun/autorun.check", "autorun/open.sh", ".mpc-manager-id"]}  # as easystick.go
+NEED = {"pm-stick": ["autorun/autorun.json", "autorun/autorun.check", "autorun/open.sh", "autorun/runtime/run.sh", "autorun/runtime/payload.sha256", ".mpc-g2-stick"]}  # as g2stick.go (g2StickNeed)
 
 
 def entries(path):
