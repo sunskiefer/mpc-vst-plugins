@@ -740,6 +740,18 @@ static void attr(const char *tag, const char *end, const char *name, char *out, 
     if ((q = strchr(p, '"')) && q < end) snprintf(out, n, "%.*s", (int)(q - p), p);
 }
 
+/* /proc/mounts writes a space, tab, newline or backslash in a mount point as \040, \011, \012, \134 (a USB drive labelled "My HDD" is
+ * /media/My\040HDD): decode it in place, or the drive never matches its own path (a user's MPC One, 2026-11-03: "/media is tmpfs"). */
+static void mount_unescape(char *s) {
+    char *o = s;
+    for (const char *i = s; *i; ) {
+        if (i[0] == '\\' && i[1] >= '0' && i[1] <= '3' && i[2] >= '0' && i[2] <= '7' && i[3] >= '0' && i[3] <= '7') {
+            *o++ = (char)((i[1] - '0') * 64 + (i[2] - '0') * 8 + (i[3] - '0')); i += 4;
+        } else *o++ = *i++;
+    }
+    *o = 0;
+}
+
 /* the filesystem a path is on, from /proc/mounts (longest matching mount point); why it can't hold a plugin, or NULL.
  * A plugin needs a mount that is read-write and not noexec, and that keeps its files: so there is no list of
  * allowed filesystems (Gen2's internal /nvme is exFAT, and a user's SD card may be too), only a few that lose or never
@@ -755,6 +767,7 @@ static const char *bad_fs(const char *path, char *why, size_t n) {
     int ok = 0;
     snprintf(why, n, "not on a mounted filesystem");
     while (f && fscanf(f, "%127s %255s %31s %511s %*d %*d", dev, mnt, type, opts) == 4) {
+        mount_unescape(mnt);
         size_t l = strlen(mnt);
         if (strncmp(path, mnt, l) || (path[l] && path[l] != '/' && l > 1) || l < best) continue;
         best = l;
@@ -780,6 +793,7 @@ static int internal_device(const char *path) {
     char dev[128], mnt[256], type[32], opts[512], best_dev[128] = "";
     size_t best = 0;
     while (f && fscanf(f, "%127s %255s %31s %511s %*d %*d", dev, mnt, type, opts) == 4) {
+        mount_unescape(mnt);
         size_t l = strlen(mnt);
         if (strncmp(path, mnt, l) || (path[l] && path[l] != '/' && l > 1) || l < best) continue;
         best = l;
@@ -818,6 +832,26 @@ static const char *bad_target(const char *path, char *why, size_t n) {
     if (bad_fs(at, why, n)) return why;
     if (statvfs(at, &sv) || (unsigned long long)sv.f_bavail * sv.f_frsize < 64ull << 20) return "under 64 MB free";
     return NULL;
+}
+
+static int folder_id(const char *p, dev_t *dv, ino_t *in, int *made) {
+    struct stat st;
+    char par[200];
+    *made = stat(p, &st) == 0;
+    if (!*made) {
+        snprintf(par, sizeof par, "%s", p);
+        char *sl = strrchr(par, '/');
+        if (!sl || sl == par || stat((*sl = 0, par), &st)) return 0;
+    }
+    *dv = st.st_dev; *in = st.st_ino;
+    return 1;
+}
+static int same_folder(const char *a, const char *b) {
+    dev_t da, db; ino_t ia, ib; int ma, mb;
+    if (!folder_id(a, &da, &ia, &ma) || !folder_id(b, &db, &ib, &mb) || ma != mb || da != db || ia != ib) return 0;
+    if (ma) return 1;
+    const char *x = strrchr(a, '/'), *y = strrchr(b, '/');   /* both not made yet: same parent and same last name */
+    return x && y && !strcmp(x, y);
 }
 
 static int good_target(const char *loc) {
@@ -1004,8 +1038,10 @@ static void probe_device(device_t *d) {
             char u[200];
             snprintf(u, sizeof u, "%s", d->loc[i]);
             for (size_t l = strlen(u); l > 1 && u[l - 1] == '/'; ) u[--l] = 0;   /* a trailing "/" is the same folder */
+            /* the same folder by another path (a Force's /sdcard and /media/az01-internal-sd, a bind mount) counts once: compared by
+             * device and inode, of the folder or, when it is not made yet, of its parent */
             int dup = 0;
-            for (int k = 0; k < d->nusable; k++) if (!strcmp(d->usable[k], u)) dup = 1;
+            for (int k = 0; k < d->nusable; k++) if (!strcmp(d->usable[k], u) || same_folder(d->usable[k], u)) dup = 1;
             if (!dup && d->nusable < 8) {
                 const char *lab = !strncmp(u, "/media/", 7) && !internal ? u + 7 : NULL;
                 snprintf(d->uname[d->nusable], sizeof d->uname[0], "%.*s", lab ? (int)strcspn(lab, "/") : 8, lab ? lab : "Internal");
@@ -1058,6 +1094,7 @@ static void probe_device(device_t *d) {
 #endif
         char dv[128], mnt[256], ty[32], op[512];
         while (mf && d->nvdrv < 4 && fscanf(mf, "%127s %255s %31s %511s %*d %*d", dv, mnt, ty, op) == 4) {
+            mount_unescape(mnt);
             const char *lab = mnt + 7;
             if (strncmp(mnt, "/media/", 7) || !*lab || strchr(lab, '/') || !strncmp(lab, "az01-internal", 13) || !strncmp(lab, "acvs-", 5)) continue;
             if (strncmp(op, "rw", 2) || (op[2] && op[2] != ',') || !strcmp(ty, "tmpfs") || !strcmp(ty, "ramfs") || !strcmp(ty, "squashfs")) continue;
@@ -1159,6 +1196,7 @@ static void write_report(const device_t *d) {
         const char *bad = bad_target(d->loc[i], why, sizeof why);
         fprintf(f, "location: %s  (%s)\n", d->loc[i], bad ? bad : "usable");
     }
+    for (int k = 0; k < d->nusable; k++) fprintf(f, "usable: %s\n", d->usable[k]);
     own_synths(own, sizeof own);
     fprintf(f, "manager folder: %s\ninstall target: %s%s%s%s\n", own[0] ? own : "(unknown)", d->target[0] ? d->target : "(none)",
             d->via[0] ? "  (from " : "", d->via, d->via[0] ? ")" : "");

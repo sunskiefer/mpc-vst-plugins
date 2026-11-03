@@ -40,6 +40,10 @@ for dev in tests/devices/${DEV:-*}.sh; do
   while IFS= read -r line; do
     grep -qxF -- "$line" /tmp/openmpc-pm/device.txt || { echo "FAIL $dev: device.txt lacks: $line"; exit 1; }
   done < "$exp"
+  absent="${dev%.sh}.absent"   # lines that must NOT be in device.txt (e.g. a second path to the same folder)
+  if [ -f "$absent" ]; then while IFS= read -r line; do
+    ! grep -qxF -- "$line" /tmp/openmpc-pm/device.txt || { echo "FAIL $dev: device.txt has: $line"; exit 1; }
+  done < "$absent"; fi
 done
 fi # devices
 if want addins; then

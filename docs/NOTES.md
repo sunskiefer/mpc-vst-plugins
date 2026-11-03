@@ -2200,3 +2200,13 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
 - On our Live III, `/nvme` is `nvme0n1p2`, exFAT, 79.2 GB: the **MPC User** drive, with `VST2 Plugins` at its root. So on a Live III / XL
   the USB-cable way copies into `VST2 Plugins` on MPC User (no card); everyone else needs a card or drive in the MPC. Guide, installer and
   Install page now say so per model. Owner's test (Live III, MPC OS 3.10.1, Windows): the drives appear once Akai's USB driver is installed (none before). The steps now say so.
+
+### 2026-11-03: Plugin Manager: drive names with spaces, and one storage listed twice (user report on 0.2.5; fixed offline in 1.0.0)
+- A user's MPC One (Gen1, Hakai 3.9.1.2) with a 1 TB exFAT USB drive saw only the internal entries; the Manager said "/media is tmpfs".
+  Cause: `/proc/mounts` writes a space in a mount point as `\040` (also `\011`, `\012`, `\134`), and the Manager compared the raw text, so
+  `/media/<label with a space>` never matched its own path (the parent `/media`, tmpfs, did). The same raw text kept such drives out of
+  the MPC OS 3.10.1 VST2 Plugins drive menu (`safe()` refuses a backslash). Now decoded in all three readers (`mount_unescape`).
+- Two listed paths to one storage (a Force's `/sdcard/Synths` and `/media/az01-internal-sd/Synths`) showed as two Internal targets: now
+  compared by device and inode (`same_folder`). device.txt lists the `usable:` targets.
+- Tests: tests/devices/label-space, same-storage, gen2-310-label-space (the first two fail on the old code). The reporter also had a
+  patch with ARMv7 tests.
