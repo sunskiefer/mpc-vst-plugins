@@ -2173,7 +2173,8 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
 ### 2026-11-03: a VST2 Plugins stick is picked up without a restart (device, owner's test)
 - On a Live III (MPC OS 3.10.1), a USB stick with `VST2 Plugins/OpenMPC - VST - Plugin Manager G2/` (written by the Install page's
   Write to USB) showed up in the plugin browser as soon as it was plugged in, with no restart, and the Plugin Manager loaded from it.
-  The Install page guide and the installer now say "plug it in, no restart needed" for a stick or card. Not checked: whether a
-  folder copied to the internal drive over Wi-Fi (`/nvme/VST2 Plugins`) also appears without a restart; those steps still say restart.
+  The Install page guide and the installer now say "plug it in, no restart needed" for a stick or card. A folder moved into the
+  internal drive's `/nvme/VST2 Plugins` (one `mv`, MPC running) did NOT appear without a restart (same day): MPC watches drives being
+  plugged in, not the internal folder, so the Wi-Fi way keeps its restart step.
 - Unplugging the stick removes the plugin from the plugin browser at once, again with no restart (same test). Plugging it back in shows it again straight away. Pulling the stick while a track uses the plugin stops it and its screen goes black; plugging it back in brings the track back (the guide and
   installer now warn about this). Not yet known: whether a saved project finds it again after re-plugging.
