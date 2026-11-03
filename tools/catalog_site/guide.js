@@ -142,7 +142,7 @@
           [["Copy the folder into ", el("code", null, S.gen === 2 ? "/nvme/VST2 Plugins/" : "/sdcard/VST2 Plugins/"), ", then restart the MPC"], HERE, "After the restart, MPC lists the Plugin Manager in its plugin browser."]], "#a-over-wi-fi-developer-mode"],
        ["With a USB cable", "Controller Mode", /Live III|XL/.test(S.model) ? [   /* only these mount their internal drives (Akai's support articles) */
           ["Connect the MPC to your computer with a USB cable", MPC],
-          ["Menu, the computer icon: Controller Mode", MPC, "Two drives appear on your computer: MPC User (the MPC's internal drive) and MPC Content."],
+          ["Menu, the computer icon: Controller Mode", MPC, "Two drives appear on your computer: MPC User (the MPC's internal drive) and MPC Content. On Windows they appear only once Akai's MPC USB driver is installed (from akaipro.com)."],
           ["Copy the folder into VST2 Plugins on the MPC User drive, eject it, then tap Standalone on the MPC and confirm", HERE, "If the Plugin Manager isn't in the plugin browser yet, restart the MPC: the internal drive is read at start-up."]]
         : [["Put an SD card or USB drive in the MPC and connect the MPC to your computer", MPC, "This MPC's internal drive doesn't show on a computer, only a card or drive in it."],
           ["Menu, the computer icon: Controller Mode", MPC, "The card or drive appears on your computer like a USB stick."],

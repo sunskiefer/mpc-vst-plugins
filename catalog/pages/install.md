@@ -43,7 +43,7 @@ Put the folder inside a folder called **`VST2 Plugins`** (exact name; create it 
 :::
 
 ::: details B. With a USB cable (Controller Mode)
-**MPC Live III and MPC XL:** both internal drives show on your computer, as **MPC User** (the MPC's internal drive) and **MPC Content**.
+**MPC Live III and MPC XL:** both internal drives show on your computer, as **MPC User** (the MPC's internal drive) and **MPC Content**. On Windows they appear only once Akai's MPC USB driver is installed (from akaipro.com).
 
 1. Connect the MPC to your computer with a USB cable.
 2. **Menu**, then tap the computer icon (top right) to switch to **Controller Mode**.

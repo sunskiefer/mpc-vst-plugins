@@ -382,7 +382,6 @@ details.way[open] summary { margin-bottom: 6px; }
       <ul>
         <li>Turns <b>SSH</b> on (a key you give, or a password).</li>
         <li>Puts back any <b>addins</b> you already installed.</li>
-        <li>Optionally also opens the <b>plugin manager</b>, as in the section above (tick the box below). A stick holds only one autorun, so a stick that turns on SSH has to carry the manager itself if you want both.</li>
       </ul></li>
     <li><b>How it works:</b> MPC OS has its own stock "USB script" reader, built in by Akai (not a security hole). A stick with the right files on it makes MPC ask one on-screen question, then run a script as root. <i>Nothing happens until you confirm that prompt on the device's own screen.</i> The check the reader needs depends on your device's firmware, so this reads your own stock update image once (nothing from it is kept or sent anywhere).</li>
     <li><b>Works on:</b> Gen1 MPC (Live, One, X, Key), Force and Gen2 (Live III, One G2, Key G2, XL), <b>but only on MPC OS up to 3.9.1</b>.
@@ -432,15 +431,8 @@ details.way[open] summary { margin-bottom: 6px; }
   </div>
 </section>
 
-<section id="st3" class="off">
-  <h2><span class="n">3</span>Also include the plugin manager</h2>
-  <label style="display:flex;gap:10px;align-items:flex-start;font:400 15px var(--text)"><input type="checkbox" id="st-withmgr" checked style="margin-top:4px">
-    <span>Also open the plugin manager from this stick (recommended). It is Twisted Cable's Plugin Manager USB for OPEN MPC (our fork of it, with the OpenMPC Plugin Manager VST option), downloaded and
-    checked as for the plugin manager stick above. It opens the <b>first time</b> you use the stick, right after SSH is turned on. After that, inserting the stick only re-enables SSH and your addins; put a file called <code>open-plugin-manager.txt</code> on the stick to open the manager again.</span></label>
-</section>
-
 <section id="st4" class="off">
-  <h2><span class="n">4</span>Build the stick</h2>
+  <h2><span class="n">3</span>Build the stick</h2>
   <p class="sub">Writes the stick's files to the folder you pick. Point it straight at a mounted FAT32/exFAT USB stick's top level (pick one below, or Browse to it) and there's nothing left to copy -- otherwise, copy everything in the folder (hidden files too) to the root of a stick afterward. Either way: insert the stick into the device and confirm the prompt there.</p>
   <div id="st-drives"></div>
   <div class="row">
@@ -1057,7 +1049,7 @@ function wzPlan() {
             ["Press Menu, add a new Plugin track, tap its plugin slot and browse to External VST Plugins > OpenMPC - Plugin Manager G2", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]], go: "", fn: null,
     ways: [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode on the MPC and note its IP address", MPC, "This computer can now reach the MPC over Wi-Fi."], ["Connect from this computer and install the Plugin Manager", HERE, "MPC restarts with it. You can turn Developer mode off again afterwards."]], "Install over Wi-Fi", goSSH],
            ["With a USB cable", "Controller Mode", /Live III|XL/.test(WZ.model) ? [   /* only these mount their internal drives (Akai's support articles) */
-             ["Connect the MPC to this computer with a USB cable", MPC], ["Menu, the computer icon: Controller Mode", MPC, "Two drives appear on this computer: MPC User (the MPC's internal drive) and MPC Content."],
+             ["Connect the MPC to this computer with a USB cable", MPC], ["Menu, the computer icon: Controller Mode", MPC, "Two drives appear on this computer: MPC User (the MPC's internal drive) and MPC Content. On Windows they appear only once Akai's MPC USB driver is installed (from akaipro.com)."],
              ["Write the Plugin Manager onto the MPC User drive, eject it, then tap Standalone on the MPC and confirm", HERE, "If the Plugin Manager isn't in the plugin browser yet, restart the MPC: the internal drive is read at start-up."]]
            : [["Put an SD card or USB drive in the MPC and connect the MPC to this computer", MPC, "This MPC's internal drive doesn't show on a computer, only a card or drive in it."], ["Menu, the computer icon: Controller Mode", MPC, "The card or drive appears on this computer like a USB stick."],
              ["Write the Plugin Manager onto it, eject it, then tap Standalone on the MPC and confirm", HERE, "MPC finds the Plugin Manager on it. Leave the card or drive in."]], "Write the Plugin Manager", function () { goV2(arch, false); }],
@@ -1168,7 +1160,7 @@ function scanMsg(s, cls, spin) {
 $("st-scan").addEventListener("click", function () {
   var fw = $("st-fw").value.trim();
   if (!fw) { scanMsg("Enter the path to a firmware file first.", "err"); return; }
-  ST.running = true; ST.scanHandle = ""; $("st2").classList.add("off"); $("st3").classList.add("off"); $("st4").classList.add("off");
+  ST.running = true; ST.scanHandle = ""; $("st2").classList.add("off"); $("st4").classList.add("off");
   scanMsg("Scanning…", null, true); var log = $("st-scanlog"); log.hidden = false; log.textContent = "";
   api("/api/stick/scan", { Firmware: fw }).then(function () { stickPoll(0, log); })
     .catch(function (e) { ST.running = false; scanMsg(e.message, "err"); });
@@ -1185,7 +1177,7 @@ function stickPoll(since, log) {
       ST.scanHandle = j.result; ST.gen2 = !!j.gen2;
       $("st-gen2-warn").hidden = !ST.gen2;
       scanMsg("Found the salt. Now choose how you want to log in over SSH, then build the stick below.", "ok");
-      $("st2").classList.remove("off"); $("st3").classList.remove("off"); $("st4").classList.remove("off");
+      $("st2").classList.remove("off"); $("st4").classList.remove("off");
     } else {
       scanMsg(j.result, "err");
     }
@@ -1224,9 +1216,8 @@ $("st-build").addEventListener("click", function () {
   var key = stickSSHKey(), pw = stickSSHPassword();
   if (!key && !pw) { msg($("st-buildmsg"), "Give a public key, generate one, or set a password: SSH is what this stick is for.", "err"); return; }
   if (pw && ST.gen2) { msg($("st-buildmsg"), "This firmware looks like a Gen2 one, which can't keep an SSH password. Use a key instead.", "err"); return; }
-  var withMgr = $("st-withmgr").checked;
-  msg($("st-buildmsg"), withMgr ? "Downloading the plugin manager and building…" : "Building…");
-  api("/api/stick/build", { ScanHandle: ST.scanHandle, Out: out, SSHPubKey: key, SSHPassword: pw, WithManager: withMgr })
+  msg($("st-buildmsg"), "Building…");   /* SSH and addins only: the Plugin Manager has its own stick (the section above) */
+  api("/api/stick/build", { ScanHandle: ST.scanHandle, Out: out, SSHPubKey: key, SSHPassword: pw, WithManager: false })
     .then(function (r) {
       var where = stickOutIsAMountedDrive(out)
         ? "That's a mounted drive, so it's already on the stick -- just"

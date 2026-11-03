@@ -2199,4 +2199,4 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
   are not listed. Don't format either drive.
 - On our Live III, `/nvme` is `nvme0n1p2`, exFAT, 79.2 GB: the **MPC User** drive, with `VST2 Plugins` at its root. So on a Live III / XL
   the USB-cable way copies into `VST2 Plugins` on MPC User (no card); everyone else needs a card or drive in the MPC. Guide, installer and
-  Install page now say so per model. Open: in the owner's first try (Live III, MPC OS 3.10.1) no drive appeared on the PC.
+  Install page now say so per model. Owner's test (Live III, MPC OS 3.10.1, Windows): the drives appear once Akai's USB driver is installed (none before). The steps now say so.
