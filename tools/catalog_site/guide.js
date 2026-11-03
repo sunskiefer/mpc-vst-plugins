@@ -49,6 +49,36 @@
     p.appendChild(link("How to start it", "#the-desktop-installer-app")); b.appendChild(p); c.appendChild(b);
   }
 
+  var EASY = /*EASY_PIN*/null;
+  /* steps: [label, fn(file, root, progress) -> Promise<message>]; a file box, a drive picker, and the result */
+  function writer(c, title, zipName, hint, run) {
+    var box = el("div", "gwrite");
+    box.appendChild(el("b", null, title));
+    if (typeof DriveWrite === "undefined" || !DriveWrite.supported()) {
+      box.appendChild(el("p", "gsub", "Writing from this page needs Chrome or Edge on a computer. Use one of the ways below instead."));
+      c.appendChild(box); return;
+    }
+    var f = null, st = el("p", "gstatus"), pickZip = el("button", "gback", "1. Choose the downloaded " + zipName), pickDrive = el("button", "gbtn", "2. Choose the drive and write");
+    pickZip.type = pickDrive.type = "button"; pickDrive.disabled = true;
+    var inp = el("input"); inp.type = "file"; inp.accept = ".zip"; inp.hidden = true;
+    inp.onchange = function () { f = inp.files[0] || null; pickDrive.disabled = !f; st.className = "gstatus"; st.textContent = f ? "Zip: " + f.name : ""; };
+    pickZip.onclick = function () { inp.click(); };
+    pickDrive.onclick = function () {
+      DriveWrite.pick().then(function (root) {
+        st.className = "gstatus"; st.textContent = "Writing to " + root.name + "…"; pickDrive.disabled = true;
+        return run(f, root, function (d, n) { st.textContent = "Writing to " + root.name + ": " + d + " of " + n + " files"; }).then(function (msg) {
+          st.className = "gstatus ok"; st.textContent = msg + " Eject the drive before you unplug it.";
+        });
+      }).catch(function (e) {
+        if (e && e.name === "AbortError") return;
+        st.className = "gstatus bad"; st.textContent = (e && e.message) || String(e);
+      }).then(function () { pickDrive.disabled = !f; });
+    };
+    var row = el("div", "gwrow"); row.appendChild(pickZip); row.appendChild(pickDrive);
+    box.appendChild(el("p", "gsub", hint)); box.appendChild(row); box.appendChild(inp); box.appendChild(st);
+    c.appendChild(box);
+  }
+
   function draw() {
     root.textContent = "";
     var c;
@@ -76,6 +106,11 @@
         [["Download ", link("OpenMPC-Plugin-Manager-1.0.0-" + g + ".zip", PM + g + ".zip"), " and unzip it: one folder, OpenMPC - VST - Plugin Manager G2"], HERE],
         ["Copy that whole folder into a VST2 Plugins folder on the MPC. Pick a way below", HERE],
         ["Add a track: External VST Plugins > OpenMPC - Plugin Manager G2. Install from its screen, or open the address it shows on your phone", MPC]]));
+      writer(c, "Copy it from this page (Chrome or Edge)", "Plugin Manager zip",
+        "Plug in a USB stick or SD card, or connect the MPC in Controller Mode. Choose the zip, then the drive: this page puts the folder in VST2 Plugins on it.",
+        function (file, root, prog) { return DriveWrite.folderZip(file, root, prog).then(function (folder) {
+          return "Done: VST2 Plugins/" + folder + " is on " + root.name + ". Put it in the MPC (or tap Standalone) and restart."; }); });
+      c.appendChild(el("p", "gsub", "Or copy it yourself:"));
       [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode and note the MPC's IP address", MPC],
           ["Connect with a file app (WinSCP, Cyberduck, FileZilla) as root, no password", HERE],
           [["Copy the folder into ", el("code", null, S.gen === 2 ? "/nvme/VST2 Plugins/" : "/sdcard/VST2 Plugins/"), ", then restart the MPC"], HERE]], "#a-over-wi-fi-developer-mode"],
@@ -92,8 +127,17 @@
       installer(a, "It can write the stick for you, or install over Wi-Fi with Developer mode."); c.appendChild(a);
     } else {
       c = card(3, 3, "Plugin Manager stick", "A stick that installs the Plugin Manager: you confirm one prompt and MPC restarts with it.");
-      installer(c, "On 3.9.1 or earlier the desktop installer app makes the stick.");
-      c.appendChild(plan([["Start the app, choose 3.9.1 or earlier and follow it to Plugin Manager stick. Write it to an empty USB stick", HERE],
+      if (EASY) {
+        var dl = el("div", "gdl"); dl.appendChild(link("Download the Plugin Manager stick zip (" + EASY.version + ")", EASY.url, "gbtn")); c.appendChild(dl);
+        writer(c, "Write the stick from this page (Chrome or Edge)", "stick zip", "Use an empty, freshly formatted USB stick. Choose the zip you just downloaded, then the stick.",
+          function (file, root, prog) { return DriveWrite.stickZip(file, root, EASY, prog).then(function (n) { return "Done: " + n + " files on " + root.name + "."; }); });
+        c.appendChild(plan([["Save your project, plug the stick in and choose Open on the prompt", MPC],
+          ["Add the Plugin Manager to a track and install plugins from its screen, or from your phone", MPC]]));
+        var o2 = el("details", "gothers"); o2.appendChild(el("summary", null, "Other browser, or rather use the desktop app?"));
+        installer(o2, "The desktop installer app makes the same stick."); c.appendChild(o2);
+      }
+      else installer(c, "On 3.9.1 or earlier the desktop installer app makes the stick.");
+      if (!EASY) c.appendChild(plan([["Start the app, choose 3.9.1 or earlier and follow it to Plugin Manager stick. Write it to an empty USB stick", HERE],
         ["Save your project, plug the stick in and choose Open on the prompt", MPC],
         ["Add the Plugin Manager to a track and install plugins from its screen, or from your phone", MPC]]));
       var adv = el("p", "gsub", "With root SSH the same app also installs over Wi-Fi, removes plugins, and manages backups and patches: ");

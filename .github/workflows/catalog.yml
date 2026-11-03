@@ -24,6 +24,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Tests
         run: python3 tools/test_catalog.py
+      - name: Install page drive writer tests
+        run: node tools/test_drivewrite.mjs
       - name: Skin compatibility tests
         run: python3 tools/test_skin_compat.py
       - name: Validate the registry
