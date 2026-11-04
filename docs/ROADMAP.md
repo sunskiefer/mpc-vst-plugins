@@ -75,6 +75,14 @@ The catalog, its site and the installer app are live (see Done). Still open, in 
       installer app, the Plugin Manager and `mpc-store.sh list` still list members one by one (they can read `collections[]` in `catalog.json`).
 
 ## Companion apps (catalog)
+- [ ] **Install page: plugins and their ROMs onto a stick from the browser.** The page writes the Plugin Manager today (Write to USB,
+      `tools/catalog_site/drivewrite.js`); plugins with ROMs still need the installer app. Needs same-site copies of plugin zips (size and
+      bandwidth: see docs/CATALOG.md "Install page writes drives") or the user's own downloads.
+- [ ] **One Plugin Manager download for every MPC on 3.10.1.** Swap the Gen1/Gen2 folder zips for the release's SDK-format zip once it
+      is device-tested (Live III, then a Gen1 on 3.10.1).
+- [ ] **Rebuilding the Plugin Manager re-pins three things:** the folder zips in `catalog/downloads.json`, the 3.9.1 stick (its
+      checksum file covers the zips; `tools/usb_g2/build_stick.py` needs a stock 3.9.1 firmware file) and `tools/desktop/g2stick-pin.json`.
+      A script that does all three from one release would stop them drifting.
 - [ ] **Plugin Manager: empty MPC's skin image cache on load, if needed.** Today it is emptied only by APPLY (apply.sh, before MPC
       starts again) or a power cycle; the Manager just warns at 85%. On a Live III, reloading skin-heavy plugins many times filled the
       cache to 100% and parts of skins drew black; APPLY cleared it (device, 2026-11-03). Build only if users hit it: e.g. delete
@@ -101,6 +109,12 @@ The catalog, its site and the installer app are live (see Done). Still open, in 
 ## Verification
 - [ ] **Stock, unmodded MPC and other models:** the ALSA MIDI-out port (`poc/midiport.c`) without MockbaMod,
       and `tools/probe_device.sh` after firmware updates. Needs the hardware.
+
+- [ ] **The 3.9.1 Plugin Manager stick on more models.** Device-tested on Forces and a Live III (MPC OS 3.9.1); offline-tested for
+      the MPC One/Key loop-image layout and Gen2 `/nvme`. Wanted: Live, Live II, X, One, Key 61/37, One G2, Key G2 (send
+      `g2-install-result.txt`).
+- [ ] **The turn-on-SSH stick on MPC OS 2.x.** Offered by the installer for 2.x without SSH, built from the user's own firmware; whether
+      2.x has the same stock USB-script reader is not yet known.
 
 ## Done
 - [x] **Catalog collections** (live 2026-11-02, PR #686): a set of plugins from one repo is one card with its own view (members by
