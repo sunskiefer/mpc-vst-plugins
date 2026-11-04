@@ -38,7 +38,7 @@ plugins for MPC OS, with each plugin's current version, license, source link and
 - **Install with the Plugin Manager.** The **OpenMPC Plugin Manager** runs on your MPC: browse the catalog and install,
   update and remove plugins on its screen or from a web page on your phone or computer. Put it on once:
   [Install the Plugin Manager](https://open-mpc.github.io/install.html) (MPC OS 3.10.1 and earlier versions).
-- **Or with the installer app.** The [MPC plugin installer](https://github.com/open-mpc/mpc-vst-plugins/releases/latest) is a
+- **Or with the installer app.** The [MPC plugin installer](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/desktop-v1.1.2) is a
   small Windows, Mac and Linux app: connect to your device, tick plugins from the catalog (or drop in zips, including
   build-yourself ones), and it checks each download, installs the batch with one MPC restart and backs up your settings
   first. It can also remove plugins (keeping your own files), install to an SD card or USB drive, register plugin folders
