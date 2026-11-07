@@ -149,6 +149,14 @@ sed -i "s|<KNOWNPLUGINS/>|<KNOWNPLUGINS><PLUGIN name=\"Linky old\" descriptiveNa
 /tmp/drive_addins drives > /tmp/drives-upd.out
 grep -qF "after pick: open=0 readout: |CARD" /tmp/drives-upd.out
 grep -F "Linky" /tmp/openmpc-pm/apply.sh | grep -qF -- "-t '"'"'/sdcard/Synths'"'"'" || { grep -F install.sh /tmp/openmpc-pm/apply.sh; exit 1; }
+# LOCATIONS tab: MAKE DEFAULT on the card row moves the default and is remembered; the default row has no button
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/two-targets.sh
+/tmp/drive_addins locpick > /tmp/locpick.out
+grep -qF "before: canpick 1 0 | Ready  ·  0 plugins | Default install location  ·  0 plugins" /tmp/locpick.out || { cat /tmp/locpick.out; exit 1; }
+grep -qF "after: canpick 0 1 | Default install location  ·  0 plugins | Ready  ·  0 plugins" /tmp/locpick.out || { cat /tmp/locpick.out; exit 1; }
+grep -qF "rescan: canpick 0 1" /tmp/locpick.out || { cat /tmp/locpick.out; exit 1; }
+grep -qxF "/media/CARD/Synths" /media/az01-internal/.openmpcpm-target
 echo "pick OK"
 fi # pick
 if want theme; then

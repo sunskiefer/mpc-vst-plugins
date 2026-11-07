@@ -861,7 +861,9 @@ static int good_target(const char *loc) {
 
 
 /* ---- LOCATIONS tab: what is known about each Synths folder MPC lists ---- */
-typedef struct { char name[96], info[200], state[200]; int bar, vis, usable, dflt; } locrow_t;
+typedef struct { char name[96], info[200], state[200]; int bar, vis, usable, dflt, pick; } locrow_t;
+static int loc_target_index(const mgr_t *m, const char *path);   /* below, with the other target helpers */
+static int ntargets(const mgr_t *m);
 
 static int mount_of(const char *path, char *fs, size_t nf, int *rw, int *exec) {
 #ifdef FS_ANY
@@ -918,7 +920,9 @@ static void loc_row(const mgr_t *m, int k, locrow_t *r) {
     if (dd) closedir(dd);
     const char *bad = bad_target(path, why, sizeof why);
     r->usable = !bad;
-    r->dflt = !bad && d->target[0] && (!strcmp(d->target, path) || same_folder(d->target, path));
+    int ti = bad ? -1 : loc_target_index(m, path);
+    r->dflt = ti >= 0 && ti == m->tsel % ntargets(m);   /* where new installs go now: the remembered place, else the first usable */
+    r->pick = ti >= 0 && !r->dflt;
     if (bad) snprintf(r->state, sizeof r->state, "Can't install here: %s", bad);
     else snprintf(r->state, sizeof r->state, "%s  \xc2\xb7  %d plugin%s", r->dflt ? "Default install location" : "Ready", n, n == 1 ? "" : "s");
     r->vis = 1;
@@ -983,6 +987,29 @@ static const char *target_at(const mgr_t *m, int k) { return m->dev->vst2 == 2 &
 static const char *target_name(const mgr_t *m, int k) { return m->dev->vst2 == 2 && m->dev->nvdrv ? m->dev->vname[k] : m->dev->uname[k]; }
 static const char *dest(const mgr_t *m) {
     return ntargets(m) ? target_at(m, m->tsel % ntargets(m)) : m->dev->target;
+}
+
+
+/* which of the install targets (ntargets/target_at) is this listed Synths folder? -1: none. With VST2 Support on (3.10.1) a target is
+ * "<drive>/VST2 Plugins", so the folder matches by its drive. */
+static int loc_target_index(const mgr_t *m, const char *path) {
+    char p[220], drive[220];
+    snprintf(p, sizeof p, "%s", path);
+    for (size_t l = strlen(p); l > 1 && p[l - 1] == '/'; ) p[--l] = 0;
+    snprintf(drive, sizeof drive, "%s", p);
+    char *sl = strrchr(drive, '/');
+    if (sl && sl != drive) *sl = 0;
+    for (int k = 0; k < ntargets(m); k++) {
+        const char *t = target_at(m, k);
+        if (m->dev->vst2 == 2 && m->dev->nvdrv) {
+            char td[220];
+            snprintf(td, sizeof td, "%s", t);
+            char *ts = strrchr(td, '/');
+            if (ts && ts != td) *ts = 0;
+            if (!strcmp(td, drive)) return k;
+        } else if (!strcmp(t, p) || same_folder(t, p)) return k;
+    }
+    return -1;
 }
 
 /* The install location confirmed last time (a restart prompt, usually after CHANGE) is the default for new installs from now on: saved in
@@ -2478,7 +2505,18 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
             m->ready = 0;     /* a prepared apply.sh names the old drive */
             post(m, J_REFRESH);   /* the readout shows the new drive's free space */
         }
-    } else if (!strcmp(key, "d_back")) { m->detail[0] = 0; m->menu = -1; }
+    } else if (!strncmp(key, "loc", 3) && key[3] >= '1' && key[3] <= '4' && !strcmp(key + 4, "_pick") && !busy) {   /* LOCATIONS: MAKE DEFAULT */
+        locrow_t r;
+        loc_row(m, key[3] - '1', &r);
+        int k = r.pick ? loc_target_index(m, m->dev->loc[key[3] - '1']) : -1;
+        if (k >= 0 && ntargets(m) > 1) {
+            m->tsel = k;
+            target_save(m);   /* remembered, as a pick in the drive menu is */
+            m->ready = 0;
+            post(m, J_REFRESH);
+        }
+    } else if (!strcmp(key, "loc_rescan") && !busy) post(m, J_REFRESH);
+    else if (!strcmp(key, "d_back")) { m->detail[0] = 0; m->menu = -1; }
     else if (!strcmp(key, "tag_clear")) { m->tag[0] = 0; m->page = 0; }
     else if (!strncmp(key, "d_tag", 5) && key[5] >= '1' && key[5] <= '8') {   /* a tag button: list the plugins with that tag (in the current tab) */
         int i = detail_of(m);
@@ -2557,6 +2595,7 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
         loc_row(m, key[3] - '1', &r);
         const char *f = key + 5;
         if (!strcmp(f, "vis")) snprintf(b, n, "%d", r.vis);
+        else if (!strcmp(f, "canpick")) snprintf(b, n, "%d", r.pick);
         else if (!strcmp(f, "bar")) snprintf(b, n, "%d", r.bar);
         else if (!strcmp(f, "ok")) snprintf(b, n, "%d", !r.vis ? 0 : r.usable ? 1 : 2);   /* none, yes, no */
         else if (!strcmp(f, "name")) snprintf(b, n, "%s", r.vis ? r.name : " ");

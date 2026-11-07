@@ -3379,6 +3379,72 @@
    "name": "Locations footer",
    "type": "readout",
    "display": "string"
+  },
+  {
+   "key": "loc1_canpick",
+   "name": "Location 1 can be default",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc1_pick",
+   "name": "Location 1 make default",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc2_canpick",
+   "name": "Location 2 can be default",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc2_pick",
+   "name": "Location 2 make default",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc3_canpick",
+   "name": "Location 3 can be default",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc3_pick",
+   "name": "Location 3 make default",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc4_canpick",
+   "name": "Location 4 can be default",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc4_pick",
+   "name": "Location 4 make default",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc_rescan",
+   "name": "Locations rescan",
+   "type": "trigger",
+   "momentary": true
   }
  ]
 }

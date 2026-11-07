@@ -172,6 +172,15 @@ int main(int argc, char **argv) {
     press("confirm_go"); usleep(300000);   /* a test build only writes apply.sh (dry run): the tests read it */
     e->destroy(m); return 0;
   }
+  if (argc > 1 && !strcmp(argv[1], "locpick")) {   /* LOCATIONS: MAKE DEFAULT on the card's row, then a rescan */
+    printf("before: canpick %s %s | %s | %s\n", get("loc1_canpick"), get("loc2_canpick"), get("loc1_state"), get("loc2_state"));
+    press("loc1_pick");
+    for (int i = 0; i < 60 && strcmp(get("loc2_canpick"), "1"); i++) usleep(200000);   /* the pick refreshes */
+    printf("after: canpick %s %s | %s | %s\n", get("loc1_canpick"), get("loc2_canpick"), get("loc1_state"), get("loc2_state"));
+    press("loc_rescan"); sleep(2);
+    printf("rescan: canpick %s %s\n", get("loc1_canpick"), get("loc2_canpick"));
+    e->destroy(m); return 0;
+  }
   if (argc > 1 && !strcmp(argv[1], "pickshow")) {   /* a fresh start: which place does the restart prompt name first? */
     set("kind", "1"); press("r1_act"); press("apply");
     for (int i = 0; i < 60 && strcmp(get("apply_state"), "3") && strcmp(get("apply_state"), "4"); i++) sleep(1);

@@ -88,6 +88,10 @@ def main():
         + text(70, 21, "USABLE", 15, GREEN, 700, anchor="middle", spacing=1.5))
     svg("loc_bad.svg", 140, 30, '<rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="%s" stroke-width="2"/>' % RED
         + text(70, 21, "NOT USABLE", 15, "#ff9a93", 700, anchor="middle", spacing=1.5))
+    svg("loc_def.svg", 160, 34, '<rect x="1" y="1" width="158" height="32" rx="8" fill="none" stroke="%s" stroke-width="2"/>' % DIM
+        + text(80, 23, "MAKE DEFAULT", 16, INK, 700, anchor="middle", spacing=1.2))
+    svg("loc_rescan.svg", 170, 40, '<rect x="1" y="1" width="168" height="38" rx="8" fill="#26272a"/>'
+        + icon("refresh", 22, 9, 22, INK) + text(104, 27, "RESCAN", 17, INK, 700, anchor="middle", spacing=1.5))
     svg("net_on.svg", 100, 24, '<circle cx="5" cy="12" r="4.5" fill="#3fbf7f"/>' + text(16, 17, "ONLINE", 15, MUTED, 600, spacing=1))
     svg("net_off.svg", 100, 24, '<circle cx="5" cy="12" r="4.5" fill="%s"/>' % RED + text(16, 17, "OFFLINE", 15, "#ff9a93", 600, spacing=1))
     # a plugin card (the list row's own picture): the thumbnail tile is part of it
