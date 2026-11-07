@@ -148,3 +148,21 @@ whether LoadPin and dm-verity are enforcing on a given unit (`MPC_OS_REFERENCE.m
 - Budget CPU on the slowest core you target. The Sample is four A55s only; see `docs/MPC_SAMPLE.md`.
 - If a feature needs a USB mode change (controller mode, drive swap), allow about a second after the mux switches.
 - Don't assume a writable or executable drive: read the mount line first (`edisksd` default above).
+
+## Follow-up checks (the source is still there to read)
+
+The repo is public and stays fetchable (recipe above), so these can be checked later without a device or with one read-only
+command. Nothing below has been done yet.
+
+**Still to read in the source (2026-11-08 was a first pass):**
+- The G1 kernel's differences from upstream (only the device trees, defconfig and `of-mux.c` were read), for example the
+  Force's SATA/SD paths and the RK3288 audio setup.
+- `libusbgx` and `base-files` (`fstab`, `rotation`) on each group, and `u-boot` (read only for the Sample's file list).
+- Whether a later release changes `edisksd` defaults, the mux delays or the board files: diff the new branch against the
+  one read here (`mpc-g1/*`, `mpc-g2/*`, `mpc-sample/*`).
+
+**To confirm on a unit (read-only):**
+- `cat /etc/edisksd/main.conf` and the `mount` lines for removable and internal drives (does the default `noexec` apply?).
+- Whether LoadPin and dm-verity enforce (`dmesg | grep -i -E 'loadpin|verity'`).
+- On the Live III: the mux state and hub (`lsusb -t`) before and after a Controller Mode change, to compare with the
+  1 s post-switch delay noted for the Force.
