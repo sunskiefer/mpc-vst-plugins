@@ -49,10 +49,12 @@ vst-release.yml  --release-->   nightly + on-dispatch workflow:       device scr
 ### Registry entry (`plugins/<id>.json`, hand-written once)
 `id`, `name`, `author`, `repo` (owner/name), `kind` (instrument | effect), `license` (an SPDX ID, or IDs joined by `AND`/`OR` when the zip
 bundles a program under another licence, e.g. `MIT AND Apache-2.0`: open when every ID is), `summary`, `screenshot`
-(optional `https://` URL; the site ignores anything else), `asset_pattern` (default `*-mpc-armv7.zip`), `homepage` (optional),
+(optional `https://` URL; the site ignores anything else), `asset_pattern` (default `*-mpc-armv7.zip`), `homepage` (optional), `youtube` (optional, a `youtube.com` or `youtu.be` https link to a video or playlist about the plugin: the
+catalog page's plugin popup shows a Video button next to Copy link; anything else fails the registry check),
 `tier` (optional, only `"experimental"`) and `featured` (optional bool); see Trust tiers below. `flags_reviewed` (optional list of
 risky-call categories a maintainer has looked at, e.g. `["network"]` for a remote-control plugin; see Validation), `collection` (optional, see
-Collections below). Nothing versioned.
+Collections below), `devices` (optional: the only devices it is for, today just `"mpc-sample"`; see "Device-limited entries" below).
+Nothing versioned.
 `catalog/added.json` (`{"<id>": "YYYY-MM-DD"}`) records when each entry joined the catalog, for the site's "Newest in catalog" sort. A
 maintainer adds a line when merging a new entry (not the contributor, so PRs don't conflict on one file); an entry without a line uses
 the date of its oldest release. Backfilled 2026-10-24 from the first commit that added each registry file.
@@ -80,11 +82,15 @@ checks, `tested.json` tier, uid and download; `catalog.tsv`, the installer and `
 - **`catalog.json`:** `collections[]` with members, kind counts, best member tier, total downloads (`docs/CATALOG_SPEC.md`).
 - **Site:** one card per collection (its screenshot, else a collage of up to four member screenshots; title, author, Collection badge,
   "13 instruments · 7 effects", best tier, the first member chips and +N, View all and Source). It shows under each tab its members cover,
-  with counts and chips for that kind, and sorts by its best member tier and total downloads. Search and filters match the members and list the ones that
+  with counts and chips for that kind, and sorts by its best member tier and its most downloaded member's downloads. (2026-11-05, offline: grid cards fold their Details by default and show downloads in a bar under the title; a collection's community figures and downloads are its best member's, not a sum, 2026-11-06: a sum let a 100-plugin collection outrank any single plugin; `catalog.json` still carries the total.) Search and filters match the members and list the ones that
   match; a search for the collection's title lists all of them. `#c=<id>`, shared as `p/c/<id>.html`, opens the collection view:
   members by kind, each with its install checkbox and a Pick all per group, feeding the same install list. A member's popup and its
   `p/<id>.html` say "Part of <title>". Entries without a collection look as before.
 - **Feed:** members of a collection released on the same day and channel are one `feed.xml` entry ("<title>: N plugins updated").
+- **Per-plugin feeds (2026-11-05, offline):** `feed/<id>.xml` is an Atom feed of one plugin's releases (not yanked, newest first, at most 30, a beta
+  marked, the release notes as the summary), with the same entry ids as `feed.xml`. A plugin's popup has a "Follow updates" button linking to it,
+  and its share page advertises it with a `<link rel="alternate">`. A reader gets a new entry for every release or revision. A collection has its own feed,
+  `feed/c/<id>.xml` (same-day member releases are one entry, as in `feed.xml`), linked from the collection popup's "Follow updates" button.
 
 ### Distribution types
 `distribution` in the registry entry: `release` (default; everything above) or `build-yourself`. `build-yourself` is limited to
@@ -119,13 +125,20 @@ list. Each plugin gets a `tier` in `catalog.json`, computed by `catalog_build.py
 (`"tier"` accepts only `"experimental"`); `"featured": true` is a maintainer pick, ignored while experimental. The site hides
 Experimental by default (the Tier filter and a "Show them" link reveal it), badges Verified and Experimental cards only (2026-10-11:
 Listed is the unlabelled middle, still computed and filterable as "Not yet verified"), and the default sort,
-"Recommended", is featured, then tier, then (2026-10-14, offline) Verified on both generations before one, newest hardware-test
-date, downloads, and finally name. Verified is split by device generation (2026-10-12, offline: unit tests and a
+"Recommended", is featured, then evidence points, with experimental always last (2026-11-05, offline; maintainer decision: people reporting a plugin works count
+for more than the author's own record). A complete Verified plugin (every generation it ships verified: a Gen1-only build tested on Gen1, a
+Gen2-only build tested on Gen2, or a dual build tested on both) is worth 3 points, a dual build verified on one generation 1.5, Listed 0.
+With the community service reachable (public since 2026-11-06), each person who reported the newest release working adds 1, a person who only reported an older release
+0.25, and each like 0.1, so 4 people confirming a Listed plugin beat a Verified badge with no reports, and 2 do not. Without community counts the
+order is the old one (complete Verified, partly verified, Listed). Ties go to the newest hardware-test date, downloads, and finally name. Verified is split by device generation (2026-10-12, offline: unit tests and a
 headless-browser check): `verified_on` in `catalog.json` lists `gen1` and/or `gen2` (`verified_on` in `catalog_build.py`). A `tested.json`
 entry whose `device` names Gen2 counts for `gen2`, and only when that version has an aarch64 build; any other entry counts for `gen1`.
 The card shows one badge per generation ("Verified Gen1", "Verified Gen2"), the Tier filter has "Verified on Gen1" and
 "Verified on Gen2", and the quality bar asks for a Gen2 test (`tested-gen2`) when a Gen2 build has none. The tier itself stays one
-value (verified on either generation), so the sort is unchanged. Catalogs built before the field read a verified plugin as Gen1. Catalogs built before the field read as `listed`. Deliberately not done:
+value (verified on either generation), so the sort is unchanged. Catalogs built before the field read a verified plugin as Gen1.
+Since 2026-11-05 (offline: unit tests and the headless-browser check) the MPC Sample has its own: a `tested.json` entry whose `device`
+names the MPC Sample counts for `sample` (on a version with an aarch64 build, which is what the Sample runs), not for `gen1` as before,
+with a "Verified Sample" badge and a "Verified on MPC Sample" Tier filter option. Catalogs built before the field read as `listed`. Deliberately not done:
 star ratings, comments, upvotes (few users, needs a backend and moderation; if wanted later, compatibility reports through
 GitHub Discussions that feed `tested.json` fit the static model better, with any vote count only a tiebreaker inside a tier).
 
@@ -165,6 +178,29 @@ each plugin, less the categories in its entry's `flags_reviewed`. `tools/catalog
 categories ("Catalog: <id> flagged for review (network, runs programs)"). Closing it is the review: it is never reopened, a later
 version with the same categories opens nothing, new categories open a new issue (2026-10-11, offline tests only; the first run
 opened one issue per version, 70 in all, which this replaced).
+
+### Device-limited entries (2026-11-05, offline: unit tests, Go tests, the site browser test)
+The MPC Sample (AC50) runs MPC OS on aarch64, so it takes a release's Gen2 zip, but it is not a Gen2 MPC: an addin written for its
+screen (the draw handler, the rack) loads and does nothing on a Live III. A registry entry can say so with `"devices": ["mpc-sample"]`
+(`DEVICES` in `catalog_build.py`; unknown ids are refused). Then:
+- `catalog.json` carries `devices`, and `catalog.tsv` a `devices` column (24th, comma list, `-` for every MPC).
+- The site shows "MPC Sample only" in place of the Gen2 tag, and a Devices row in the popup. Its one download button is named for
+  the device, "Download (MPC Sample)", with no Gen1 button (2026-11-06, offline: the site browser test). The card's badge is the device
+  label, so its `tags` should not repeat it (no `mpc-sample` tag).
+- The catalog page has a device switch above the section tabs, "MPC / Force" | "MPC Sample", each with its catalog-wide count (2026-11-06,
+  offline: the site browser tests). MPC / Force (the default) hides the entries limited to the Sample. MPC Sample lists only entries with
+  evidence for it (maintainer decision 2026-11-06): made for the Sample (`devices`), Verified Sample (`tested.json`), or reported working on
+  an MPC Sample through the community service (its `sample` count). A Gen2 build alone is not enough. While nothing qualifies, the view says
+  how to add a report. The Gen1/Gen2 Device filter is hidden there; the choice is in the page address (`#plat=sample`) and survives Clear
+  filters; the plugin tabs' counts and the "N of M" line follow the switch. "MPC Sample" is in the Works for me device list.
+- `mpc-store.sh` lists it as `[only for: mpc-sample]` and skips it (not an error) on other devices; the desktop app refuses it there
+  (`CatPlugin.ForDevice`) and marks it. Both tell the Sample by its settings file (`MPC Sample.settings`); `MPC_STORE_DEVICE` overrides.
+- The quality bar asks for a Sample test (`tested-sample`) instead of Gen1 and Gen2 ones.
+- **Dependencies:** an entry may depend on a device-limited one only if it is limited to those devices too. `--check-registry` refuses
+  the registry dependency otherwise, and the builder hides a version whose dependency (registry or zip) is only for devices it is not
+  limited to, with the reason, so no installer can be asked to fetch a Sample-only addin for a Live III. The rack depends on the draw
+  handler (`sample-draw-handler>=0.3.0`), both Sample-only. A plugin with a Sample page (`"sample_page"`) does not depend on the draw
+  handler: the page is optional and the plugin works without it everywhere.
 
 ### Dependencies, requirements and addins that may break each other (2026-10-26, offline: unit tests, Go tests, the desktop addin UI test, the site browser test)
 - **Dependencies and conflicts** (declared, CATALOG_SPEC.md "Dependencies"): a version can need other catalog plugins
@@ -259,7 +295,7 @@ here first and move to its own repo (recommended, for community ownership) once 
 
 ### Phase 3: The website
 - [x] `tools/catalog_site.py` generates the site from `catalog.json`; `catalog.yml` deploys with Pages on main (2026-09-29; checked in headless Chromium; Pages deploy live at https://sd88me.github.io/mpc-vst-plugins/).
-- [x] List with search, filters (kind, style, developer, license, MPC OS 2.x / 3.x, beta) and sorting (updated, newest in catalog, downloads, name, developer, kind), state kept in the URL hash; plugin page with history, install steps, checksum, source link.
+- [x] List with search, filters (kind, style, developer, tags, MPC OS 2.x / 3.x, Gen1/Gen2, tier, beta; the License and Distribution filters were removed 2026-11-05, and old links that carry `lic=` or `dist=` still load and ignore them; pick several tags, or click a tag on a card, and a plugin must carry all of them: `tags=a,b` in the URL hash) and sorting (updated, newest in catalog, downloads, name, developer, kind), state kept in the URL hash; plugin page with history, install steps, checksum, source link.
 - [x] Guide pages Install, Build and Workflow (Add yours was merged into Workflow on 2026-10-09; add.html redirects) (2026-09-29): Markdown in `catalog/pages/*.md`, rendered by `tools/catalog_site.py`
       with a shared menu; checked in headless Chromium at desktop and phone width.
 - [x] (2026-09-29; live, `feed.xml` and `catalog.tsv` both served, checked 2026-10-02) Atom feed `feed.xml`; "Tested on" from optional `tested.json` in the plugin repo; contributor docs in `catalog/README.md`.

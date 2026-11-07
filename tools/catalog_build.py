@@ -44,6 +44,9 @@ REPO = re.compile(r"[\w.-]+/[\w.-]+")
 KINDS = ("instrument", "effect")   # what a plugin (or a build-yourself component) is
 ENTRY_KINDS = KINDS + ("addin",)    # an addin: a library MPC preloads (tools/release_addin.py, docs/ADDINS.md)
 DISTRIBUTIONS = ("release", "build-yourself")
+# devices an entry can be limited to ("devices": [...]): only those get it offered. The MPC Sample (AC50) runs MPC OS on aarch64,
+# so it takes the Gen2 zip, but it is not a Gen2 MPC: addins written for its screen do nothing on a Live III (docs/CATALOG.md).
+DEVICES = {"mpc-sample": "MPC Sample"}
 BUILD_YOURSELF_FIELDS = ("requires_user_files", "build", "components")
 TAG_VERSION = re.compile(r"v?(\d+)\.(\d+)\.(\d+)")
 ZIP_PATTERN = "*-mpc-armv7.zip"
@@ -99,10 +102,15 @@ def check_entry(e, fname=None):
     if "flags_reviewed" in e and not (isinstance(e["flags_reviewed"], list) and e["flags_reviewed"]
                                       and all(c in catalog_check.RISKY_CALLS for c in e["flags_reviewed"])):
         p.append("flags_reviewed must list risky-call categories a maintainer has reviewed: %s" % ", ".join(catalog_check.RISKY_CALLS))
+    if "youtube" in e and not (isinstance(e["youtube"], str) and YOUTUBE.fullmatch(e["youtube"])):
+        p.append("youtube must be an https://youtube.com/... or https://youtu.be/... link (a video or playlist; no spaces, at most 200 characters)")
     if "collection" in e and not (isinstance(e["collection"], str) and ID.fullmatch(e["collection"])):
         p.append("collection must be the id of a file in catalog/collections/ (a lowercase slug)")
     if "featured" in e and not isinstance(e["featured"], bool):
         p.append("featured must be true or false")
+    if "devices" in e and not (isinstance(e["devices"], list) and e["devices"] and all(d in DEVICES for d in e["devices"])
+                               and len(set(e["devices"])) == len(e["devices"])):
+        p.append("devices must list the only devices it is for, from: %s (leave it out for every MPC)" % ", ".join(DEVICES))
     if "tags" in e and not (isinstance(e["tags"], list) and all(isinstance(t, str) and ID.fullmatch(t) for t in e["tags"])):
         p.append("tags must be a list of lowercase slugs")
     elif len(e.get("tags", [])) > MAX_TAGS:
@@ -124,18 +132,25 @@ def check_entry(e, fname=None):
     return p
 
 
+YOUTUBE = re.compile(r"https://(?:(?:www\.|m\.|music\.)?youtube\.com/|youtu\.be/)[^\s]{4,170}")   # the optional "youtube" line of a registry entry
 GEN2_DEVICE = re.compile(r"gen\s*2", re.I)   # a tested.json device naming Gen2, e.g. "MPC Live III (Gen2)" (docs/GEN2.md)
+SAMPLE_DEVICE = re.compile(r"mpc\s*sample", re.I)   # a tested.json device naming the MPC Sample (its own badge, not Gen2)
+
+
+def device_class(device):
+    """What a tested.json device counts for: "sample" (the MPC Sample), "gen2" (a device naming Gen2) or "gen1" (anything else)."""
+    return "sample" if SAMPLE_DEVICE.search(device) else "gen2" if GEN2_DEVICE.search(device) else "gen1"
 
 
 def verified_on(versions):
-    """Device generations the newest stable, unyanked version has a tested.json entry for: "gen1" (a Gen1 device, the armv7
-    build) and/or "gen2" (a device naming Gen2; counts only when that version has an aarch64 build)."""
+    """Devices the newest stable, unyanked version has a tested.json entry for: "gen1" (a Gen1 device, the armv7 build), "gen2" (a
+    device naming Gen2) and/or "sample" (the MPC Sample); the last two count only when that version has an aarch64 build."""
     live = [v for v in versions if v["channel"] == "stable" and not v["yanked"]]
     if not live:
         return []
-    gens = {"gen2" if GEN2_DEVICE.search(t.get("device", "")) else "gen1" for t in live[0].get("tested", [])}
+    gens = {device_class(t.get("device", "")) for t in live[0].get("tested", [])}
     if not live[0].get("gen2"):
-        gens.discard("gen2")
+        gens -= {"gen2", "sample"}
     return sorted(gens)
 
 
@@ -157,6 +172,7 @@ BAR = {   # id -> what the author sees. Informational: it never hides or demotes
     "cpu-bench": "run the CPU bench (docs/BENCH.md) so the release records a figure",
     "tested": "add a tested.json entry for the newest release on a Gen1 device (device and MPC OS version)",
     "tested-gen2": "add a tested.json entry for the newest release's Gen2 build (a device naming Gen2, e.g. \"MPC Live III (Gen2)\")",
+    "tested-sample": "add a tested.json entry for the newest release on an MPC Sample (device \"MPC Sample\")",
 }
 
 
@@ -177,6 +193,10 @@ def bar_of(entry, versions):
     elif live and entry["kind"] != "addin" and entry.get("distribution", "release") == "release" and not cpu:
         out.append("cpu-bench")
     gens = verified_on(versions)
+    if entry.get("devices"):   # an entry for named devices only: tested on those, Gen1/Gen2 tests don't apply
+        if live and "mpc-sample" in entry["devices"] and "sample" not in gens:
+            out.append("tested-sample")
+        return out
     if live and "gen1" not in gens:
         out.append("tested")
     if live and live[0].get("gen2") and "gen2" not in gens:
@@ -661,7 +681,7 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
         versions.sort(key=lambda v: deps.key(v["version"]), reverse=True)
         versions = versions[:keep]
         item = {k: e[k] for k in ("id", "name", "author", "repo", "kind", "license", "summary") }
-        for k in ("screenshot", "homepage", "style", "role"):
+        for k in ("screenshot", "homepage", "style", "role", "devices", "youtube"):
             if e.get(k):
                 item[k] = e[k]
         col = (collections or {}).get(e.get("collection"))
@@ -721,6 +741,31 @@ def derive(item, e, added=None):
 ARCHES = ("armv7", "aarch64")
 
 
+def device_gap(dependent_devices, dependency):
+    """Why a plugin limited to dependent_devices (registry "devices", [] = every MPC) can't have dependency (a registry entry or a built
+    plugin) on every device it is offered on, or "" when it can: a dependency limited to some devices is only for dependents limited to
+    those too (an MPC Sample addin can't be installed on a Live III, so nothing offered there may need it)."""
+    only = dependency.get("devices") or []
+    if not only or (dependent_devices and set(dependent_devices) <= set(only)):
+        return ""
+    return "%s is only for the %s" % (dependency["id"], " and ".join(DEVICES.get(d, d) for d in only))
+
+
+def device_dependency_problems(entries):
+    """(file, problem) for each registry dependency on an entry limited to devices the dependent isn't limited to."""
+    by, out = {e["id"]: e for e in entries}, []
+    for e in entries:
+        for spec in e.get("depends") or []:
+            try:
+                did = deps.parse(spec)[0]
+            except ValueError:
+                continue   # check_entry reports it
+            gap = device_gap(e.get("devices"), by[did]) if did in by else ""
+            if gap:
+                out.append(("%s.json" % e["id"], "depends on %s, but %s: limit this entry to those devices too (\"devices\")" % (did, gap)))
+    return out
+
+
 def apply_dependencies(plugins, problems):
     """Keep only what can be installed whole: a version is listed for a device generation (armv7, aarch64) only when every one of its
     dependencies has a listed, unyanked version in the catalog that meets its rules and has a build for that generation (a stable
@@ -742,6 +787,11 @@ def apply_dependencies(plugins, problems):
                 for arch in [a for a in ARCHES if a in v["assets"]]:
                     for d in v["depends"]:
                         t = by.get(d["id"])
+                        gap = device_gap(p.get("devices"), t) if t else ""
+                        if gap:   # needs something only some devices can have, on devices that can't: not installable here
+                            d.get("pick", {}).pop(arch, None)
+                            lost[arch] = "needs %s, but %s" % (d["id"], gap)
+                            break
                         fits = [w for w in (t["versions"] if t and t.get("distribution") == "release" else [])
                                 if not w.get("yanked") and arch in (w.get("assets") or {}) and deps.satisfies(w["version"], d["rules"])
                                 and (v["channel"] == "beta" or w["channel"] == "stable")]
@@ -850,6 +900,7 @@ def main():
     if a.check_registry:
         reg_problems += stray_files(os.path.dirname(os.path.normpath(a.registry))) + added_problems
         reg_problems += [(a.added, "%r is not a registry entry" % k) for k in sorted(added) if k not in {e["id"] for e in entries}]
+        reg_problems += device_dependency_problems(entries)
     for f, m in reg_problems:
         print("error: %s: %s" % (f, m), file=sys.stderr)
     if a.check_registry:

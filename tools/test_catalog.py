@@ -892,6 +892,13 @@ class BuildTest(Base):
         gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1, pre=True)]}, {1: self.build("1.0.0")})
         self.assertEqual(catalog_build.build([self.ENTRY], gh, os.path.join(self.tmp, "b"), set())[0]["plugins"][0]["tier"], "experimental")
 
+    def test_youtube_line_is_carried_into_catalog_json(self):
+        gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
+        item = catalog_build.build([dict(self.ENTRY, youtube="https://youtu.be/abc123")], gh, os.path.join(self.tmp, "yt"), set())[0]["plugins"][0]
+        self.assertEqual(item["youtube"], "https://youtu.be/abc123")
+        gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
+        self.assertNotIn("youtube", catalog_build.build([self.ENTRY], gh, os.path.join(self.tmp, "yt2"), set())[0]["plugins"][0])
+
     def test_verified_is_split_by_generation(self):
         def plugin(tested, gen2=True):
             z32 = self.build("1.0.0")
@@ -917,6 +924,50 @@ class BuildTest(Base):
         self.assertEqual((p["tier"], p["verified_on"]), ("listed", []))
         self.assertNotIn("tested-gen2", plugin([g1], gen2=False)["bar_missing"])
         self.assertEqual(plugin([])["verified_on"], [])
+
+    def test_an_mpc_sample_test_is_its_own_verification(self):
+        def plugin(tested, entry=None, gen2=True):
+            rel = self.gen2_release("v1.0.0", 1, 2) if gen2 else self.rel("v1.0.0", 1)
+            gh = FakeGitHub({"acme/test-synth": [rel]}, {1: self.build("1.0.0"), 2: self.build("1.0.0", machine=183, elf_class=2)})
+            gh.tested = lambda repo: tested
+            return catalog_build.build([entry or self.ENTRY], gh, os.path.join(self.tmp, "s%d" % len(os.listdir(self.tmp))), set())[0]["plugins"][0]
+        smp = {"version": "1.0.0", "device": "MPC Sample", "firmware": "1.3.0"}
+        g1 = {"version": "1.0.0", "device": "MPC Key 37", "firmware": "3.9.1"}
+        p = plugin([smp])   # not Gen1 (it was counted as Gen1 before the Sample had its own badge), not Gen2
+        self.assertEqual((p["tier"], p["verified_on"]), ("verified", ["sample"]))
+        self.assertIn("tested", p["bar_missing"])
+        self.assertIn("tested-gen2", p["bar_missing"])
+        self.assertEqual(plugin([smp, g1])["verified_on"], ["gen1", "sample"])
+        self.assertEqual(plugin([smp], gen2=False)["verified_on"], [])   # the Sample runs the aarch64 build: none, nothing verified
+        # an entry for the Sample only: devices carried to the catalog, and the bar asks for a Sample test, not Gen1/Gen2 ones
+        only = {**self.ENTRY, "devices": ["mpc-sample"]}
+        p = plugin([], only)
+        self.assertEqual(p["devices"], ["mpc-sample"])
+        self.assertIn("tested-sample", p["bar_missing"])
+        self.assertFalse({"tested", "tested-gen2"} & set(p["bar_missing"]))
+        self.assertNotIn("tested-sample", plugin([smp], only)["bar_missing"])
+        self.assertNotIn("devices", plugin([g1]))
+
+    def test_a_dependency_limited_to_some_devices_is_only_for_dependents_limited_to_them(self):
+        base = {**self.ENTRY, "id": "draw", "devices": ["mpc-sample"]}
+        rack = {**self.ENTRY, "id": "rack", "devices": ["mpc-sample"], "depends": ["draw>=0.3.0"]}
+        tool = {**self.ENTRY, "id": "tool", "depends": ["draw"]}   # offered on every MPC, but its dependency isn't
+        self.assertEqual(catalog_build.device_dependency_problems([base, rack]), [])
+        probs = catalog_build.device_dependency_problems([base, rack, tool])
+        self.assertEqual([f for f, _ in probs], ["tool.json"])
+        self.assertIn("only for the MPC Sample", probs[0][1])
+        # built versions: the unlimited dependent loses its builds (nothing it is offered on can have the dependency), the other keeps them
+        def built(pid, devices=None, depends=()):
+            v = {"version": "1.0.0", "channel": "stable", "yanked": False, "assets": {"aarch64": {"url": "u"}}, "gen2": True,
+                 "depends": [{"id": d, "rules": []} for d in depends]}
+            return {"id": pid, "distribution": "release", "versions": [v], **({"devices": devices} if devices else {})}
+        plugins = [built("draw", ["mpc-sample"]), built("rack", ["mpc-sample"], ["draw"]), built("tool", None, ["draw"])]
+        problems = []
+        self.assertTrue(catalog_build.apply_dependencies(plugins, problems))
+        by = {p["id"]: p for p in plugins}
+        self.assertEqual(by["rack"]["versions"][0]["depends"][0]["pick"], {"aarch64": "1.0.0"})
+        self.assertEqual(by["tool"]["versions"], [])
+        self.assertTrue(any("only for the MPC Sample" in str(x) for x in problems), problems)
 
     def test_quality_bar(self):
         gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
@@ -955,6 +1006,9 @@ class BuildTest(Base):
         self.assertEqual(catalog_build.check_entry({**self.ENTRY, "tier": "experimental", "featured": True}, "x/test-synth.json"), [])
         self.assertTrue(catalog_build.check_entry({**self.ENTRY, "tier": "verified"}))
         self.assertTrue(catalog_build.check_entry({**self.ENTRY, "featured": "yes"}))
+        self.assertEqual(catalog_build.check_entry({**self.ENTRY, "devices": ["mpc-sample"]}, "x/test-synth.json"), [])
+        for bad in ([], ["live3"], "mpc-sample", ["mpc-sample", "mpc-sample"]):
+            self.assertTrue(catalog_build.check_entry({**self.ENTRY, "devices": bad}, "x/test-synth.json"), bad)
 
     def test_dependencies_come_from_the_manifest_else_the_registry_and_unmet_ones_hide_the_version(self):
         dep = self.build("2.0.0", extra=("--id", "other-plugin"))
@@ -1229,6 +1283,43 @@ class SiteTest(unittest.TestCase):
         self.assertEqual(len(doc.getElementsByTagName("entry")), 1)
         self.assertIn("A <&>", doc.getElementsByTagName("title")[1].firstChild.data)
 
+    def test_plugin_feed(self):
+        """feed/<id>.xml: one plugin's releases, newest first, no yanked ones, a beta marked, text escaped, ids shared with feed.xml."""
+        import xml.dom.minidom
+        v = lambda ver, date, y=False, ch="stable", notes="": {"version": ver, "date": date, "url": "https://x/%s?a=1&b=2" % ver, "yanked": y, "channel": ch, "notes": notes}
+        p = {"id": "a", "name": "A <&>", "author": "Z", "summary": "s", "versions": [v("1.0.0", "2026-10-01"), v("1.2.0", "2026-10-20", notes="Fixes  the\nclick <b>noise</b>"),
+                                                                                       v("1.1.0", "2026-10-10", y=True), v("1.3.0-b", "2026-10-25", ch="beta")]}
+        doc = xml.dom.minidom.parseString(catalog_site.plugin_atom(p, "https://e.io/x/"))
+        entries = doc.getElementsByTagName("entry")
+        titles = [e.getElementsByTagName("title")[0].firstChild.data for e in entries]
+        self.assertEqual(titles, ["A <&> 1.3.0-b (beta)", "A <&> 1.2.0", "A <&> 1.0.0"])          # newest first, the yanked 1.1.0 is gone
+        ids = [e.getElementsByTagName("id")[0].firstChild.data for e in entries]
+        self.assertEqual(ids[1], "tag:mpc-vst-catalog,2026:a@1.2.0")
+        cat = {"schema": 1, "generated": "g", "plugins": [p]}
+        main = xml.dom.minidom.parseString(catalog_site.atom(cat, "https://e.io/x/"))
+        self.assertEqual({e.getElementsByTagName("id")[0].firstChild.data for e in main.getElementsByTagName("entry")}, set(ids))   # same ids as feed.xml
+        self.assertEqual(entries[1].getElementsByTagName("summary")[0].firstChild.data, "Fixes the click <b>noise</b>")        # notes: one line, escaped text
+        self.assertIn('rel="self" href="https://e.io/x/feed/a.xml"', catalog_site.plugin_atom(p, "https://e.io/x/"))
+        self.assertEqual(xml.dom.minidom.parseString(catalog_site.plugin_atom(dict(p, versions=[]))).getElementsByTagName("entry").length, 0)   # no release yet: an empty feed
+        many = dict(p, versions=[v("1.%d.0" % i, "2026-09-%02d" % (i % 28 + 1)) for i in range(40)])
+        self.assertEqual(len(xml.dom.minidom.parseString(catalog_site.plugin_atom(many)).getElementsByTagName("entry")), 30)
+
+    def test_collection_feed(self):
+        import xml.dom.minidom
+        cat = self.collection_catalog()
+        c = cat["collections"][0]; members = [p for p in cat["plugins"] if p.get("collection") == "pack"]
+        doc = xml.dom.minidom.parseString(catalog_site.collection_atom(c, members, "https://e.io/x/"))
+        titles = [e.getElementsByTagName("title")[0].firstChild.data for e in doc.getElementsByTagName("entry")]
+        self.assertTrue(all(t.startswith("Pack <&>") or t.startswith("Member 3") for t in titles), titles)   # only this collection's releases, none of Solo's
+        self.assertNotIn("Solo 1.0.0", " ".join(titles))
+        self.assertTrue(any("2 plugins updated" in t for t in titles), titles)                              # same-day releases are one entry, as in feed.xml
+        self.assertIn('rel="self" href="https://e.io/x/feed/c/pack.xml"', catalog_site.collection_atom(c, members, "https://e.io/x/"))
+        self.assertEqual(doc.getElementsByTagName("title")[0].firstChild.data, "Pack <&>: releases")
+
+    def test_share_page_advertises_its_feed(self):
+        html = catalog_site.share_page({"id": "a-b", "name": "A <b>", "author": "Z", "summary": "s"})
+        self.assertIn('<link rel="alternate" type="application/atom+xml" title="A &lt;b&gt;: releases" href="../feed/a-b.xml">', html)
+
     def collection_catalog(self):
         v = lambda ver, date, ch="stable": {"version": ver, "date": date, "url": "https://x/%s.zip" % ver, "yanked": False, "channel": ch}
         m = lambda i, vers, col="pack": {"id": "m%d" % i, "name": "Member %d" % i, "author": "Z", "summary": "s%d" % i, "kind": "effect",
@@ -1285,6 +1376,14 @@ class SiteTest(unittest.TestCase):
             self.assertEqual(catalog_build.check_entry(dict(BuildTest.ENTRY, license=lic)), [], lic)
         for lic in ("MIT AND MAME license", "MIT AND", "AND MIT", "MIT WITH Apache-2.0", "MIT Apache-2.0"):
             self.assertTrue(catalog_build.check_entry(dict(BuildTest.ENTRY, license=lic)), lic)
+
+    def test_registry_youtube_line(self):
+        """The optional "youtube" line: a youtube.com or youtu.be https link, validated, and carried into catalog.json."""
+        for good in ("https://www.youtube.com/watch?v=abc123", "https://youtu.be/abc123", "https://youtube.com/playlist?list=PL1", "https://m.youtube.com/watch?v=x1"):
+            self.assertEqual(catalog_build.check_entry(dict(BuildTest.ENTRY, youtube=good)), [], good)
+        for bad in ("http://youtu.be/abc123", "https://evil.example/youtube.com/x", "https://youtube.com.evil.example/x", "https://youtu.be/ a b",
+                    "javascript:alert(1)", "https://www.youtube.com/watch?v=" + "a" * 300, "", 7, None):
+            self.assertTrue(catalog_build.check_entry(dict(BuildTest.ENTRY, youtube=bad)), repr(bad))
 
     def test_registry_role_midi_only_on_an_instrument(self):
         ok = dict(BuildTest.ENTRY, kind="instrument", role="midi")
@@ -1387,10 +1486,10 @@ class PagesTest(unittest.TestCase):
     def test_repo_pages_render_with_nav(self):
         pages = catalog_site.load_pages(os.path.join(HERE, "..", "catalog", "pages"))
         self.assertGreaterEqual(len(pages), 3)
-        self.assertEqual([p["slug"] for p in pages], ["install", "faq", "build", "workflow"])
+        self.assertEqual([p["slug"] for p in pages], ["install", "faq", "build", "workflow", "privacy"])
         for p in pages:
             html = catalog_site.render_page(p, pages)
-            self.assertIn('aria-current="page"', html)
+            if not p.get("hidden"): self.assertIn('aria-current="page"', html)   # a hidden page (Privacy) has no menu entry, only a footer link
             for marker in ("/*NAV*/", "/*TITLE*/", "/*DESC*/", "/*BODY*/", "/*SITE_CSS*/"):
                 self.assertNotIn(marker, html)
         idx = catalog_site.render({"schema": 1, "generated": "x", "plugins": []}, pages)
@@ -1931,7 +2030,7 @@ class StoreTest(Base):
         open(self.settings_path, "w").write(SyncTest.ONLY_OTHER)
         self.log = os.path.join(self.tmp, "mpc_ctl.log")
 
-    def write_catalog(self, published, addins=(), gen2=None, gen2_only=False, requires="", shares_hooks=(), depends=None, conflicts=()):
+    def write_catalog(self, published, addins=(), gen2=None, gen2_only=False, requires="", shares_hooks=(), depends=None, conflicts=(), devices=()):
         """depends: {synth version: [{id, rules, pick}]} as catalog_build.py resolves them; conflicts: the synth's, on every version."""
         vs = []
         for v, path in self.versions:
@@ -1950,7 +2049,7 @@ class StoreTest(Base):
                     vs[-1].update(gen2=True, gen2_only=True)
         vs.sort(key=lambda x: [int(n) for n in x["version"].split(".")], reverse=True)
         cat = {"schema": 1, "plugins": [{"id": "test-synth", "name": "Test Synth", "kind": "instrument", "distribution": "release",
-                                          "latest": vs[0]["version"], "versions": vs},
+                                          "latest": vs[0]["version"], "versions": vs, **({"devices": list(devices)} if devices else {})},
                                          {"id": "byo", "name": "Build Yourself", "kind": "instrument", "distribution": "build-yourself", "versions": []}]}
         avs = []
         for v in addins:   # (version, zip) of the test addin
@@ -2084,6 +2183,21 @@ class StoreTest(Base):
         self.assertIn("[Gen2 only]", self.store("list", env_extra={"MPC_STORE_ARCH": "armv7l"}).stdout)
         r = self.store("install", "test-synth", env_extra={"MPC_STORE_ARCH": "aarch64"})
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_a_plugin_for_the_mpc_sample_installs_only_there(self):
+        z64 = self.build(version="1.2.0", machine=183, elf_class=2)
+        shutil.copy(z64, self.web)
+        self.write_catalog(["1.2.0"], gen2=os.path.join(self.web, os.path.basename(z64)), devices=["mpc-sample"])
+        self.assertIn("mpc-sample", open(os.path.join(self.web, "catalog.tsv")).read().splitlines()[-1].split("\t")[23])
+        g2 = {"MPC_STORE_ARCH": "aarch64", "MPC_STORE_DEVICE": ""}
+        r = self.store("install", "test-synth", env_extra=g2)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)   # skipped, not an error, like a missing build
+        self.assertIn("only for mpc-sample", r.stdout + r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(self.synths, self.SKIN)))
+        self.assertIn("[only for: mpc-sample]", self.store("list", env_extra=g2).stdout)
+        r = self.store("install", "test-synth", env_extra={"MPC_STORE_ARCH": "aarch64", "MPC_STORE_DEVICE": "mpc-sample"})
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertTrue(os.path.exists(os.path.join(self.synths, self.SKIN, "test_synth.so")))
 
     def test_a_gen2_device_installs_the_aarch64_zip(self):
         self.with_gen2()

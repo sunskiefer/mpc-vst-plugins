@@ -107,8 +107,8 @@ with sync_playwright() as p:
     # "Newest in catalog" sorts by when the entry was added (catalog/added.json), newest first, not by release date
     import json
     fixture = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixture-catalog.json")))
-    # one card per plugin outside a collection, one per collection (its "added" is its oldest member's)
-    cards = [(x["added"], x["name"]) for x in fixture["plugins"] if not x.get("collection")] + [(c["added"], c["title"]) for c in fixture["collections"]]
+    # one card per plugin outside a collection (Sample-only ones show in the MPC Sample view only), one per collection (its "added" is its oldest member's)
+    cards = [(x["added"], x["name"]) for x in fixture["plugins"] if not x.get("collection") and not x.get("devices")] + [(c["added"], c["title"]) for c in fixture["collections"]]
     want = [n.upper() for _, n in sorted(cards, key=lambda t: t[0], reverse=True)]
     pg.select_option("#sort", "added")
     got = [t.upper() for t in pg.locator("#grid article.card h2").all_inner_texts()]
@@ -117,12 +117,22 @@ with sync_playwright() as p:
     # Verified is split by device generation: one badge per generation, and a Tier filter option for each
     both = pg.locator("#grid article:has(h2:has-text('Tested Two')) .tag.tier-verified").all_text_contents()
     check("a plugin tested on both generations has two Verified badges", both == ["Verified Gen1", "Verified Gen2"], str(both))
-    for val, gen in (("verified-gen1", "gen1"), ("verified-gen2", "gen2")):
-        pg.select_option("#f-tier", val)
+    # the MPC Sample has its own badge, and an entry limited to it (registry "devices") says so instead of "Gen2"
+    pg.click("#tab-addin"); pg.click('[data-plat="sample"]')   # Sample-only entries show in the MPC Sample view only
+    smp = pg.locator("#grid article:has(h2:has-text('Sample Only'))")
+    check("a plugin tested on an MPC Sample has the Verified Sample badge",
+          smp.locator(".tag.tier-verified").all_text_contents() == ["Verified Sample"], str(smp.locator(".tag.tier-verified").all_text_contents()))
+    check("a plugin for the MPC Sample only says so", smp.locator(".tag:has-text('MPC Sample only')").count() == 1
+          and smp.locator(".tag:has-text('Gen2')").count() == 0, smp.inner_text()[:200])
+    dl = smp.locator("a.btn-l:has-text('Download')").all_text_contents()
+    check("a plugin for the MPC Sample only has one download, named for the Sample", dl == ["Download (MPC Sample)"], str(dl))
+    pg.click('[data-plat=""]'); pg.click("#tab-all")
+    for val, gen in (("verified-gen1", "gen1"), ("verified-gen2", "gen2"), ("verified-sample", "sample")):
+        pg.click('[data-plat="%s"]' % ("sample" if gen == "sample" else "")); pg.select_option("#f-tier", val)
         cards = pg.locator("#grid article.card")
         wrong = [i for i in range(cards.count()) if cards.nth(i).locator(".tag.tier-verified[data-gen=%s]" % gen).count() != 1]
         check("Tier filter %s shows only cards with that badge" % val, cards.count() >= 1 and not wrong, "%d cards, wrong %s" % (cards.count(), wrong))
-    pg.select_option("#f-tier", "")
+    pg.select_option("#f-tier", ""); pg.click('[data-plat=""]')
     check("experimental plugins are hidden by default", pg.locator(".tag.tier-experimental").count() == 0)
     check("the hidden-experimental note offers them", pg.locator("#exp").is_visible())
     pg.click("#show-exp")
