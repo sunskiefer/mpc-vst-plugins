@@ -83,7 +83,7 @@ def main():
         + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
         + text(1256, 38, "LOCATIONS", 20, MUTED, 700, anchor="end", spacing=2)
         + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE))
-    svg("loc_row.svg", 1232, 108, '<rect x="0.5" y="0.5" width="1231" height="107" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE))
+    svg("loc_row.svg", 1232, 100, '<rect x="0.5" y="0.5" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE))
     svg("loc_ok.svg", 140, 30, '<rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="#3fbf7f" stroke-width="2"/>'
         + text(70, 21, "USABLE", 15, GREEN, 700, anchor="middle", spacing=1.5))
     svg("loc_bad.svg", 140, 30, '<rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="%s" stroke-width="2"/>' % RED
