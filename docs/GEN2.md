@@ -4,6 +4,11 @@ Gen2 MPC devices (MPC Live III and kin, RK3588) run a 64-bit userland: `/usr/bin
 `/usr/lib/ld-linux-aarch64.so.1` and there are no 32-bit libraries, so Gen1's armv7 `.so` files cannot load
 (analysed 2026-10-06 from the 3.9.1 Gen2 update image, offline; see `docs/FIRMWARE_BUILDER.md`). A plugin needs a second, aarch64 build.
 
+**Hardware map (from inMusic's published device trees, 2026-11-08, offline; `docs/AZ0X_SOURCE.md`):** Live III = ACVG and XL = ACVC
+(full RK3588; the Live III has PCIe/NVMe, a battery gauge and `inmusic,nvme-fitted`), One G2 = ACVA3 and Key 37 G2 = ACVR2 (RK3588S).
+All run a PREEMPT_RT kernel with the `performance` governor. The MPC Sample (RK3566, AC50) is a separate aarch64 board:
+`docs/MPC_SAMPLE.md`.
+
 **Status (2026-10-11): two Gen2 device confirmations, pilot phase done.** Crate Digger 1.1.9 and Profit-08 0.1.1's aarch64 builds
 both installed on a real MPC Live III (MPC OS 3.9.1, the official user-facing version; the "5.0.18 (scarthgap)" read on the
 device is the underlying az01/buildroot base, not the MPC OS version), registered, showed up in MPC's plugin browser and ran (Crate Digger's skin

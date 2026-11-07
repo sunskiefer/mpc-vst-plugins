@@ -124,7 +124,8 @@ with the whole project. Full list: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md
 | Port an engine | [PORTING.md](docs/PORTING.md), [EMULATOR_PORTS.md](docs/EMULATOR_PORTS.md), [MIDI_TIMING.md](docs/MIDI_TIMING.md) |
 | Design a page | [SKIN_STUDIO.md](docs/SKIN_STUDIO.md), [SKIN_VARIANTS.md](docs/SKIN_VARIANTS.md), [COMMUNITY_SKINS.md](docs/COMMUNITY_SKINS.md) |
 | Measure and ship | [BENCH.md](docs/BENCH.md), [RELEASING.md](docs/RELEASING.md), [CATALOG.md](docs/CATALOG.md) |
-| Know what is verified | [NOTES.md](docs/NOTES.md) (hardware facts, dated), [MPC_OS_REFERENCE.md](docs/MPC_OS_REFERENCE.md) |
+| Know what is verified | [NOTES.md](docs/NOTES.md) (hardware facts, dated), [MPC_OS_REFERENCE.md](docs/MPC_OS_REFERENCE.md), [AZ0X_SOURCE.md](docs/AZ0X_SOURCE.md) (inMusic's published source) |
+| Target the MPC Sample | [MPC_SAMPLE.md](docs/MPC_SAMPLE.md) |
 | Work with Gen2 or MPC OS 2.x | [GEN2.md](docs/GEN2.md), [OS2_SKINS.md](docs/OS2_SKINS.md), [COMPATIBILITY.md](docs/COMPATIBILITY.md) |
 | Run an addin or patch | [ADDINS.md](docs/ADDINS.md), [PATCHES.md](docs/PATCHES.md) |
 
