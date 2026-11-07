@@ -3153,6 +3153,232 @@
    "name": "Drive pick 4",
    "type": "trigger",
    "momentary": true
+  },
+  {
+   "key": "loc1_vis",
+   "name": "Location 1 shown",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc1_ok",
+   "name": "Location 1 usable",
+   "live": true,
+   "options": [
+    "none",
+    "yes",
+    "no"
+   ]
+  },
+  {
+   "key": "loc1_bar",
+   "name": "Location 1 used",
+   "live": true,
+   "options": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ]
+  },
+  {
+   "key": "loc1_name",
+   "name": "Location 1 name",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc1_info",
+   "name": "Location 1 details",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc1_state",
+   "name": "Location 1 state",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc2_vis",
+   "name": "Location 2 shown",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc2_ok",
+   "name": "Location 2 usable",
+   "live": true,
+   "options": [
+    "none",
+    "yes",
+    "no"
+   ]
+  },
+  {
+   "key": "loc2_bar",
+   "name": "Location 2 used",
+   "live": true,
+   "options": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ]
+  },
+  {
+   "key": "loc2_name",
+   "name": "Location 2 name",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc2_info",
+   "name": "Location 2 details",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc2_state",
+   "name": "Location 2 state",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc3_vis",
+   "name": "Location 3 shown",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc3_ok",
+   "name": "Location 3 usable",
+   "live": true,
+   "options": [
+    "none",
+    "yes",
+    "no"
+   ]
+  },
+  {
+   "key": "loc3_bar",
+   "name": "Location 3 used",
+   "live": true,
+   "options": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ]
+  },
+  {
+   "key": "loc3_name",
+   "name": "Location 3 name",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc3_info",
+   "name": "Location 3 details",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc3_state",
+   "name": "Location 3 state",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc4_vis",
+   "name": "Location 4 shown",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc4_ok",
+   "name": "Location 4 usable",
+   "live": true,
+   "options": [
+    "none",
+    "yes",
+    "no"
+   ]
+  },
+  {
+   "key": "loc4_bar",
+   "name": "Location 4 used",
+   "live": true,
+   "options": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ]
+  },
+  {
+   "key": "loc4_name",
+   "name": "Location 4 name",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc4_info",
+   "name": "Location 4 details",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc4_state",
+   "name": "Location 4 state",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc_foot",
+   "name": "Locations footer",
+   "type": "readout",
+   "display": "string"
   }
  ]
 }

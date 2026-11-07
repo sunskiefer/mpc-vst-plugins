@@ -859,6 +859,71 @@ static int good_target(const char *loc) {
     return !bad_target(loc, why, sizeof why);
 }
 
+
+/* ---- LOCATIONS tab: what is known about each Synths folder MPC lists ---- */
+typedef struct { char name[96], info[200], state[200]; int bar, vis, usable, dflt; } locrow_t;
+
+static int mount_of(const char *path, char *fs, size_t nf, int *rw, int *exec) {
+#ifdef FS_ANY
+    FILE *f = fopen(!access("/tmp/pm-mounts", R_OK) ? "/tmp/pm-mounts" : "/proc/mounts", "r");
+#else
+    FILE *f = fopen("/proc/mounts", "r");
+#endif
+    char dev[128], mnt[256], type[32], opts[512];
+    size_t best = 0;
+    int found = 0;
+    while (f && fscanf(f, "%127s %255s %31s %511s %*d %*d", dev, mnt, type, opts) == 4) {
+        mount_unescape(mnt);
+        size_t l = strlen(mnt);
+        if (strncmp(path, mnt, l) || (path[l] && path[l] != '/' && l > 1) || l < best) continue;
+        best = l; found = 1;
+        snprintf(fs, nf, "%s", type);
+        *rw = !strncmp(opts, "rw", 2) && (opts[2] == ',' || !opts[2]);
+        *exec = !strstr(opts, "noexec");
+    }
+    if (f) fclose(f);
+    return found;
+}
+
+static void loc_row(const mgr_t *m, int k, locrow_t *r) {
+    const device_t *d = m->dev;
+    memset(r, 0, sizeof *r);
+    if (!d || k < 0 || k >= d->nloc) return;
+    const char *loc = d->loc[k];
+    char path[200], why[320], fs[32] = "?", parent[200];
+    snprintf(path, sizeof path, "%s", loc);
+    for (size_t l = strlen(path); l > 1 && path[l - 1] == '/'; ) path[--l] = 0;
+    snprintf(parent, sizeof parent, "%s", path);
+    char *sl = strrchr(parent, '/');
+    if (sl && sl != parent) *sl = 0;
+    const char *at = is_dir(path) ? path : parent;
+    int internal = !strncmp(path, "/media/az01-internal", 20) || !strncmp(path, "/sdcard/", 8) || !strncmp(path, "/nvme/", 6) || internal_device(path);
+    const char *lab = !strncmp(path, "/media/", 7) && !internal ? path + 7 : NULL;
+    snprintf(r->name, sizeof r->name, "%.*s  \xc2\xb7  %s", lab ? (int)strcspn(lab, "/") : 8, lab ? lab : "Internal", path);
+    int rw = 0, ex = 0;
+    mount_of(at, fs, sizeof fs, &rw, &ex);
+    struct statvfs sv;
+    char sz[64] = "size unknown";
+    if (statvfs(at, &sv) == 0 && sv.f_blocks) {
+        double tot = (double)sv.f_blocks * sv.f_frsize / 1e9, fr = (double)sv.f_bavail * sv.f_frsize / 1e9;
+        snprintf(sz, sizeof sz, "%.1f of %.1f GB used", tot - fr, tot);
+        r->bar = (int)((tot - fr) / tot * 10 + 0.5);
+        if (r->bar < 0) r->bar = 0; else if (r->bar > 10) r->bar = 10;
+    }
+    snprintf(r->info, sizeof r->info, "%s  \xc2\xb7  %s  \xc2\xb7  %s  \xc2\xb7  %s", fs, rw ? "read-write" : "read-only", ex ? "exec" : "noexec", sz);
+    int n = 0;
+    DIR *dd = opendir(path);
+    struct dirent *e;
+    while (dd && (e = readdir(dd))) if (e->d_name[0] != '.' && strstr(e->d_name, " - VST - ")) n++;
+    if (dd) closedir(dd);
+    const char *bad = bad_target(path, why, sizeof why);
+    r->usable = !bad;
+    r->dflt = !bad && d->target[0] && (!strcmp(d->target, path) || same_folder(d->target, path));
+    if (bad) snprintf(r->state, sizeof r->state, "Can't install here: %s", bad);
+    else snprintf(r->state, sizeof r->state, "%s  \xc2\xb7  %d plugin%s", r->dflt ? "Default install location" : "Ready", n, n == 1 ? "" : "s");
+    r->vis = 1;
+}
+
 /* The theme: the skin the device runs is the folder "Plugin Skins" in this plugin's own folder. Both skins ship there as "Plugin Skins.dark"
  * and "Plugin Skins.light"; an apply copies the wanted one over it while MPC is stopped (MPC keeps skins in memory, so a swap shows after a
  * restart). The wanted theme is kept in <base>/.openmpcpm-theme; the one in place is named by the file ".theme" inside each skin folder. */
@@ -2486,6 +2551,24 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
             if (statvfs(r, &dv) == 0) snprintf(b, n, "%s  \xc2\xb7  %.1f GB free", target_name(m, k), (double)dv.f_bavail * dv.f_frsize / 1e9);
             else snprintf(b, n, "%s", target_name(m, k));
         } else snprintf(b, n, " ");
+    }
+    else if (!strncmp(key, "loc", 3) && key[3] >= '1' && key[3] <= '4' && key[4] == '_') {   /* LOCATIONS tab, rows 1..4 */
+        locrow_t r;
+        loc_row(m, key[3] - '1', &r);
+        const char *f = key + 5;
+        if (!strcmp(f, "vis")) snprintf(b, n, "%d", r.vis);
+        else if (!strcmp(f, "bar")) snprintf(b, n, "%d", r.bar);
+        else if (!strcmp(f, "ok")) snprintf(b, n, "%d", !r.vis ? 0 : r.usable ? 1 : 2);   /* none, yes, no */
+        else if (!strcmp(f, "name")) snprintf(b, n, "%s", r.vis ? r.name : " ");
+        else if (!strcmp(f, "info")) snprintf(b, n, "%s", r.vis ? r.info : " ");
+        else if (!strcmp(f, "state")) snprintf(b, n, "%s", r.vis ? r.state : " ");
+        else ok = 0;
+    }
+    else if (!strcmp(key, "loc_foot")) {
+        int hid = m->dev->nloc > 4 ? m->dev->nloc - 4 : 0;
+        if (!m->dev->nloc) snprintf(b, n, "MPC lists no Synths folder");
+        else if (hid) snprintf(b, n, "%d Synths folders listed by MPC  \xc2\xb7  %d more not shown", m->dev->nloc, hid);
+        else snprintf(b, n, "%d Synths folder%s listed in MPC.settings", m->dev->nloc, m->dev->nloc == 1 ? "" : "s");
     }
     else if (!strcmp(key, "upd_badge")) snprintf(b, n, "%d", upd > 0);
     else if (!strcmp(key, "upd_count")) snprintf(b, n, "%d", upd);

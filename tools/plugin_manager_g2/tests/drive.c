@@ -88,6 +88,13 @@ int main(int argc, char **argv) {
   sleep(1);
   printf("net=%s problem=%s (%s) empty=%s disk=%s %s upd_badge=%s count=%s\n", get("net"), get("problem"), get("problem_txt"), get("empty"),
          get("disk"), get("disk_txt"), get("upd_badge"), get("upd_count"));
+  for (int i = 1; i <= 4; i++) {   /* the LOCATIONS tab's rows */
+    char k[24], nm[24], in[24], st[24], ok[24], bar[24];
+    snprintf(k, sizeof k, "loc%d_vis", i); snprintf(nm, sizeof nm, "loc%d_name", i); snprintf(in, sizeof in, "loc%d_info", i);
+    snprintf(st, sizeof st, "loc%d_state", i); snprintf(ok, sizeof ok, "loc%d_ok", i); snprintf(bar, sizeof bar, "loc%d_bar", i);
+    printf("loc%d: vis=%s ok=%s bar=%s |%s|%s|%s|\n", i, get(k), get(ok), get(bar), get(nm), get(in), get(st));
+  }
+  printf("locfoot: %s\n", get("loc_foot"));
   if (argc > 1 && !strcmp(argv[1], "webfiles")) {   /* ROMs into a folder the installed plugin's user_files names, and nowhere else */
     const char *ok = "X-PM: 1\r\nContent-Length: 4\r\n\r\nabcd";   /* the body rides after the headers */
     http_get("/api/state");

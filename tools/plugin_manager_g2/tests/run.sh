@@ -31,6 +31,8 @@ for dev in tests/devices/${DEV:-*}.sh; do
   /tmp/drive > /tmp/drive.out && grep -E "location|target|problem" /tmp/openmpc-pm/device.txt
   # a device that can install must get the first catalog plugin to "ready" (apply_state 3): a scenario that quietly timed out hid a broken install path for weeks
   if grep -q "^problem: none" "${dev%.sh}.expect"; then grep -q "apply_state 3" /tmp/drive.out || { echo "FAIL $dev: the install never reached ready"; grep "status(" /tmp/drive.out | tail -n 2; exit 1; }; fi
+  # tests/devices/<name>.locs: text the LOCATIONS tab must show (one fixed string per line; "loc1: vis=1" ...)
+  [ ! -f "${dev%.sh}.locs" ] || while IFS= read -r l; do grep -qF -- "$l" /tmp/drive.out || { echo "FAIL $dev: LOCATIONS lacks: $l"; grep "^loc" /tmp/drive.out; exit 1; }; done < "${dev%.sh}.locs"
   # tests/devices/<name>.banner: the red banner a device with a problem must show (plain words)
   [ ! -f "${dev%.sh}.banner" ] || grep -qF -- "$(cat "${dev%.sh}.banner")" /tmp/drive.out || { echo "FAIL $dev: banner is not: $(cat "${dev%.sh}.banner")"; grep banner /tmp/drive.out | head -n 2; exit 1; }
   cp -n /tmp/openmpc-pm/*.zip /tmp/zipcache/ 2>/dev/null || true
