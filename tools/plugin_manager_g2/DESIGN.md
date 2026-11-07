@@ -257,3 +257,64 @@ adapt `docs/UPSTREAM_TESTING.md`, plus: unlisted target shows the banner; a list
 - **Name**: "MPC" is Akai's mark; the project already uses it descriptively. Keep "OpenMPC" wording off logos and the plugin's skin art.
 - **exFAT and symlinks** (section 3): test a package that ships a symlink on `/nvme`.
 - **Catalog id**: poloq's manager is catalog id `plugin-manager`; this one needs its own id and uid, and a catalog entry only after a device pass.
+
+## 11. Bottom tabs: LOCATIONS, PATCHES, SETTINGS (your idea, 2026-11-07)
+
+Status: design only, on `local/post-launch`. Nothing here is built. Keep MPC OS 3.10.1 details out of public branches until Akai publishes.
+
+### Goal
+Today the whole manager is one skin tab (`[tab PLUGINS]` in `vst/layout.conf`), so storage, drive choice, theme and device state are squeezed
+into the header and the restart prompt. MPC draws one bottom tab per `[tab X]` of the layout (the DX7's VOICE, CARTS, ALGO ...). Add tabs, all
+touch-driven like the existing page, to give those things room and to add features.
+
+### Tabs
+| Tab | Content |
+|---|---|
+| **BROWSE** (today's PLUGINS, renamed) | Unchanged: Discover / Installed / Updates, search, filter, sort, queue, APPLY. **The status line and the drive readout stay here.** Locations behind the readout opens the LOCATIONS tab's content as before (the INSTALL TO menu stays). |
+| **LOCATIONS** | One card per listed content location and usable drive (see below). |
+| **PATCHES** | Device patches from `catalog/patches.json` (docs/PATCHES.md). Add-ins stay in BROWSE's kind filter (the catalog already lists them). |
+| **SETTINGS** | Theme (off the header), catalog mirror, channel, web page on/off, auto-check, pinned versions. |
+
+Left out on purpose: a per-plugin compatibility page (the cards keep their badges), Files/ROMs (next phase), About.
+
+### LOCATIONS
+Data the manager already has (`probe_device`, `device.txt`): `loc[]`, `usable[]`, `uname[]`, `vdrv[]`. New: a `statvfs` per location, the
+filesystem name and mount flags from `/proc/mounts`, a count and size of plugin folders, and the image-cache fill.
+Per card: name, mount point, filesystem, total / used / free (bar), writable, exec, listed in `SynthContentLocations`, plugins on it
+(count, size; tap for the list), verdict in words with the reason (same strings as the red banner), and the default marker.
+Actions: **Make default** (the remembered install-to place), **Register with MPC** (add a writable exec drive to `SynthContentLocations`
+through the same settings backup and rollback as an install), **Move plugins here** (3.10.1 VST2 Plugins migration, existing code), **Rescan**.
+Footer: image-cache RAM-disk fill and the `MPC.settings` path with its backup count.
+Register edits `MPC.settings`, so it is queued and applied with APPLY like everything else; nothing changes on a tap.
+
+### PATCHES
+Cards from `patches.json`: title, summary, author, licence, what it `modifies`, the `backup` path, `restarts_mpc`, `reversible`.
+Per patch the device's state comes from the script's own `status` (`state=stock|patched|old-patch|unsupported`), not from the manager.
+A patch whose `supports.mpc_md5` / `arch` does not match this device is greyed out with the reason and has no button.
+Stages follow docs/PATCHES.md: (a) list + compatibility, (b) read-only `status`, (c) Apply / Undo. **(c) is gated on one real-device
+apply, which the owner offered on their own unit (2026-11-07).**
+Apply flow (stage c): tap APPLY PATCH, a summary (modifies, backup, restarts MPC), the typed confirmation replaced by a two-step on-screen
+confirm like the restart prompt, then the manager runs the script **detached from MPC** (as installs already do via systemd-run / the
+detached restart), because the script stops MPC and the manager lives inside it. Output goes to `manager.log`; after the restart the status
+line reports the result, and UNDO is the same call with `uninstall`. One patch at a time, never part of the plugin queue or UPDATE ALL.
+The script is downloaded and its sha256 checked **before** MPC is stopped; a patch pinned to this repo is also compared with `patch_check.py` rules.
+
+### SETTINGS
+Persisted in the manager's work folder next to the theme file; every key has a default, a missing file changes nothing.
+
+### Build notes
+- Tabs: add `[tab LOCATIONS]` etc. to `layout.conf`; per-tab state is computed in `manager.c` like the existing parameters. Append new
+  parameters to the end of `params.json` (and `params.lock`) so saved projects keep their mapping; check `params.lock` rules first.
+- Shared state: locations and patches are read once per refresh by the worker thread; pages only display copies.
+- Screen cost: each tab adds widgets. Bench on the Live III (`docs/BENCH.md`) before a release; the BROWSE page must not get slower.
+- The web page (port 8790) gets the same pages later; the device screen is the first target.
+
+### Milestones
+| Step | Content | Exit test |
+|---|---|---|
+| T1 | Rename `PLUGINS` to BROWSE if MPC allows it without breaking saved projects; add an empty LOCATIONS tab | offline skin render; opens on the Live III |
+| T2 | LOCATIONS read-only (cards, bars, verdicts, cache fill) | offline fake devices (`tests/devices`); Live III + Force |
+| T3 | LOCATIONS actions (default, register, move, rescan) | fake-device tests incl. rollback; one real Register |
+| T4 | SETTINGS | persists across a restart |
+| T5 | PATCHES list + status (stages a, b) | offline; Live III shows `stock` for drum-pad |
+| T6 | PATCHES apply / undo (stage c) | one apply and one undo on the owner's device, MPC restart agreed first |
