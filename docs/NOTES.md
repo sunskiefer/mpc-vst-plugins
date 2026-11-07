@@ -2388,3 +2388,18 @@ through the draw handler's `/snap` and a webcam, audio from the Sample's USB aud
   fixed in draw handler 1.0.1). A refresh is a synchronous transfer to the SPI panel that MPC's own screen updates wait on:
   a page refreshing the whole screen 16 times a second made pad hits up to 80 ms late (18 ms on average, measured against
   an exact grid of injected hits in the USB audio). Sending only the rectangles that change removed it (no measurable delay).
+
+## 2026-11-08: inMusic's published open-source release read: hardware map, USB mux, `edisksd` mount defaults (offline; no device involved)
+
+Read the G1, G2 and Sample kernel trees and `edisksd` from <https://github.com/inmusic-software/az0x-open-source> (source only;
+details and the fetch recipe in `docs/AZ0X_SOURCE.md`, the Sample brief in `docs/MPC_SAMPLE.md`).
+- **Nothing contradicts a verified fact here.** Additions: product codes (Force ADA2; Live III ACVG, XL ACVC, One G2 ACVA3,
+  Key 37 G2 ACVR2, Sample AC50), SoCs per group (G1 RK3288, G2 RK3588/RK3588S, Sample RK3566), PREEMPT_RT everywhere.
+- **The Force/Gen2 "usb-mux" is a device-tree overlay switch** (`virtual-mux`, states `internal`/`external`, 25 ms before and,
+  on the Force, 1000 ms after a switch; Force select GPIO high = internal, with an SMSC USB5537B hub set up over I2C).
+- **`edisksd` mounts removable drives `nodev,noexec,nosuid,nosymfollow` unless `/etc/edisksd/main.conf` or the caller says
+  otherwise**; mount point `/media/<label>` with only `/` replaced, so spaces stay. This is the likely origin of the `noexec`
+  seen on drives. Not yet checked on a unit: `cat /etc/edisksd/main.conf`.
+- **Sample:** `&gpu` is disabled in the AC50 device tree; the Wi-Fi and Bluetooth nodes are in the shared base file but only
+  another product enables them (matches 2026-11-04: no Wi-Fi or Bluetooth hardware).
+- Not answered by the source: plugin hosting, skins, SMEX, update signing, whether LoadPin and dm-verity enforce.
