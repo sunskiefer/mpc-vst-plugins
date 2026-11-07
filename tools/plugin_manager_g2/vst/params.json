@@ -3170,7 +3170,8 @@
    "options": [
     "none",
     "yes",
-    "no"
+    "no",
+    "new"
    ]
   },
   {
@@ -3225,7 +3226,8 @@
    "options": [
     "none",
     "yes",
-    "no"
+    "no",
+    "new"
    ]
   },
   {
@@ -3280,7 +3282,8 @@
    "options": [
     "none",
     "yes",
-    "no"
+    "no",
+    "new"
    ]
   },
   {
@@ -3335,7 +3338,8 @@
    "options": [
     "none",
     "yes",
-    "no"
+    "no",
+    "new"
    ]
   },
   {
@@ -3443,6 +3447,97 @@
   {
    "key": "loc_rescan",
    "name": "Locations rescan",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc1_canreg",
+   "name": "Location 1 register",
+   "live": true,
+   "options": [
+    "off",
+    "register",
+    "queued"
+   ]
+  },
+  {
+   "key": "loc1_reg",
+   "name": "Location 1 register button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc2_canreg",
+   "name": "Location 2 register",
+   "live": true,
+   "options": [
+    "off",
+    "register",
+    "queued"
+   ]
+  },
+  {
+   "key": "loc2_reg",
+   "name": "Location 2 register button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc3_canreg",
+   "name": "Location 3 register",
+   "live": true,
+   "options": [
+    "off",
+    "register",
+    "queued"
+   ]
+  },
+  {
+   "key": "loc3_reg",
+   "name": "Location 3 register button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc4_canreg",
+   "name": "Location 4 register",
+   "live": true,
+   "options": [
+    "off",
+    "register",
+    "queued"
+   ]
+  },
+  {
+   "key": "loc4_reg",
+   "name": "Location 4 register button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc_pages",
+   "name": "Locations pages",
+   "live": true,
+   "options": [
+    "one",
+    "several"
+   ]
+  },
+  {
+   "key": "loc_page",
+   "name": "Locations page",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "loc_prev",
+   "name": "Locations previous page",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "loc_next",
+   "name": "Locations next page",
    "type": "trigger",
    "momentary": true
   }

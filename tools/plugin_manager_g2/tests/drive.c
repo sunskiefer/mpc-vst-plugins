@@ -92,7 +92,8 @@ int main(int argc, char **argv) {
     char k[24], nm[24], in[24], st[24], ok[24], bar[24];
     snprintf(k, sizeof k, "loc%d_vis", i); snprintf(nm, sizeof nm, "loc%d_name", i); snprintf(in, sizeof in, "loc%d_info", i);
     snprintf(st, sizeof st, "loc%d_state", i); snprintf(ok, sizeof ok, "loc%d_ok", i); snprintf(bar, sizeof bar, "loc%d_bar", i);
-    printf("loc%d: vis=%s ok=%s bar=%s |%s|%s|%s|\n", i, get(k), get(ok), get(bar), get(nm), get(in), get(st));
+    char rg[24]; snprintf(rg, sizeof rg, "loc%d_canreg", i);
+    printf("loc%d: vis=%s ok=%s bar=%s |%s|%s|%s| reg=%s\n", i, get(k), get(ok), get(bar), get(nm), get(in), get(st), get(rg));
   }
   printf("locfoot: %s\n", get("loc_foot"));
   if (argc > 1 && !strcmp(argv[1], "webfiles")) {   /* ROMs into a folder the installed plugin's user_files names, and nowhere else */
@@ -179,6 +180,17 @@ int main(int argc, char **argv) {
     printf("after: canpick %s %s | %s | %s\n", get("loc1_canpick"), get("loc2_canpick"), get("loc1_state"), get("loc2_state"));
     press("loc_rescan"); sleep(2);
     printf("rescan: canpick %s %s\n", get("loc1_canpick"), get("loc2_canpick"));
+    e->destroy(m); return 0;
+  }
+  if (argc > 1 && !strcmp(argv[1], "locreg")) {   /* LOCATIONS: REGISTER on the unlisted drive queues it; APPLY writes the step */
+    set("loc2_reg", "1"); set("loc2_reg", "1"); set("loc2_reg", "0");   /* one finger tap reaches the plugin as two events: it counts once */
+    usleep((tapms() + 20) * 1000);
+    printf("queued: reg=%s |%s| apply=%s\n", get("loc2_canreg"), get("loc2_state"), get("apply_state"));
+    press("loc2_reg");
+    printf("cancelled: reg=%s apply=%s\n", get("loc2_canreg"), get("apply_state"));
+    press("loc2_reg"); press("apply");
+    for (int i = 0; i < 60 && strcmp(get("apply_state"), "3") && strcmp(get("apply_state"), "4"); i++) sleep(1);
+    printf("prepared: apply=%s\n", get("apply_state"));
     e->destroy(m); return 0;
   }
   if (argc > 1 && !strcmp(argv[1], "pickshow")) {   /* a fresh start: which place does the restart prompt name first? */

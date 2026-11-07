@@ -157,6 +157,17 @@ grep -qF "before: canpick 1 0 | Ready  ·  0 plugins | Default install location 
 grep -qF "after: canpick 0 1 | Default install location  ·  0 plugins | Ready  ·  0 plugins" /tmp/locpick.out || { cat /tmp/locpick.out; exit 1; }
 grep -qF "rescan: canpick 0 1" /tmp/locpick.out || { cat /tmp/locpick.out; exit 1; }
 grep -qxF "/media/CARD/Synths" /media/az01-internal/.openmpcpm-target
+# LOCATIONS: REGISTER for a drive MPC does not list (queue, cancel, queue again, APPLY writes a step that edits MPC.settings)
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/loc-unlisted.sh
+/tmp/drive_addins locreg > /tmp/locreg.out
+grep -qF "queued: reg=2 |Queued: press APPLY on the PLUGINS tab (MPC restarts)| apply=" /tmp/locreg.out || { cat /tmp/locreg.out; exit 1; }
+grep -qF "cancelled: reg=1" /tmp/locreg.out && grep -qF "prepared: apply=3" /tmp/locreg.out || { cat /tmp/locreg.out; exit 1; }
+grep -qF "register location /media/STICK/Synths" /tmp/openmpc-pm/apply.sh || { cat /tmp/openmpc-pm/apply.sh | tail -20; exit 1; }
+cp /media/az01-internal/Settings/MPC/MPC.settings /tmp/ms.before
+awk -v loc=/media/STICK/Synths -f /tmp/openmpc-pm/loc_add.awk /tmp/ms.before > /tmp/ms.after
+grep -qF "<Location>/media/STICK/Synths</Location>" /tmp/ms.after
+[ "$(grep -c "<Location>" /tmp/ms.after)" = 2 ] && [ "$(grep -cP "\r$" /tmp/ms.after)" = "$(wc -l < /tmp/ms.after)" ] || { cat -A /tmp/ms.after; exit 1; }
 echo "pick OK"
 fi # pick
 if want theme; then

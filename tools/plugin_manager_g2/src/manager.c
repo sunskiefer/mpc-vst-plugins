@@ -98,6 +98,7 @@ enum { Q_INSTALL = 1, Q_REMOVE = 2, Q_REGISTER = 3 };
 enum { J_NONE, J_REFRESH, J_PREPARE, J_LAUNCH };
 
 typedef struct device device_t;
+typedef struct { char name[96], info[200], state[200], path[200]; int bar, vis, usable, dflt, pick, cand; } locrow_t;   /* LOCATIONS: one drive */
 typedef struct {
     pthread_t th;
     pthread_mutex_t mu;
@@ -133,6 +134,8 @@ typedef struct {
     int migrate, migrate_seen;   /* MPC OS 3.10.1: "move to VST2 Plugins" is queued; it was offered once this session (cleared, it stays off) */
     pthread_t web;   /* the local web page (web.c) */
     int web_on;
+    char regq[4][200]; int nregq;   /* LOCATIONS: drives queued for REGISTER (a Synths folder to add to MPC.settings at APPLY) */
+    locrow_t locs[16]; int nlocs, locpage;   /* LOCATIONS rows (built by the worker on each refresh), the page shown (4 per page) */
 } mgr_t;
 
 /* ---- small helpers ---- */
@@ -704,6 +707,8 @@ struct device {
     addin_t addin[32];
     int vst2;              /* MPC OS 3.10.1+: 0 no VST2 Support setting (older OS), 1 off, 2 on (Enhancements.VST2Support in MPC.settings) */
     char vst2dir[220];     /* "<drive of the target>/VST2 Plugins": where 3.10.1 looks for plugins (and where installs go while vst2 == 2) */
+    char cand[8][200];     /* LOCATIONS: Synths folders on mounted drives MPC does not list (registered with REGISTER), cand[k] = "<mount>/Synths" */
+    int ncand, hasloclist; /* hasloclist: MPC.settings has a SynthContentLocations element a Location can be added to */
     int nmove;             /* plugin folders in a usable Synths location with no copy in vst2dir yet */
     char vdrv[4][220], vname[4][32];   /* 3.10.1 with VST2 Support on: "<drive>/VST2 Plugins" on each writable drive (internal first), its name */
     int nvdrv;
@@ -861,7 +866,6 @@ static int good_target(const char *loc) {
 
 
 /* ---- LOCATIONS tab: what is known about each Synths folder MPC lists ---- */
-typedef struct { char name[96], info[200], state[200]; int bar, vis, usable, dflt, pick; } locrow_t;
 static int loc_target_index(const mgr_t *m, const char *path);   /* below, with the other target helpers */
 static int ntargets(const mgr_t *m);
 
@@ -887,11 +891,10 @@ static int mount_of(const char *path, char *fs, size_t nf, int *rw, int *exec) {
     return found;
 }
 
-static void loc_row(const mgr_t *m, int k, locrow_t *r) {
-    const device_t *d = m->dev;
+static void loc_fill(const mgr_t *m, const char *loc, int cand, locrow_t *r) {   /* cand: a mounted drive MPC does not list */
     memset(r, 0, sizeof *r);
-    if (!d || k < 0 || k >= d->nloc) return;
-    const char *loc = d->loc[k];
+    r->cand = cand;
+    snprintf(r->path, sizeof r->path, "%s", loc);
     char path[200], why[320], fs[32] = "?", parent[200];
     snprintf(path, sizeof path, "%s", loc);
     for (size_t l = strlen(path); l > 1 && path[l - 1] == '/'; ) path[--l] = 0;
@@ -899,7 +902,7 @@ static void loc_row(const mgr_t *m, int k, locrow_t *r) {
     char *sl = strrchr(parent, '/');
     if (sl && sl != parent) *sl = 0;
     const char *at = is_dir(path) ? path : parent;
-    int internal = !strncmp(path, "/media/az01-internal", 20) || !strncmp(path, "/sdcard/", 8) || !strncmp(path, "/nvme/", 6) || internal_device(path);
+    int internal = !cand && (!strncmp(path, "/media/az01-internal", 20) || !strncmp(path, "/sdcard/", 8) || !strncmp(path, "/nvme/", 6) || internal_device(path));
     const char *lab = !strncmp(path, "/media/", 7) && !internal ? path + 7 : NULL;
     snprintf(r->name, sizeof r->name, "%.*s  \xc2\xb7  %s", lab ? (int)strcspn(lab, "/") : 8, lab ? lab : "Internal", path);
     int rw = 0, ex = 0;
@@ -920,12 +923,43 @@ static void loc_row(const mgr_t *m, int k, locrow_t *r) {
     if (dd) closedir(dd);
     const char *bad = bad_target(path, why, sizeof why);
     r->usable = !bad;
-    int ti = bad ? -1 : loc_target_index(m, path);
+    int ti = bad || cand ? -1 : loc_target_index(m, path);
     r->dflt = ti >= 0 && ti == m->tsel % ntargets(m);   /* where new installs go now: the remembered place, else the first usable */
     r->pick = ti >= 0 && !r->dflt;
     if (bad) snprintf(r->state, sizeof r->state, "Can't install here: %s", bad);
+    else if (cand) snprintf(r->state, sizeof r->state, "MPC does not list this drive  \xc2\xb7  REGISTER adds its Synths folder");
     else snprintf(r->state, sizeof r->state, "%s  \xc2\xb7  %d plugin%s", r->dflt ? "Default install location" : "Ready", n, n == 1 ? "" : "s");
     r->vis = 1;
+}
+
+/* The LOCATIONS rows, in the order shown: listed folders that can take a plugin, then drives MPC does not list, then the folders that cannot.
+ * Built by the worker on each refresh (each row reads the mounts and the folder), served from the copy while MPC polls the page. */
+static void loc_build(mgr_t *m) {
+    locrow_t *rows = calloc(16, sizeof *rows);
+    if (!rows) return;
+    const device_t *d = m->dev;
+    int n = 0;
+    for (int pass = 0; pass < 3; pass++) {
+        for (int k = 0; k < (pass == 1 ? d->ncand : d->nloc) && n < 16; k++) {
+            locrow_t r;
+            loc_fill(m, pass == 1 ? d->cand[k] : d->loc[k], pass == 1, &r);
+            if (pass != 1 && (pass == 0) != r.usable) continue;
+            rows[n++] = r;
+        }
+    }
+    pthread_mutex_lock(&m->mu);
+    memcpy(m->locs, rows, (size_t)n * sizeof *rows);
+    m->nlocs = n;
+    if (m->locpage * 4 >= n) m->locpage = n ? (n - 1) / 4 : 0;
+    int w = 0;   /* a queued REGISTER for a drive that is listed now (or gone) is dropped */
+    for (int q = 0; q < m->nregq; q++) {
+        int keep = 0;
+        for (int k = 0; k < d->ncand; k++) if (!strcmp(d->cand[k], m->regq[q])) keep = 1;
+        if (keep) { if (w != q) snprintf(m->regq[w], sizeof m->regq[w], "%s", m->regq[q]); w++; }
+    }
+    m->nregq = w;
+    pthread_mutex_unlock(&m->mu);
+    free(rows);
 }
 
 /* The theme: the skin the device runs is the folder "Plugin Skins" in this plugin's own folder. Both skins ship there as "Plugin Skins.dark"
@@ -1094,6 +1128,7 @@ static void probe_device(device_t *d) {
     char *x = d->settings[0] ? slurp(d->settings, 4 << 20) : NULL;
     if (x) {
         char *a = strstr(x, "<SynthContentLocations>"), *b = a ? strstr(a, "</SynthContentLocations>") : NULL;
+        d->hasloclist = a && b;
         for (char *p = a; b && d->nloc < 8 && (p = strstr(p, "<Location>")) && p < b; ) {
             p += 10;
             char *q = strstr(p, "</Location>");
@@ -1140,6 +1175,27 @@ static void probe_device(device_t *d) {
                 snprintf(d->usable[d->nusable++], sizeof d->usable[0], "%s", u);
             }
         }
+    /* drives MPC does not list: a mounted drive under /media/<label> with no entry for its Synths folder (LOCATIONS offers REGISTER) */
+    {
+#ifdef FS_ANY
+        FILE *mf = fopen(!access("/tmp/pm-mounts", R_OK) ? "/tmp/pm-mounts" : "/proc/mounts", "r");
+#else
+        FILE *mf = fopen("/proc/mounts", "r");
+#endif
+        char mdev[128], mmnt[256], mtype[32], mopts[512];
+        while (mf && fscanf(mf, "%127s %255s %31s %511s %*d %*d", mdev, mmnt, mtype, mopts) == 4 && d->ncand < 8) {
+            mount_unescape(mmnt);
+            if (strncmp(mmnt, "/media/", 7) || strchr(mmnt + 7, '/') || !mmnt[7] || !strncmp(mmnt + 7, "az01-internal", 13)) continue;
+            char c[200];
+            snprintf(c, sizeof c, "%s/Synths", mmnt);
+            if (strlen(mmnt) > 180 || !safe(c) || strpbrk(c, "&<>\"|")) continue;
+            int listed = 0;
+            for (int k = 0; k < d->nloc; k++) if (!strcmp(d->loc[k], c) || same_folder(d->loc[k], c)) listed = 1;
+            for (int k = 0; k < d->ncand; k++) if (!strcmp(d->cand[k], c)) listed = 1;
+            if (!listed) snprintf(d->cand[d->ncand++], sizeof d->cand[0], "%s", c);
+        }
+        if (mf) fclose(mf);
+    }
     if (d->nusable) snprintf(d->target, sizeof d->target, "%s", d->usable[0]);
     if (d->target[0]) snprintf(d->via, sizeof d->via, "SynthContentLocations");
     /* No fallback: MPC draws a plugin's skin only from a listed content location (docs/NOTES.md in mpc-vst-plugins, 2026-10-27),
@@ -1628,7 +1684,7 @@ static void show_result(mgr_t *m, const pkg_t *pkg, int n) {
         if (!strcmp(a + 1, "ok")) {
             ok++;
             char act[12] = "", ver[24] = "";
-            if (sscanf(b + 1, "%11s %23s", act, ver) >= 1) hist_record(m->dev, l, act, ver);
+            if (sscanf(b + 1, "%11s %23s", act, ver) >= 1 && strncmp(l, "loc-", 4)) hist_record(m->dev, l, act, ver);
         }
         else {
             if (!bad++) {
@@ -1684,6 +1740,7 @@ static void do_refresh(mgr_t *m) {
     theme_init(m);
     if (!m->confirm) target_init(m);   /* a pick still open on the prompt is kept */
     write_report(m->dev);
+    loc_build(m);
     scan_installed(m->dev, tmp, l.n);
     detect_orphans(m->dev);
     l.n = add_orphans(m->dev, tmp, l.n);
@@ -1895,6 +1952,19 @@ static void prepare(mgr_t *m, pkg_t *q) {
         if (!err && m->migrate)   /* first, so an update below finds (and upgrades) the VST2 copy with the user's files in it */
             fprintf(f, "echo '-- move to VST2 Plugins'\nif sh '" WORK "/vst2.sh' --apply; then echo 'move-to-vst2|ok|move' >> \"$RES\"; "
                        "else echo 'move-to-vst2|fail|not every plugin could be copied to VST2 Plugins (" WORK "/apply.log)' >> \"$RES\"; fi\n");
+        if (!err && m->nregq) {   /* LOCATIONS: add each drive's Synths folder to MPC.settings (CRLF kept); item() snapshots the settings for a rollback */
+            FILE *a = fopen(WORK "/loc_add.awk", "w");
+            if (a) {
+                fputs("/<\\/SynthContentLocations>/ && !done { cr = ($0 ~ /\\r$/) ? \"\\r\" : \"\"; print \"      <Location>\" loc \"</Location>\" cr; done = 1 }\n"
+                      "{ print }\nEND { exit !done }\n", a);
+                fclose(a);
+            } else err = "could not write the registration files";
+            for (int r = 0; r < m->nregq && !err; r++) {
+                if (!safe(m->regq[r]) || strpbrk(m->regq[r], "&<>\"|")) { err = "has an unsupported character in its name"; break; }
+                fprintf(f, "echo '-- register location %s'\nitem 'loc-%d' '' register '' sh -c 'mkdir -p \"$1\" && awk -v loc=\"$1\" -f \"$2\" \"$3\" > \"$3.new\" && mv \"$3.new\" \"$3\"' sh '%s' '" WORK "/loc_add.awk' '%s'\n",
+                        m->regq[r], r + 1, m->regq[r], m->dev->settings);
+            }
+        }
         for (i = 0; i < nq && !err; i++) {
             pkg_t *p = &q[i];
             /* a remove goes where it is; an update stays where it is if that folder can hold a plugin, else it (and a new
@@ -2162,7 +2232,7 @@ static int count_updates(const mgr_t *m) {
 }
 
 static int count_queued(const mgr_t *m) {
-    int n = theme_dirty(m) + m->migrate;   /* a theme change (or the move to VST2 Plugins) is applied like an install: stop MPC, ..., start MPC */
+    int n = theme_dirty(m) + m->migrate + m->nregq;   /* a theme change (or the move to VST2 Plugins) is applied like an install: stop MPC, ..., start MPC */
     for (int i = 0; i < m->npkg; i++) n += m->pkg[i].queued != 0;
     return n;
 }
@@ -2179,6 +2249,7 @@ static void changes_text(const mgr_t *m, char *b, int n) {   /* the restart prom
         else if (p->queued) k += snprintf(b + k, n - k, "%s+ %s %s", sep, p->name, p->latest);
     }
     if (theme_dirty(m) && k < n) k += snprintf(b + k, n - k, "%sTheme: %s", k ? "\xc2\xa0\xc2\xb7  " : "", m->theme ? "light" : "dark");
+    for (int r = 0; r < m->nregq && k < n; r++) k += snprintf(b + k, n - k, "%sRegister %s", k ? "\xc2\xa0\xc2\xb7  " : "", m->regq[r]);
     if (m->migrate && k < n) snprintf(b + k, n - k, "%sMove %d plugin%s to VST2 Plugins", k ? "\xc2\xa0\xc2\xb7  " : "", m->dev->nmove, m->dev->nmove == 1 ? "" : "s");
 }
 
@@ -2203,6 +2274,7 @@ static void queue_text(const mgr_t *m, char *b, int n) {
         if (m->pkg[i].queued)
             k += snprintf(b + k, n - k, "  %s%s", m->pkg[i].queued == Q_REMOVE ? "\xe2\x88\x92" : "+", m->pkg[i].name);
     if (theme_dirty(m) && k < n) k += snprintf(b + k, n - k, "  Theme: %s", m->theme ? "light" : "dark");
+    for (int r = 0; r < m->nregq && k < n; r++) k += snprintf(b + k, n - k, "  Register %s", m->regq[r]);
     if (m->migrate && k < n) snprintf(b + k, n - k, "  Move %d to VST2 Plugins", m->dev->nmove);
 }
 
@@ -2389,7 +2461,7 @@ static int repeated(long long *last, int ms) {
 /* the trigger params (a tap), not the option params the host steps on purpose (kind, sort, ...), the keyboard keys or THEME (its own window) */
 static int is_button(const char *key) {
     static const char *const end[] = {"_act", "_open", "_more", "_reinstall", "_remove", "_btn", "_pick1", "_pick2", "_pick3", "_pick4",
-                                      "_close", "_back", "_cancel", "_go", "_clear", "_next", "_prev"};
+                                      "_close", "_back", "_cancel", "_go", "_clear", "_next", "_prev", "_reg", "_pick", "_rescan"};
     size_t kl = strlen(key);
     if (!strcmp(key, "theme_btn")) return 0;
     if (!strcmp(key, "update_all") || !strcmp(key, "apply") || !strcmp(key, "refresh") || !strncmp(key, "d_tag", 5)) return 1;
@@ -2506,16 +2578,28 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
             post(m, J_REFRESH);   /* the readout shows the new drive's free space */
         }
     } else if (!strncmp(key, "loc", 3) && key[3] >= '1' && key[3] <= '4' && !strcmp(key + 4, "_pick") && !busy) {   /* LOCATIONS: MAKE DEFAULT */
-        locrow_t r;
-        loc_row(m, key[3] - '1', &r);
-        int k = r.pick ? loc_target_index(m, m->dev->loc[key[3] - '1']) : -1;
+        int ri = m->locpage * 4 + key[3] - '1';
+        int k = ri < m->nlocs && m->locs[ri].pick ? loc_target_index(m, m->locs[ri].path) : -1;
         if (k >= 0 && ntargets(m) > 1) {
             m->tsel = k;
             target_save(m);   /* remembered, as a pick in the drive menu is */
             m->ready = 0;
             post(m, J_REFRESH);
         }
-    } else if (!strcmp(key, "loc_rescan") && !busy) post(m, J_REFRESH);
+    } else if (!strncmp(key, "loc", 3) && key[3] >= '1' && key[3] <= '4' && !strcmp(key + 4, "_reg") && !busy) {   /* LOCATIONS: REGISTER / cancel */
+        int ri = m->locpage * 4 + key[3] - '1';
+        if (ri < m->nlocs && m->locs[ri].cand && m->locs[ri].usable && m->dev->hasloclist) {
+            int at = -1;
+            for (int q = 0; q < m->nregq; q++) if (!strcmp(m->regq[q], m->locs[ri].path)) at = q;
+            if (at >= 0) {
+                for (int q = at; q + 1 < m->nregq; q++) snprintf(m->regq[q], sizeof m->regq[q], "%s", m->regq[q + 1]);
+                m->nregq--;
+            } else if (m->nregq < 4) snprintf(m->regq[m->nregq++], sizeof m->regq[0], "%s", m->locs[ri].path);
+            m->ready = 0;   /* a prepared apply.sh does not have it */
+        }
+    } else if (!strcmp(key, "loc_prev") && m->locpage > 0) m->locpage--;
+    else if (!strcmp(key, "loc_next") && (m->locpage + 1) * 4 < m->nlocs) m->locpage++;
+    else if (!strcmp(key, "loc_rescan") && !busy) post(m, J_REFRESH);
     else if (!strcmp(key, "d_back")) { m->detail[0] = 0; m->menu = -1; }
     else if (!strcmp(key, "tag_clear")) { m->tag[0] = 0; m->page = 0; }
     else if (!strncmp(key, "d_tag", 5) && key[5] >= '1' && key[5] <= '8') {   /* a tag button: list the plugins with that tag (in the current tab) */
@@ -2590,23 +2674,29 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
             else snprintf(b, n, "%s", target_name(m, k));
         } else snprintf(b, n, " ");
     }
-    else if (!strncmp(key, "loc", 3) && key[3] >= '1' && key[3] <= '4' && key[4] == '_') {   /* LOCATIONS tab, rows 1..4 */
-        locrow_t r;
-        loc_row(m, key[3] - '1', &r);
+    else if (!strncmp(key, "loc", 3) && key[3] >= '1' && key[3] <= '4' && key[4] == '_') {   /* LOCATIONS tab, rows 1..4 of the page */
+        int ri = m->locpage * 4 + key[3] - '1';
+        const locrow_t *r = ri < m->nlocs ? &m->locs[ri] : NULL;
         const char *f = key + 5;
-        if (!strcmp(f, "vis")) snprintf(b, n, "%d", r.vis);
-        else if (!strcmp(f, "canpick")) snprintf(b, n, "%d", r.pick);
-        else if (!strcmp(f, "bar")) snprintf(b, n, "%d", r.bar);
-        else if (!strcmp(f, "ok")) snprintf(b, n, "%d", !r.vis ? 0 : r.usable ? 1 : 2);   /* none, yes, no */
-        else if (!strcmp(f, "name")) snprintf(b, n, "%s", r.vis ? r.name : " ");
-        else if (!strcmp(f, "info")) snprintf(b, n, "%s", r.vis ? r.info : " ");
-        else if (!strcmp(f, "state")) snprintf(b, n, "%s", r.vis ? r.state : " ");
+        int queued = 0;
+        for (int q = 0; r && q < m->nregq; q++) queued |= !strcmp(m->regq[q], r->path);
+        if (!strcmp(f, "vis")) snprintf(b, n, "%d", r != NULL);
+        else if (!strcmp(f, "canpick")) snprintf(b, n, "%d", r && r->pick);
+        else if (!strcmp(f, "canreg")) snprintf(b, n, "%d", r && r->cand && r->usable && m->dev->hasloclist ? 1 + queued : 0);   /* off, register, queued */
+        else if (!strcmp(f, "bar")) snprintf(b, n, "%d", r ? r->bar : 0);
+        else if (!strcmp(f, "ok")) snprintf(b, n, "%d", !r ? 0 : r->cand && r->usable ? 3 : r->usable ? 1 : 2);   /* none, yes, no, not listed */
+        else if (!strcmp(f, "name")) snprintf(b, n, "%s", r ? r->name : " ");
+        else if (!strcmp(f, "info")) snprintf(b, n, "%s", r ? r->info : " ");
+        else if (!strcmp(f, "state")) snprintf(b, n, "%s", r ? (queued ? "Queued: press APPLY on the PLUGINS tab (MPC restarts)" : r->state) : " ");
         else ok = 0;
     }
+    else if (!strcmp(key, "loc_pages")) snprintf(b, n, "%d", m->nlocs > 4);
+    else if (!strcmp(key, "loc_page")) snprintf(b, n, "%d / %d", m->locpage + 1, m->nlocs ? (m->nlocs + 3) / 4 : 1);
     else if (!strcmp(key, "loc_foot")) {
-        int hid = m->dev->nloc > 4 ? m->dev->nloc - 4 : 0;
-        if (!m->dev->nloc) snprintf(b, n, "MPC lists no Synths folder");
-        else if (hid) snprintf(b, n, "%d Synths folders listed by MPC  \xc2\xb7  %d more not shown", m->dev->nloc, hid);
+        int unl = 0;
+        for (int i = 0; i < m->nlocs; i++) unl += m->locs[i].cand;
+        if (!m->dev->nloc && !unl) snprintf(b, n, "MPC lists no Synths folder");
+        else if (unl) snprintf(b, n, "%d listed by MPC  \xc2\xb7  %d drive%s not listed", m->dev->nloc, unl, unl == 1 ? "" : "s");
         else snprintf(b, n, "%d Synths folder%s listed in MPC.settings", m->dev->nloc, m->dev->nloc == 1 ? "" : "s");
     }
     else if (!strcmp(key, "upd_badge")) snprintf(b, n, "%d", upd > 0);
