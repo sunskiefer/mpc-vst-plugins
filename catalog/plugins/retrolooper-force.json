@@ -2,6 +2,7 @@
   "id": "retrolooper-force",
   "name": "Retrolooper One (Force)",
   "kind": "effect",
+  "tier": "experimental",
   "summary": "Stereo Audio looper for Akai Force with host sync, overdubs, touch/MIDI and WAV export. Native Controls are optional.",
   "tags": [
     "looper",

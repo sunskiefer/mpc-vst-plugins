@@ -2,7 +2,7 @@
   "id": "retrolooper-one",
   "name": "Retrolooper One (MPC)",
   "kind": "effect",
-  "summary": "Stereo Audio looper for MPC One+ with host sync, overdubs, touch/MIDI and WAV export. Native Controls are optional.",
+  "summary": "Stereo Audio looper for MPC with host sync, overdubs, touch/MIDI and WAV export. Native Controls are optional.",
   "tags": [
     "looper",
     "overdub",
