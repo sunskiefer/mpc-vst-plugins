@@ -2,7 +2,7 @@
 
 Optional and experimental. Install Retrolooper One by itself first. Touch, Q-Links and MIDI are available in the standalone effect. Controls adds Track Select follow, lower-row pad colours and actions, selected Audio track MERGE input preparation, and Bounce to Clip. Controls 0.2.10 keeps the looper editor open when you choose an Audio slot with a pad. You can also choose a slot on the Matrix touchscreen. The bounce starts as soon as the slot is selected, including while Force plays.
 
-This installer accepts only ARMv7 and Akai Force 3.10 host build 154ae9752e0f3c6490912a703b0dfe4b668b343d. The installer checks the host SHA-256. The library checks the build again before activating. It does not modify the host executable.
+This installer accepts only ARMv7 and Akai Force 3.10 host build 154ae9752e0f3c6490912a703b0dfe4b668b343d. The installer verifies the host executable with SHA-256. OpenMPC uses the host MD5 in its supported-build list, and the patch reports that MD5 in its `status` output. The library checks the build again before activating. It does not modify the host executable.
 
 The patch adds /data/mpc-addins/retrolooper-force-controls/retrolooper_force_controls.so to /etc/systemd/system/acvs.service.d/90-mpc-addins.conf and preserves unrelated add-ins. Backups are under /data/retrolooper-controls/backups/retrolooper-force-controls. The script restarts the Akai app, checks the library loaded and rolls back if it did not.
 
