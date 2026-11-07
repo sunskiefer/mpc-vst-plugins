@@ -1,0 +1,17 @@
+{
+  "id": "retrolooper-one",
+  "name": "Retrolooper One (MPC)",
+  "kind": "effect",
+  "summary": "Stereo Audio looper for MPC with host sync, overdubs, touch/MIDI and WAV export. Native Controls are optional.",
+  "tags": [
+    "looper",
+    "overdub",
+    "utility"
+  ],
+  "author": "Retroloop USA / IAMTHEBAND LLC",
+  "repo": "asearan/Retrolooper-One-MPC-Force",
+  "license": "GPL-3.0-only",
+  "style": "looper",
+  "screenshot": "https://raw.githubusercontent.com/asearan/Retrolooper-One-MPC-Force/mpc-v0.3.9/docs/images/retrolooper-one-thumbnail.jpg",
+  "asset_pattern": "RetroLooper-One-[0-9]*-mpc-armv7.zip"
+}

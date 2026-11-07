@@ -85,6 +85,62 @@
       "backup": "none (files are new, nothing overwritten)",
       "restarts_mpc": false,
       "reversible": true
+    },
+    {
+      "id": "retrolooper-mpc-controls",
+      "title": "Retrolooper Controls for MPC 3.10.0.49",
+      "summary": "Experimental, optional track and pad integration for Retrolooper One, including Audio track timeline bounce.",
+      "tier": "experimental",
+      "requires": "MPC One+ 3.10.0.49 (modified host) on ARMv7 (host build bc141062ea5ea5be619d98366f423c8102574365)",
+      "author": "Retroloop USA / IAMTHEBAND LLC",
+      "license": "GPL-3.0-only",
+      "docs": "docs/retrolooper-controls-mpc.md",
+      "script": {
+        "sha256": "49eef0dfde51fac46cf7b678111be0fcc93c7d75bdac1a5c5b6b2b45f8637207",
+        "url": "https://raw.githubusercontent.com/asearan/Retrolooper-One-MPC-Force/c2ad478c48002949af1b9047eecf2b60efbb3f74/device-patches/retrolooper-mpc-controls-0.2.13.sh"
+      },
+      "supports": {
+        "os": "MPC One+ 3.10.0.49 (modified host); host build bc141062ea5ea5be619d98366f423c8102574365",
+        "arch": "armv7l",
+        "mpc_md5": [
+          "b6cc8e7a398bdf6c3fd8f7176eecd3ee"
+        ]
+      },
+      "modifies": [
+        "/data/mpc-addins/retrolooper-buttons/retrolooper_buttons.so",
+        "/etc/systemd/system/acvs.service.d/90-mpc-addins.conf"
+      ],
+      "backup": "/data/retrolooper-controls/backups/retrolooper-buttons",
+      "restarts_mpc": true,
+      "reversible": true
+    },
+    {
+      "id": "retrolooper-force-controls",
+      "title": "Retrolooper Controls for Force 3.10",
+      "summary": "Experimental, optional track and pad integration for Retrolooper One, including Matrix clip bounce.",
+      "tier": "experimental",
+      "requires": "Akai Force 3.10 (verified host image) on ARMv7 (host build 154ae9752e0f3c6490912a703b0dfe4b668b343d)",
+      "author": "Retroloop USA / IAMTHEBAND LLC",
+      "license": "GPL-3.0-only",
+      "docs": "docs/retrolooper-controls-force.md",
+      "script": {
+        "sha256": "60489f5d77f858c87a8f5f8a6bf77cc3a0cbc7c06ddfb8fa363ca24b8341d287",
+        "url": "https://raw.githubusercontent.com/asearan/Retrolooper-One-MPC-Force/c2ad478c48002949af1b9047eecf2b60efbb3f74/device-patches/retrolooper-force-controls-0.2.10.sh"
+      },
+      "supports": {
+        "os": "Akai Force 3.10 (verified host image); host build 154ae9752e0f3c6490912a703b0dfe4b668b343d",
+        "arch": "armv7l",
+        "mpc_md5": [
+          "a282a259d094223b7f7c7d74c1c6f1fb"
+        ]
+      },
+      "modifies": [
+        "/data/mpc-addins/retrolooper-force-controls/retrolooper_force_controls.so",
+        "/etc/systemd/system/acvs.service.d/90-mpc-addins.conf"
+      ],
+      "backup": "/data/retrolooper-controls/backups/retrolooper-force-controls",
+      "restarts_mpc": true,
+      "reversible": true
     }
   ]
 }
