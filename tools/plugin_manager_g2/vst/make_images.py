@@ -113,6 +113,8 @@ def main():
                             ("cache", "IMAGE CACHE", "MPC's skin cache fills up and then skins draw black. Clearing restarts MPC (APPLY).")):
         svg("set_row_%s.svg" % nm, 1232, 108, '<rect x="0.5" y="0.5" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE)
             + text(28, 42, title, 29, INK, 700, spacing=1) + text(28, 78, desc, 22, DIM, 600))
+    svg("set_clear.svg", 150, 46, '<rect x="1" y="1" width="148" height="44" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
+        + text(75, 30, "CLEAR", 17, INK, 700, anchor="middle", spacing=1.5))
     svg("set_btn.svg", 150, 46, '<rect x="1" y="1" width="148" height="44" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
         + text(75, 30, "CHANGE", 17, INK, 700, anchor="middle", spacing=1.5))
     # the PATCHES tab: header, footer, three cards, state pills and the CHECK buttons
