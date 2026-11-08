@@ -2403,3 +2403,41 @@ details and the fetch recipe in `docs/AZ0X_SOURCE.md`, the Sample brief in `docs
 - **Sample:** `&gpu` is disabled in the AC50 device tree; the Wi-Fi and Bluetooth nodes are in the shared base file but only
   another product enables them (matches 2026-11-04: no Wi-Fi or Bluetooth hardware).
 - Not answered by the source: plugin hosting, skins, SMEX, update signing, whether LoadPin and dm-verity enforce.
+## 2026-11-08: Force, Live II, X: the USB-B socket is behind the internal hub, so no standalone USB gadget reaches a computer (device report + firmware images)
+
+A Force owner (firmware 3.10 stock with SSH, Windows 10) installed usb-audio 1.1.0: the addin loaded, MPC built no standalone
+gadget, the fallback built `mpcusbaudio`, the UDC read `configured`, and the PC saw nothing. His `/proc/asound/cards` listed
+our gadget as the Force's **own** card 5 ("MPC USB Audio at usb-ff500000.usb-1.7"), and the UDC stayed `configured` with the
+PC cable unplugged: the Force enumerates its own gadget. His `/sys/bus/usb/devices`, all under one internal hub `2-1`
+(`09e8:5040` "Force Hub"): `2-1.1` the USB-A sockets (his external hub with two controllers), `2-1.4` a JMicron `152d:0578`
+USB-SATA bridge (the SATA bay drive, `/dev/sda`), `2-1.5` `09e8:0040` "Akai Pro Force" (the pad/knob board: two class-01
+interfaces, a plain USB MIDI device), `2-1.7` our gadget. Nothing of the processor's is wired to the USB-B socket. (The entry above, from inMusic's published kernel sources, describes
+the mux driver itself, a `virtual-mux` overlay switch, and notes the Gen2 devices carry one too; this entry is what it means
+in practice, seen on a unit.)
+
+From the Force 3.10 image (`Force 3.10.0 Updater.exe` → `update.img`, `AZ01` header, xz ext4 rootfs; kernel 6.18.44-az01) and the
+Gen1 3.9.1 image: the device tree (`rk3288-az01-ada2.dtb`, "Akai Professional Force") has a `usb-mux` (`compatible = "virtual-mux"`,
+states `internal`/`external`, default `internal`) that re-pins the hub node (`usb5537@2d`, `smsc,usb5537b`, I2C-configured with a
+config blob naming "Force Hub") and resets it: the mux moves the hub's upstream between the processor's host controller
+(`ff500000`, `internal`) and the USB-B socket (`external`). The device port (`ff580000`, dwc2 OTG) is wired to hub port 7. MPC
+(same strings in the Force and Gen1 binaries: `/sys/devices/platform/usb-mux/state`, "failed to switch mux to external/internal")
+runs `/usr/bin/az01-usbmux-switch <state>` on entering Computer Mode; the script holds the SATA bridge in reset across the switch
+(byte-identical in both images). Nothing else in the rootfs (no udev rule, no unit) touches the mux. The same `usb-mux` node is in
+the Gen1 trees for the MPC Live II (`acvb`), X SE (`acv5s`), `acv5`/`acv8` and one of the two Key 61 trees (`az01-acvm`); the
+MPC One (`acva`), One+ (`acva2`), Key 37 (`acvr`) and the `az05` Key 61 tree have none, and on the Key 37 the standalone gadget
+goes straight to USB-B (verified since 2026-10-03). In standalone mode MPC builds **no** gadget at all on the Force (a gadget there
+would only reach the Force itself); on the Key 37 it builds `f_midi`. Both kernels have `f_uac2`, `f_midi`, `f_fs`, `f_ncm`/`ecm`/`rndis`
+and FUSE built in, no `cifs`/`nfs`/`usbip`, no `snd-virmidi`/`aloop`.
+
+Independent confirmation: the catalog's `force-link-audio` addin (macdigi) found the same USB5537B hub and mux on a Force and flipped
+it from standalone: the gadget enumerates on the computer, and every control except the touchscreen goes dark (the board is on the hub;
+the touchscreen is I2C). It streams the main mix over the network as Ableton Link Audio instead. Not run by us: the flip.
+
+Consequences, recorded in mpc-addin-usb-audio (branch `force-hub-mux`, host tests): the addin reads the mux at start and builds
+nothing when it says `internal`, logging why and pointing at `force-link-audio` (`hub_mux_check=0` overrides); as a backstop for the
+same wiring without a mux node, a gadget of ours that shows up on the device's own USB bus (`/sys/bus/usb/devices`, `1d6b:0104`,
+manufacturer `mpc-addin-usb-audio`) is removed again. README, `docs/DEVICE_TEST.md` section 7 and the catalog summary say the
+Force, Live II and X are out. `tested.json` is unchanged: its entries only mean "works". A USB audio mode on these models is only
+possible by flipping the mux and relaying the hub's devices back through the computer (the board is pure ALSA rawmidi in MPC:
+`snd_card_next`/`snd_ctl_card_info`, `snd_rawmidi_open("hw:%d,%d,%u")`, ~20 calls; the Key 37's board is the same kind, `09e8:0057`,
+`/dev/snd/midiC0D0`), with the SATA drive gone meanwhile unless served back over a USB network function. Not started.
