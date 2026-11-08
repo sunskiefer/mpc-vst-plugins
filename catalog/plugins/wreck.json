@@ -1,5 +1,5 @@
 { "id": "wreck", "name": "Wreck", "author": "L'Cronx", "repo": "sunskiefer/Wreck",
   "kind": "instrument", "style": "sampler", "tags": ["sampler", "sound-design", "experimental", "feedback", "generative", "arpeggiator", "chaos", "lo-fi"],
   "license": "PolyForm-Noncommercial-1.0.0", "source_available": true, "asset_pattern": "*-mpc-armv7.zip",
-  "screenshot": "https://raw.githubusercontent.com/sunskiefer/Wreck/v0.1.3/docs/screenshots/page_0.png",
-  "summary": "A self-sampling sound design instrument: ten sources (noise, clicks, your own WAV files, FM, attractors and more) run through five blocks in any order into a 20 second loop that MIDI voices play back, and the voices can feed the chain again. 4-lane polymetric arp, bouncing-ball delay, 22 presets. MPC OS 3.x." }
+  "screenshot": "https://raw.githubusercontent.com/sunskiefer/Wreck/v0.2.0/docs/screenshots/page_0.png",
+  "summary": "A self-sampling sound design instrument: ten sources (noise, clicks, your own WAV files from any folder or drive, FM, attractors and more) run through five blocks in any order into a 20 second loop that MIDI voices play back, and the voices can feed the chain again. 4-lane polymetric arp, bouncing-ball delay, 22 presets. MPC OS 3.x." }
