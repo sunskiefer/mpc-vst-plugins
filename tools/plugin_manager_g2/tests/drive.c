@@ -219,6 +219,24 @@ int main(int argc, char **argv) {
     printf("foot: %s\n", get("pat_foot"));
     e->destroy(m); return 0;
   }
+  if (argc > 1 && !strcmp(argv[1], "papply")) {   /* PATCHES: APPLY and UNDO need two taps; a patch that restarts MPC is not offered */
+    press("pat1_chk");
+    for (int i = 0; i < 60 && strcmp(get("pat1_pill"), "2"); i++) usleep(200000);
+    printf("start: pill=%s act=%s\n", get("pat1_pill"), get("pat1_canact"));
+    press("pat1_act");
+    printf("asked: act=%s pill=%s\n", get("pat1_canact"), get("pat1_pill"));
+    press("pat1_act");
+    for (int i = 0; i < 60 && strcmp(get("pat1_pill"), "3"); i++) usleep(200000);
+    printf("applied: pill=%s act=%s |%s|\n", get("pat1_pill"), get("pat1_canact"), get("status"));
+    press("pat1_act"); press("pat1_act");
+    for (int i = 0; i < 60 && strcmp(get("pat1_pill"), "2"); i++) usleep(200000);
+    printf("undone: pill=%s act=%s |%s|\n", get("pat1_pill"), get("pat1_canact"), get("status"));
+    press("pat_next");
+    press("pat1_chk");
+    for (int i = 0; i < 60 && !strcmp(get("pat1_pill"), "1"); i++) usleep(200000);
+    printf("restarting: |%s| pill=%s act=%s\n", get("pat1_title"), get("pat1_pill"), get("pat1_canact"));
+    e->destroy(m); return 0;
+  }
   if (argc > 1 && !strcmp(argv[1], "pickshow")) {   /* a fresh start: which place does the restart prompt name first? */
     set("kind", "1"); press("r1_act"); press("apply");
     for (int i = 0; i < 60 && strcmp(get("apply_state"), "3") && strcmp(get("apply_state"), "4"); i++) sleep(1);

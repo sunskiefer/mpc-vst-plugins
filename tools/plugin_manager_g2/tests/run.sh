@@ -181,8 +181,17 @@ sh tests/devices/two-targets.sh
 grep -qF "pat1: Fixture stock pill=1 canchk=1" /tmp/patches.out && grep -qF "pat3: Fixture other CPU pill=5 canchk=0" /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
 grep -qF "checked1: pill=2 |Checked on this MPC: stock| canchk=2" /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
 grep -qF "checked2: pill=6 |Checked on this MPC: error  ·  the script does not match its checksum: not run|" /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
-grep -qF "checked3: pill=5" /tmp/patches.out && grep -qF "foot: 3 device patches." /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
+grep -qF "checked3: pill=5" /tmp/patches.out && grep -qF "foot: 4 device patches." /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
 [ ! -e /tmp/patch-evil-ran ] || { echo "a script with a wrong checksum ran"; exit 1; }
+# PATCHES: APPLY and UNDO (two taps; the script runs install/uninstall --confirmed); a patch that restarts MPC is not offered
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts /tmp/fx-patch-marker; mkdir -p /media
+sh tests/devices/two-targets.sh
+/tmp/drive_addins papply > /tmp/papply.out
+grep -qF "start: pill=2 act=1" /tmp/papply.out && grep -qF "asked: act=3 pill=2" /tmp/papply.out || { cat /tmp/papply.out; exit 1; }
+grep -qF "applied: pill=3 act=2 |Fixture stock: applied. Now: patched.|" /tmp/papply.out || { cat /tmp/papply.out; exit 1; }
+grep -qF "undone: pill=2 act=1 |Fixture stock: removed. Now: stock.|" /tmp/papply.out || { cat /tmp/papply.out; exit 1; }
+grep -qF "restarting: |Fixture restarting| pill=2 act=0" /tmp/papply.out || { cat /tmp/papply.out; exit 1; }
+[ ! -e /tmp/fx-patch-marker ] || { echo "the marker is still there"; exit 1; }
 echo "pick OK"
 fi # pick
 if want theme; then

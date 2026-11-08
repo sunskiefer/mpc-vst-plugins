@@ -125,10 +125,14 @@ def main():
                                ("unsupported", "NOT SUPPORTED", RED, "#ff9a93"), ("other", "OTHER DEVICE", RED, "#ff9a93"), ("failed", "CHECK FAILED", RED, "#ff9a93")):
         svg("pat_%s.svg" % nm, 190, 30, '<rect width="190" height="30" fill="%s"/><rect x="1" y="1" width="188" height="28" rx="14" fill="none" stroke="%s" stroke-width="2"/>' % (PANEL, col)
             + text(95, 21, label, 15, tx, 700, anchor="middle", spacing=1.5))
-    svg("pat_chk.svg", 180, 40, '<rect x="1" y="1" width="178" height="38" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
-        + text(90, 26, "CHECK", 17, INK, 700, anchor="middle", spacing=1.5))
-    svg("pat_chk2.svg", 180, 40, '<rect x="1" y="1" width="178" height="38" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
-        + text(90, 26, "CHECK AGAIN", 17, INK, 700, anchor="middle", spacing=1.5))
+    svg("pat_chk.svg", 180, 36, '<rect x="1" y="1" width="178" height="34" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
+        + text(90, 24, "CHECK", 16, INK, 700, anchor="middle", spacing=1.5))
+    svg("pat_chk2.svg", 180, 36, '<rect x="1" y="1" width="178" height="34" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
+        + text(90, 24, "CHECK AGAIN", 16, INK, 700, anchor="middle", spacing=1.5))
+    for nm, label, fill, stroke, tx in (("apply", "APPLY", PANEL, RED, "#ff9a93"), ("undo", "UNDO", PANEL, AMBER, AMBER_TX),
+                                        ("confapply", "TAP AGAIN: APPLY", RED, RED, "#ffffff"), ("confundo", "TAP AGAIN: UNDO", AMBER, AMBER, "#1a1205")):
+        svg("pat_%s.svg" % nm, 180, 36, '<rect x="1" y="1" width="178" height="34" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (fill, stroke)
+            + text(90, 24, label, 15, tx, 700, anchor="middle", spacing=1.2))
     svg("net_on.svg", 100, 24, '<circle cx="5" cy="12" r="4.5" fill="#3fbf7f"/>' + text(16, 17, "ONLINE", 15, MUTED, 600, spacing=1))
     svg("net_off.svg", 100, 24, '<circle cx="5" cy="12" r="4.5" fill="%s"/>' % RED + text(16, 17, "OFFLINE", 15, "#ff9a93", 600, spacing=1))
     # a plugin card (the list row's own picture): the thumbnail tile is part of it

@@ -3810,6 +3810,60 @@
    "name": "Patches footer",
    "type": "readout",
    "display": "string"
+  },
+  {
+   "key": "pat1_canact",
+   "name": "Patch 1 apply or undo",
+   "live": true,
+   "options": [
+    "off",
+    "apply",
+    "undo",
+    "confapply",
+    "confundo"
+   ]
+  },
+  {
+   "key": "pat1_act",
+   "name": "Patch 1 apply or undo button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "pat2_canact",
+   "name": "Patch 2 apply or undo",
+   "live": true,
+   "options": [
+    "off",
+    "apply",
+    "undo",
+    "confapply",
+    "confundo"
+   ]
+  },
+  {
+   "key": "pat2_act",
+   "name": "Patch 2 apply or undo button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "pat3_canact",
+   "name": "Patch 3 apply or undo",
+   "live": true,
+   "options": [
+    "off",
+    "apply",
+    "undo",
+    "confapply",
+    "confundo"
+   ]
+  },
+  {
+   "key": "pat3_act",
+   "name": "Patch 3 apply or undo button",
+   "type": "trigger",
+   "momentary": true
   }
  ]
 }

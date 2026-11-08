@@ -105,7 +105,7 @@ typedef struct {
     char dir[256];        /* unpacked package (install.sh / uninstall.sh), set while preparing */
 } pkg_t;
 enum { Q_INSTALL = 1, Q_REMOVE = 2, Q_REGISTER = 3 };
-enum { J_NONE, J_REFRESH, J_PREPARE, J_LAUNCH, J_PATCH };
+enum { J_NONE, J_REFRESH, J_PREPARE, J_LAUNCH, J_PATCH, J_PAPPLY };
 
 typedef struct device device_t;
 typedef struct {   /* PATCHES: one entry of patches.json (a change to MPC itself, run from a script) and what its `status` said */
@@ -150,7 +150,8 @@ typedef struct {
     int migrate, migrate_seen;   /* MPC OS 3.10.1: "move to VST2 Plugins" is queued; it was offered once this session (cleared, it stays off) */
     pthread_t web;   /* the local web page (web.c) */
     int web_on;
-    patch_t pt[8]; int npt, ptpage, ptidx;   /* PATCHES: the list (loaded on each refresh), the page shown (3 per page), the one being checked */
+    patch_t pt[8]; int npt, ptpage, ptidx, ptact, ptconf; long long ptconf_t;   /* PATCHES; ptact: 1 apply, 2 undo (the job); ptconf: 1 + index*2 + undo of the row waiting for its second tap */
+       /* PATCHES: the list (loaded on each refresh), the page shown (3 per page), the one being checked */
     int show_beta, web_pref;        /* SETTINGS (saved in <base>/.openmpcpm-settings): list beta plugins in Discover, serve the web page */
     char regq[4][200]; int nregq;   /* LOCATIONS: drives queued for REGISTER (a Synths folder to add to MPC.settings at APPLY) */
     locrow_t locs[16]; int nlocs, locpage;   /* LOCATIONS rows (built by the worker on each refresh), the page shown (4 per page) */
@@ -1077,66 +1078,158 @@ static int pt_arch_ok(const mgr_t *m, const patch_t *p) {
     return !p->arch[0] || strstr(p->arch, a) != NULL;
 }
 
+static long long mono_ms(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1000LL + ts.tv_nsec / 1000000; }
+/* what the page offers for a checked patch: 1 APPLY (the script says stock and supported), 2 UNDO (it says patched), 0 nothing. A patch that
+ * restarts MPC is not run from this screen: the script stops MPC, and the manager lives inside it. */
+static int pt_act_kind(const mgr_t *m, const patch_t *p) {
+    if (!p || !pt_arch_ok(m, p) || !p->checked || p->restarts) return 0;
+    if (p->supported && !strcmp(p->state, "stock")) return 1;
+    if (!strcmp(p->state, "patched") && p->reversible) return 2;
+    return 0;
+}
+
+/* A patch's script: fetched, written to `file` and compared with the sha256 in patches.json. 0 when it is there and matches; else why not. */
+static const char *patch_script(mgr_t *m, const patch_t *p, const char *file) {
+    sink_t s = {0};
+    const char *why = NULL;
+    if (strlen(p->sha) != 64 || !p->url[0]) return "no script in the list";
+    if (fetch(m, p->url, &s) || !s.buf || !s.len) why = "the script could not be fetched";
+    else {
+        FILE *f = fopen(file, "w");
+        if (f) { fwrite(s.buf, 1, s.len, f); fclose(f); }
+        char cmd[400], hash[80] = "";
+        snprintf(cmd, sizeof cmd, "sha256sum '%s' 2>/dev/null | cut -d' ' -f1", file);
+        FILE *h = popen(cmd, "r");
+        if (h) { if (fgets(hash, sizeof hash, h)) hash[strcspn(hash, "\r\n")] = 0; pclose(h); }
+        if (strcmp(hash, p->sha)) { why = "the script does not match its checksum: not run"; unlink(file); }
+    }
+    free(s.buf);
+    return why;
+}
+
+/* Run `sh file <a1> <a2>` with a clean environment (no LD_PRELOAD of MPC's addins), output to `outfile`, and a watchdog (busybox here has no
+ * `timeout`). Returns the script's exit status, -1 when it did not finish or could not start. */
+static int patch_run(const char *file, const char *a1, const char *a2, int secs, const char *outfile) {
+    char cmd[700], rcf[300];
+    snprintf(rcf, sizeof rcf, "%s.rc", outfile);
+    unlink(rcf);
+    snprintf(cmd, sizeof cmd, "env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/root sh -c "
+             "'sh \"$1\" $3 $4 >\"$2\" 2>&1 </dev/null & p=$!; ( sleep $5; kill $p ) >/dev/null 2>&1 & w=$!; wait $p; echo $? >\"$2.rc\"; kill $w 2>/dev/null' "
+             "sh '%s' '%s' '%s' '%s' %d", file, outfile, a1, a2, secs);
+    sh(cmd);
+    int rc = -1;
+    FILE *f = fopen(rcf, "r");
+    if (f) { if (fscanf(f, "%d", &rc) != 1) rc = -1; fclose(f); }
+    unlink(rcf);
+    return rc;
+}
+
+static void patch_state_from(const char *out, char *state, size_t ns, int *sup, char *reason, size_t nr) {   /* the script's last STATE line */
+    char *st = strstr(out, "STATE state=");
+    while (st && strstr(st + 1, "STATE state=")) st = strstr(st + 1, "STATE state=");
+    if (!st) { snprintf(reason, nr, "the script gave no STATE line"); return; }
+    char line[300];
+    snprintf(line, sizeof line, "%.*s", (int)strcspn(st, "\r\n"), st);
+    char sb[24] = "";
+    sscanf(line, "STATE state=%23s", sb);
+    snprintf(state, ns, "%s", sb);
+    char *sp = strstr(line, "supported=");
+    *sup = sp && sp[10] == '1';
+    char *rs = strstr(line, "reason=");
+    if (rs) snprintf(reason, nr, "%s", rs + 7);
+}
+
+static char *patch_slurp_out(void) {
+    char *o = slurp(WORK "/patch-out.txt", 16384);
+    unlink(WORK "/patch-out.txt");
+    return o;
+}
+
 /* CHECK: fetch the patch's script, verify its sha256 against patches.json, and run `status` (the contract: it changes nothing). The script's
  * last "STATE state=<s> supported=<0|1> ... reason=<text>" line is what the page shows. */
+static void patch_store(mgr_t *m, const char *id, const char *state, int sup, const char *reason) {
+    pthread_mutex_lock(&m->mu);
+    for (int i = 0; i < m->npt; i++)
+        if (!strcmp(m->pt[i].id, id)) {
+            m->pt[i].checked = 1;
+            m->pt[i].supported = sup;
+            snprintf(m->pt[i].state, sizeof m->pt[i].state, "%s", state);
+            snprintf(m->pt[i].reason, sizeof m->pt[i].reason, "%s", reason);
+        }
+    m->rev++;
+    pthread_mutex_unlock(&m->mu);
+}
+
+static int patch_status(mgr_t *m, const patch_t *p, const char *file, char *state, size_t ns, int *sup, char *reason, size_t nr) {
+    snprintf(state, ns, "error");
+    *sup = 0;
+    reason[0] = 0;
+    int rc = patch_run(file, "status", "", 60, WORK "/patch-out.txt");
+    char *out = patch_slurp_out();
+    if (rc < 0 && !out) snprintf(reason, nr, "the script did not finish");
+    else patch_state_from(out ? out : "", state, ns, sup, reason, nr);
+    free(out);
+    (void)m; (void)p;
+    return 0;
+}
+
 static void do_patch(mgr_t *m) {
     pthread_mutex_lock(&m->mu);
     int k = m->ptidx;
     patch_t p = k >= 0 && k < m->npt ? m->pt[k] : (patch_t){0};
     pthread_mutex_unlock(&m->mu);
     if (!p.id[0]) return;
-    char state[20] = "error", reason[100] = "", file[300];
+    char state[24] = "error", reason[100] = "", file[300];
     int sup = 0;
     snprintf(file, sizeof file, WORK "/patch-%s.sh", p.id);
-    sink_t s = {0};
-    if (strlen(p.sha) != 64 || !p.url[0]) snprintf(reason, sizeof reason, "no script in the list");
-    else if (fetch(m, p.url, &s) || !s.buf || !s.len) snprintf(reason, sizeof reason, "the script could not be fetched");
-    else {
-        FILE *f = fopen(file, "w");
-        if (f) { fwrite(s.buf, 1, s.len, f); fclose(f); }
-        char cmd[400], out[2048] = "", hash[80] = "";
-        snprintf(cmd, sizeof cmd, "sha256sum '%s' 2>/dev/null | cut -d' ' -f1", file);
-        FILE *h = popen(cmd, "r");
-        if (h) { if (fgets(hash, sizeof hash, h)) hash[strcspn(hash, "\r\n")] = 0; pclose(h); }
-        if (strcmp(hash, p.sha)) snprintf(reason, sizeof reason, "the script does not match its checksum: not run");
-        else {
-            /* a clean environment (no LD_PRELOAD of MPC's addins), output to a file, and a 60 s watchdog (busybox here has no `timeout`) */
-            snprintf(cmd, sizeof cmd, "env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/root sh -c "
-                     "'sh \"$1\" status >\"$2\" 2>&1 </dev/null & p=$!; ( sleep 60; kill $p ) >/dev/null 2>&1 & w=$!; wait $p; kill $w 2>/dev/null' sh '%s' '" WORK "/patch-out.txt'", file);
-            sh(cmd);
-            FILE *r = fopen(WORK "/patch-out.txt", "r");
-            size_t n = 0;
-            while (r && n < sizeof out - 1 && fgets(out + n, (int)(sizeof out - n), r)) n = strlen(out);
-            if (r) fclose(r);
-            unlink(WORK "/patch-out.txt");
-            char *st = strstr(out, "STATE state=");
-            while (st && strstr(st + 1, "STATE state=")) st = strstr(st + 1, "STATE state=");
-            if (!st) snprintf(reason, sizeof reason, "the script gave no STATE line");
-            else {
-                char *e = st + strcspn(st, "\r\n");
-                *e = 0;
-                sscanf(st, "STATE state=%19s", state);
-                char *sp = strstr(st, "supported=");
-                sup = sp && sp[10] == '1';
-                char *rs = strstr(st, "reason=");
-                if (rs) snprintf(reason, sizeof reason, "%s", rs + 7);
-            }
-        }
-        unlink(file);
-    }
-    free(s.buf);
+    const char *why = patch_script(m, &p, file);
+    if (why) snprintf(reason, sizeof reason, "%s", why);
+    else { patch_status(m, &p, file, state, sizeof state, &sup, reason, sizeof reason); unlink(file); }
     logf_("patch %s status: %s supported=%d %s", p.id, state, sup, reason);
+    patch_store(m, p.id, state, sup, reason);
     pthread_mutex_lock(&m->mu);
-    for (int i = 0; i < m->npt; i++)
-        if (!strcmp(m->pt[i].id, p.id)) {
-            m->pt[i].checked = 1;
-            m->pt[i].supported = sup;
-            snprintf(m->pt[i].state, sizeof m->pt[i].state, "%s", state);
-            snprintf(m->pt[i].reason, sizeof m->pt[i].reason, "%s", reason);
-        }
     m->sticky = 0;
     m->rev++;
     pthread_mutex_unlock(&m->mu);
+}
+
+/* APPLY / UNDO a patch that does not restart MPC: the script's own `install --confirmed` / `uninstall --confirmed` (it keeps its own backup and
+ * puts things back if it fails), then `status` again. The screen asked twice first. The output is kept in <work>/patch-<id>.log. */
+static void do_papply(mgr_t *m) {
+    pthread_mutex_lock(&m->mu);
+    int k = m->ptidx, undo = m->ptact == 2;
+    patch_t p = k >= 0 && k < m->npt ? m->pt[k] : (patch_t){0};
+    pthread_mutex_unlock(&m->mu);
+    if (!p.id[0] || p.restarts) return;   /* restarting patches are not run from here */
+    char file[300], log[300], state[24] = "error", reason[100] = "";
+    int sup = 0;
+    snprintf(file, sizeof file, WORK "/patch-%s.sh", p.id);
+    snprintf(log, sizeof log, WORK "/patch-%s.log", p.id);
+    const char *why = patch_script(m, &p, file);
+    if (why) {
+        say(m, ERR, "%s: %s. Nothing was changed.", p.title, why);
+        return;
+    }
+    say(m, OK, "%s \"%s\"\xe2\x80\xa6", undo ? "Removing" : "Applying", p.title);
+    int rc = patch_run(file, undo ? "uninstall" : "install", "--confirmed", 180, WORK "/patch-out.txt");
+    char *out = slurp(WORK "/patch-out.txt", 16384);
+    if (out) { FILE *lf = fopen(log, "w"); if (lf) { fputs(out, lf); fclose(lf); } }
+    unlink(WORK "/patch-out.txt");
+    char last[160] = "";
+    if (out) {   /* the last line that is not the STATE line, for the status message */
+        char *e = out + strlen(out);
+        while (e > out && (e[-1] == '\n' || e[-1] == '\r')) *--e = 0;
+        char *ls = strrchr(out, '\n');
+        snprintf(last, sizeof last, "%s", ls ? ls + 1 : out);
+    }
+    free(out);
+    patch_status(m, &p, file, state, sizeof state, &sup, reason, sizeof reason);
+    unlink(file);
+    patch_store(m, p.id, state, sup, reason);
+    logf_("patch %s %s: exit %d, now %s", p.id, undo ? "uninstall" : "install", rc, state);
+    int good = rc == 0 && (undo ? strcmp(state, "patched") : !strcmp(state, "patched"));
+    if (good) say(m, OK, "%s: %s. Now: %s.", p.title, undo ? "removed" : "applied", state);
+    else say(m, ERR, "%s: %s did not finish (exit %d, now %s). %s", p.title, undo ? "removing" : "applying", rc, state, last);
 }
 
 /* The theme: the skin the device runs is the folder "Plugin Skins" in this plugin's own folder. Both skins ship there as "Plugin Skins.dark"
@@ -2327,6 +2420,7 @@ static void *worker(void *ud) {
         else if (job == J_PREPARE) do_prepare(m);
         else if (job == J_LAUNCH) do_launch(m);
         else if (job == J_PATCH) do_patch(m);
+        else if (job == J_PAPPLY) do_papply(m);
         pthread_mutex_lock(&m->mu);
         m->busy = 0;
         m->rev++;
@@ -2837,11 +2931,26 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
         int pi = m->ptpage * 3 + key[3] - '1';
         if (pi < m->npt && pt_arch_ok(m, &m->pt[pi])) {
             m->ptidx = pi;
+            m->ptconf = 0;
             say_locked(m, OK, "Checking \"%s\": running its status (nothing is changed)\xe2\x80\xa6", m->pt[pi].title);
             post(m, J_PATCH);
         }
-    } else if (!strcmp(key, "pat_prev") && m->ptpage > 0) m->ptpage--;
-    else if (!strcmp(key, "pat_next") && (m->ptpage + 1) * 3 < m->npt) m->ptpage++;
+    } else if (!strncmp(key, "pat", 3) && key[3] >= '1' && key[3] <= '3' && !strcmp(key + 4, "_act") && !m->busy && !m->job) {   /* PATCHES: APPLY / UNDO, twice */
+        int pi = m->ptpage * 3 + key[3] - '1';
+        int kind = pi < m->npt ? pt_act_kind(m, &m->pt[pi]) : 0;
+        if (kind) {
+            long long now = mono_ms();
+            int want = 1 + pi * 2 + (kind == 2);
+            if (m->ptconf == want && now - m->ptconf_t < 6000) {   /* the second tap, within 6 s */
+                m->ptconf = 0;
+                m->ptidx = pi;
+                m->ptact = kind;
+                say_locked(m, OK, "%s \"%s\"\xe2\x80\xa6", kind == 2 ? "Removing" : "Applying", m->pt[pi].title);
+                post(m, J_PAPPLY);
+            } else { m->ptconf = want; m->ptconf_t = now; }   /* the first tap: the button asks again */
+        }
+    } else if (!strcmp(key, "pat_prev") && m->ptpage > 0) { m->ptpage--; m->ptconf = 0; }
+    else if (!strcmp(key, "pat_next") && (m->ptpage + 1) * 3 < m->npt) { m->ptpage++; m->ptconf = 0; }
     else if (!strcmp(key, "loc_prev") && m->locpage > 0) m->locpage--;
     else if (!strcmp(key, "loc_next") && (m->locpage + 1) * 4 < m->nlocs) m->locpage++;
     else if (!strcmp(key, "loc_rescan") && !busy) post(m, J_REFRESH);
@@ -2950,12 +3059,18 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
         else if (!strcmp(f, "for")) {
             if (!p) snprintf(b, n, " ");
             else if (!pt_arch_ok(m, p)) snprintf(b, n, "Not for this device: built for %s, this MPC is %s", p->arch, m->dev->arch);
-            else if (p->checked) snprintf(b, n, "Checked on this MPC: %s%s%s", p->state, p->reason[0] ? "  \xc2\xb7  " : "", p->reason);
+            else if (p->checked) snprintf(b, n, "Checked on this MPC: %s%s%s%s", p->state, p->reason[0] ? "  \xc2\xb7  " : "", p->reason,
+                                          p->restarts && (p->supported || !strcmp(p->state, "patched")) ? "  \xc2\xb7  restarts MPC: use the installer app" : "");
             else snprintf(b, n, "For: %.108s", p->os);
         }
         else if (!strcmp(f, "pill"))   /* none, not checked, stock (can apply), applied, not supported, other device, check failed */
             snprintf(b, n, "%d", !p ? 0 : !pt_arch_ok(m, p) ? 5 : !p->checked ? 1 : !strcmp(p->state, "error") ? 6
                                   : p->supported && !strcmp(p->state, "stock") ? 2 : !strcmp(p->state, "patched") ? 3 : 4);
+        else if (!strcmp(f, "canact")) {   /* off, apply, undo, confirm apply, confirm undo */
+            int kind = pt_act_kind(m, p);
+            int want = 1 + pi * 2 + (kind == 2);
+            snprintf(b, n, "%d", !kind ? 0 : m->ptconf == want && mono_ms() - m->ptconf_t < 6000 ? 2 + kind : kind);
+        }
         else if (!strcmp(f, "canchk")) snprintf(b, n, "%d", p && pt_arch_ok(m, p) ? 1 + p->checked : 0);   /* off, check, check again */
         else ok = 0;
     }
