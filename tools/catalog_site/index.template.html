@@ -749,7 +749,7 @@ put("pads", h);
 (function () {
   var API = String(window.__SIGNALS_API || "https://openmpc-signals.open-mpc.workers.dev").replace(/\/$/, "");
   var TOKEN = "openmpc-signals-token", LAST = "openmpc-signals-last", GH = "openmpc-gh:", REPO_RE = /^[\w.-]+\/[\w.-]+$/;
-  var DEVICES = ["MPC Live", "MPC Live II", "MPC Live III", "MPC One", "MPC One+", "MPC X", "MPC Key 37", "MPC Key 61", "Force", "MPC Sample"];
+  var DEVICES = ["MPC Live", "MPC Live II", "MPC Live III", "MPC One", "MPC One+", "MPC One G2", "MPC X", "MPC Key 37", "MPC Key 61", "MPC Key G2", "MPC XL", "Force", "MPC Sample"];
   var counts = null, me = null, token = null, details = {}, toastTimer = 0;
   function keep(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; }
   token = keep(TOKEN);
