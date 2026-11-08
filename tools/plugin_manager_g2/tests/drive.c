@@ -193,6 +193,32 @@ int main(int argc, char **argv) {
     printf("prepared: apply=%s\n", get("apply_state"));
     e->destroy(m); return 0;
   }
+  if (argc > 1 && !strcmp(argv[1], "settings")) {   /* SETTINGS: the toggles show their state and are saved */
+    printf("before: beta=%s web=%s theme=%s\n", get("set_beta_txt"), get("set_web_txt"), get("set_theme_txt"));
+    press("set_beta_btn"); press("set_web_btn");
+    usleep(300000);
+    printf("after: beta=%s web=%s\n", get("set_beta_txt"), get("set_web_txt"));
+    press("set_beta_btn");
+    printf("again: beta=%s\n", get("set_beta_txt"));
+    e->destroy(m); return 0;
+  }
+  if (argc > 1 && !strcmp(argv[1], "patches")) {   /* PATCHES: the list, CHECK runs status after the checksum, a wrong checksum is never run */
+    for (int i = 1; i <= 3; i++) {
+      char t[24], p[24], c[24], f[24];
+      snprintf(t, sizeof t, "pat%d_title", i); snprintf(p, sizeof p, "pat%d_pill", i); snprintf(c, sizeof c, "pat%d_canchk", i); snprintf(f, sizeof f, "pat%d_for", i);
+      printf("pat%d: %s pill=%s canchk=%s |%s|\n", i, get(t), get(p), get(c), get(f));
+    }
+    press("pat1_chk");
+    for (int i = 0; i < 60 && strcmp(get("pat1_pill"), "2"); i++) usleep(200000);
+    printf("checked1: pill=%s |%s| canchk=%s\n", get("pat1_pill"), get("pat1_for"), get("pat1_canchk"));
+    press("pat2_chk");
+    for (int i = 0; i < 60 && !strcmp(get("pat2_pill"), "1"); i++) usleep(200000);
+    printf("checked2: pill=%s |%s|\n", get("pat2_pill"), get("pat2_for"));
+    press("pat3_chk"); usleep(500000);
+    printf("checked3: pill=%s\n", get("pat3_pill"));
+    printf("foot: %s\n", get("pat_foot"));
+    e->destroy(m); return 0;
+  }
   if (argc > 1 && !strcmp(argv[1], "pickshow")) {   /* a fresh start: which place does the restart prompt name first? */
     set("kind", "1"); press("r1_act"); press("apply");
     for (int i = 0; i < 60 && strcmp(get("apply_state"), "3") && strcmp(get("apply_state"), "4"); i++) sleep(1);

@@ -80,4 +80,18 @@ pkg("Newlib", [("Newlib-1.0.0/install.sh", "#!/bin/sh\nexit 0\n"), ("Newlib-1.0.
 pkg("Oldos", [("Oldos-1.0.0/install.sh", "#!/bin/sh\nexit 0\n"), ("Oldos-1.0.0/mpc-plugin.json", '{"arch": "armv7", "os_compat": ["2.x"]}\n')], "2024-11-01")
 pkg("Evil", [("Evil-1.0.0/install.sh", "#!/bin/sh\nexit 0\n"), ("Evil-1.0.0/../escape.txt", "x")], "2025-01-01")
 json.dump({"schema": 1, "plugins": plugins}, open(os.path.join(out, "catalog.json"), "w"), indent=1)
+# patches.json: one patch whose script reports a stock device, one whose script does not match its checksum, one for another CPU
+stock = "#!/bin/sh\n[ \"$1\" = status ] || exit 2\necho human text\necho \"STATE state=stock supported=1 backup=0\"\n"
+open(os.path.join(out, "patch-stock.sh"), "w").write(stock)
+open(os.path.join(out, "patch-evil.sh"), "w").write("#!/bin/sh\necho changed > /tmp/patch-evil-ran\n")
+def pat(i, title, script, sha, arch):
+    return {"id": i, "title": title, "summary": "A fixture patch that changes nothing. " * 6, "author": "tests", "license": "MIT", "docs": "x",
+            "script": {"url": base + script, "sha256": sha},
+            "supports": {"os": "MPC OS fixture", "arch": arch}, "modifies": ["/usr/bin/MPC", "/etc/x"], "backup": "/tmp/bk",
+            "restarts_mpc": True, "reversible": True}
+json.dump({"schema": 1, "patches": [
+    pat("fx-stock", "Fixture stock", "patch-stock.sh", hashlib.sha256(stock.encode()).hexdigest(), "armv7l,aarch64,x86_64"),
+    pat("fx-evil", "Fixture bad checksum", "patch-evil.sh", "0" * 64, "armv7l,aarch64,x86_64"),
+    pat("fx-arm", "Fixture other CPU", "patch-stock.sh", hashlib.sha256(stock.encode()).hexdigest(), "mips")]},
+    open(os.path.join(out, "patches.json"), "w"), indent=1)
 print("fixture: %d packages in %s" % (len(plugins), out))

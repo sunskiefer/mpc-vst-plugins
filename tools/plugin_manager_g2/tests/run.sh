@@ -51,7 +51,7 @@ fi # devices
 if want addins; then
 echo "== addins (offline fixture)"
 fi # addins-head
-gcc $SAN -DFS_ANY=1 -DCATALOG_URL=\"file:///p/vst/build/tests/catalog.json\" -std=gnu11 -w src/manager.c tests/drive.c -lpthread -ldl -o /tmp/drive_addins
+gcc $SAN -DFS_ANY=1 -DCATALOG_URL=\"file:///p/vst/build/tests/catalog.json\" -DPATCHES_URL=\"file:///p/vst/build/tests/patches.json\" -std=gnu11 -w src/manager.c tests/drive.c -lpthread -ldl -o /tmp/drive_addins
 if want addins; then
 rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
 sh tests/devices/mpc-one.sh && sh tests/addins.sh && /tmp/drive_addins addins
@@ -168,6 +168,21 @@ cp /media/az01-internal/Settings/MPC/MPC.settings /tmp/ms.before
 awk -v loc=/media/STICK/Synths -f /tmp/openmpc-pm/loc_add.awk /tmp/ms.before > /tmp/ms.after
 grep -qF "<Location>/media/STICK/Synths</Location>" /tmp/ms.after
 [ "$(grep -c "<Location>" /tmp/ms.after)" = 2 ] && [ "$(grep -cP "\r$" /tmp/ms.after)" = "$(wc -l < /tmp/ms.after)" ] || { cat -A /tmp/ms.after; exit 1; }
+# SETTINGS: beta plugins and the web page toggle, saved beside the theme preference
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/two-targets.sh
+PM_NO_WEB=1 /tmp/drive_addins settings > /tmp/settings.out
+grep -qF "before: beta=SHOWN web=ON" /tmp/settings.out && grep -qF "after: beta=HIDDEN web=OFF" /tmp/settings.out && grep -qF "again: beta=SHOWN" /tmp/settings.out || { cat /tmp/settings.out; exit 1; }
+grep -qx "beta=1" /media/az01-internal/.openmpcpm-settings && grep -qx "web=0" /media/az01-internal/.openmpcpm-settings || { cat /media/az01-internal/.openmpcpm-settings; exit 1; }
+# PATCHES: the list from patches.json, CHECK runs a patch status only after its checksum matches; another CPU gets no button
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts /tmp/patch-evil-ran; mkdir -p /media
+sh tests/devices/two-targets.sh
+/tmp/drive_addins patches > /tmp/patches.out
+grep -qF "pat1: Fixture stock pill=1 canchk=1" /tmp/patches.out && grep -qF "pat3: Fixture other CPU pill=5 canchk=0" /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
+grep -qF "checked1: pill=2 |Checked on this MPC: stock| canchk=2" /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
+grep -qF "checked2: pill=6 |Checked on this MPC: error  ·  the script does not match its checksum: not run|" /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
+grep -qF "checked3: pill=5" /tmp/patches.out && grep -qF "foot: 3 device patches." /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
+[ ! -e /tmp/patch-evil-ran ] || { echo "a script with a wrong checksum ran"; exit 1; }
 echo "pick OK"
 fi # pick
 if want theme; then

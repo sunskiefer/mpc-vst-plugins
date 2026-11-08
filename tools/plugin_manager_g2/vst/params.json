@@ -3540,6 +3540,276 @@
    "name": "Locations next page",
    "type": "trigger",
    "momentary": true
+  },
+  {
+   "key": "set_theme_txt",
+   "name": "Setting: theme",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "set_beta_txt",
+   "name": "Setting: beta plugins",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "set_web_txt",
+   "name": "Setting: web page",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "set_beta_btn",
+   "name": "Setting: beta plugins button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "set_web_btn",
+   "name": "Setting: web page button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "pat1_vis",
+   "name": "Patch 1 shown",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "pat1_pill",
+   "name": "Patch 1 state",
+   "live": true,
+   "options": [
+    "none",
+    "unchecked",
+    "stock",
+    "applied",
+    "unsupported",
+    "other",
+    "failed"
+   ]
+  },
+  {
+   "key": "pat1_canchk",
+   "name": "Patch 1 check",
+   "live": true,
+   "options": [
+    "off",
+    "check",
+    "again"
+   ]
+  },
+  {
+   "key": "pat1_chk",
+   "name": "Patch 1 check button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "pat1_title",
+   "name": "Patch 1 title",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat1_s1",
+   "name": "Patch 1 s1",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat1_s2",
+   "name": "Patch 1 s2",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat1_meta",
+   "name": "Patch 1 meta",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat1_for",
+   "name": "Patch 1 for",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat2_vis",
+   "name": "Patch 2 shown",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "pat2_pill",
+   "name": "Patch 2 state",
+   "live": true,
+   "options": [
+    "none",
+    "unchecked",
+    "stock",
+    "applied",
+    "unsupported",
+    "other",
+    "failed"
+   ]
+  },
+  {
+   "key": "pat2_canchk",
+   "name": "Patch 2 check",
+   "live": true,
+   "options": [
+    "off",
+    "check",
+    "again"
+   ]
+  },
+  {
+   "key": "pat2_chk",
+   "name": "Patch 2 check button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "pat2_title",
+   "name": "Patch 2 title",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat2_s1",
+   "name": "Patch 2 s1",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat2_s2",
+   "name": "Patch 2 s2",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat2_meta",
+   "name": "Patch 2 meta",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat2_for",
+   "name": "Patch 2 for",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat3_vis",
+   "name": "Patch 3 shown",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "pat3_pill",
+   "name": "Patch 3 state",
+   "live": true,
+   "options": [
+    "none",
+    "unchecked",
+    "stock",
+    "applied",
+    "unsupported",
+    "other",
+    "failed"
+   ]
+  },
+  {
+   "key": "pat3_canchk",
+   "name": "Patch 3 check",
+   "live": true,
+   "options": [
+    "off",
+    "check",
+    "again"
+   ]
+  },
+  {
+   "key": "pat3_chk",
+   "name": "Patch 3 check button",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "pat3_title",
+   "name": "Patch 3 title",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat3_s1",
+   "name": "Patch 3 s1",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat3_s2",
+   "name": "Patch 3 s2",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat3_meta",
+   "name": "Patch 3 meta",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat3_for",
+   "name": "Patch 3 for",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat_pages",
+   "name": "Patches pages",
+   "live": true,
+   "options": [
+    "one",
+    "several"
+   ]
+  },
+  {
+   "key": "pat_page",
+   "name": "Patches page",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "pat_prev",
+   "name": "Patches previous page",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "pat_next",
+   "name": "Patches next page",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "pat_foot",
+   "name": "Patches footer",
+   "type": "readout",
+   "display": "string"
   }
  ]
 }

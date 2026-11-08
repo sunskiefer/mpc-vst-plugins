@@ -83,21 +83,52 @@ def main():
         + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
         + text(1256, 38, "LOCATIONS", 20, MUTED, 700, anchor="end", spacing=2)
         + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE))
-    svg("loc_row.svg", 1232, 100, '<rect x="0.5" y="0.5" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE))
-    svg("loc_ok.svg", 140, 30, '<rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="#3fbf7f" stroke-width="2"/>'
+    svg("loc_row.svg", 1232, 108, '<rect x="0.5" y="0.5" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE))
+    svg("loc_ok.svg", 140, 30, '<rect width="140" height="30" fill="%s"/><rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="#3fbf7f" stroke-width="2"/>' % PANEL
         + text(70, 21, "USABLE", 15, GREEN, 700, anchor="middle", spacing=1.5))
-    svg("loc_bad.svg", 140, 30, '<rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="%s" stroke-width="2"/>' % RED
+    svg("loc_bad.svg", 140, 30, '<rect width="140" height="30" fill="%s"/><rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="%s" stroke-width="2"/>' % (PANEL, RED)
         + text(70, 21, "NOT USABLE", 15, "#ff9a93", 700, anchor="middle", spacing=1.5))
-    svg("loc_def.svg", 160, 34, '<rect x="1" y="1" width="158" height="32" rx="8" fill="none" stroke="%s" stroke-width="2"/>' % DIM
+    svg("loc_def.svg", 160, 34, '<rect x="1" y="1" width="158" height="32" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
         + text(80, 23, "MAKE DEFAULT", 16, INK, 700, anchor="middle", spacing=1.2))
     svg("loc_rescan.svg", 170, 40, '<rect x="1" y="1" width="168" height="38" rx="8" fill="#26272a"/>'
         + icon("refresh", 22, 9, 22, INK) + text(104, 27, "RESCAN", 17, INK, 700, anchor="middle", spacing=1.5))
-    svg("loc_reg.svg", 160, 34, '<rect x="1" y="1" width="158" height="32" rx="8" fill="none" stroke="%s" stroke-width="2"/>' % AMBER
+    svg("loc_reg.svg", 160, 34, '<rect x="1" y="1" width="158" height="32" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, AMBER)
         + text(80, 23, "REGISTER", 16, AMBER_TX, 700, anchor="middle", spacing=1.2))
     svg("loc_regq.svg", 160, 34, '<rect x="1" y="1" width="158" height="32" rx="8" fill="%s"/>' % AMBER
         + text(80, 23, "QUEUED  \u00b7  CANCEL", 14, "#1a1205", 700, anchor="middle", spacing=0.8))
-    svg("loc_new.svg", 140, 30, '<rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="%s" stroke-width="2"/>' % AMBER
+    svg("loc_new.svg", 140, 30, '<rect width="140" height="30" fill="%s"/><rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="%s" stroke-width="2"/>' % (PANEL, AMBER)
         + text(70, 21, "NOT LISTED", 15, AMBER_TX, 700, anchor="middle", spacing=1.5))
+    # the SETTINGS tab: header, footer, one card per setting (title and what it does drawn in), and the button the live value sits on
+    svg("set_bg.svg", 1280, 628,
+        '<rect width="1280" height="628" fill="%s"/>' % BG
+        + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
+        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
+        + text(1256, 38, "SETTINGS", 20, MUTED, 700, anchor="end", spacing=2)
+        + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
+        + text(40, 599, "Kept beside MPC.settings. Changes marked \"restart\" apply the next time MPC starts.", 22, DIM, 600))
+    for nm, title, desc in (("theme", "THEME", "Light or dark. MPC keeps skins in memory, so a change shows after the next restart."),
+                            ("beta", "BETA PLUGINS", "Show beta releases in Discover. Plugins you have installed always show."),
+                            ("web", "WEB PAGE", "Serve the plugin list on your network (port 8790). Takes effect when MPC starts.")):
+        svg("set_row_%s.svg" % nm, 1232, 108, '<rect x="0.5" y="0.5" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE)
+            + text(28, 42, title, 29, INK, 700, spacing=1) + text(28, 78, desc, 22, DIM, 600))
+    svg("set_btn.svg", 150, 46, '<rect x="1" y="1" width="148" height="44" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
+        + text(75, 30, "CHANGE", 17, INK, 700, anchor="middle", spacing=1.5))
+    # the PATCHES tab: header, footer, three cards, state pills and the CHECK buttons
+    svg("pat_bg.svg", 1280, 628,
+        '<rect width="1280" height="628" fill="%s"/>' % BG
+        + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
+        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
+        + text(1256, 38, "DEVICE PATCHES", 20, MUTED, 700, anchor="end", spacing=2)
+        + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE))
+    svg("pat_row.svg", 1232, 140, '<rect x="0.5" y="0.5" width="1231" height="131" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE))
+    for nm, label, col, tx in (("unchecked", "NOT CHECKED", AMBER, AMBER_TX), ("stock", "CAN APPLY", "#3fbf7f", GREEN), ("applied", "APPLIED", "#3fbf7f", GREEN),
+                               ("unsupported", "NOT SUPPORTED", RED, "#ff9a93"), ("other", "OTHER DEVICE", RED, "#ff9a93"), ("failed", "CHECK FAILED", RED, "#ff9a93")):
+        svg("pat_%s.svg" % nm, 190, 30, '<rect width="190" height="30" fill="%s"/><rect x="1" y="1" width="188" height="28" rx="14" fill="none" stroke="%s" stroke-width="2"/>' % (PANEL, col)
+            + text(95, 21, label, 15, tx, 700, anchor="middle", spacing=1.5))
+    svg("pat_chk.svg", 180, 40, '<rect x="1" y="1" width="178" height="38" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
+        + text(90, 26, "CHECK", 17, INK, 700, anchor="middle", spacing=1.5))
+    svg("pat_chk2.svg", 180, 40, '<rect x="1" y="1" width="178" height="38" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
+        + text(90, 26, "CHECK AGAIN", 17, INK, 700, anchor="middle", spacing=1.5))
     svg("net_on.svg", 100, 24, '<circle cx="5" cy="12" r="4.5" fill="#3fbf7f"/>' + text(16, 17, "ONLINE", 15, MUTED, 600, spacing=1))
     svg("net_off.svg", 100, 24, '<circle cx="5" cy="12" r="4.5" fill="%s"/>' % RED + text(16, 17, "OFFLINE", 15, "#ff9a93", 600, spacing=1))
     # a plugin card (the list row's own picture): the thumbnail tile is part of it

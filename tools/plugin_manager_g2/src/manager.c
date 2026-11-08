@@ -62,6 +62,16 @@ typedef struct {
 #ifndef CATALOG_URL_FALLBACK
 #define CATALOG_URL_FALLBACK ""
 #endif
+/* the device patches list (catalog/patches.json) is published beside the catalog */
+#ifndef PATCHES_URL
+#define PATCHES_URL "https://open-mpc.github.io/patches.json"
+#ifndef PATCHES_URL_FALLBACK
+#define PATCHES_URL_FALLBACK "https://sd88me.github.io/mpc-vst-plugins/patches.json"
+#endif
+#endif
+#ifndef PATCHES_URL_FALLBACK
+#define PATCHES_URL_FALLBACK ""
+#endif
 #define WORK "/tmp/openmpc-pm"
 #define MAXPKG 256
 #define ROWS 5      /* plugin cards per page */
@@ -95,9 +105,15 @@ typedef struct {
     char dir[256];        /* unpacked package (install.sh / uninstall.sh), set while preparing */
 } pkg_t;
 enum { Q_INSTALL = 1, Q_REMOVE = 2, Q_REGISTER = 3 };
-enum { J_NONE, J_REFRESH, J_PREPARE, J_LAUNCH };
+enum { J_NONE, J_REFRESH, J_PREPARE, J_LAUNCH, J_PATCH };
 
 typedef struct device device_t;
+typedef struct {   /* PATCHES: one entry of patches.json (a change to MPC itself, run from a script) and what its `status` said */
+    char id[40], title[100], summary[400], author[32], os[200], arch[40], backup[120], modifies[160], url[400], sha[72];
+    int restarts, reversible;
+    int checked, supported;      /* `status` was run: state/reason below; supported = the script's supported=1 */
+    char state[20], reason[100];
+} patch_t;
 typedef struct { char name[96], info[200], state[200], path[200]; int bar, vis, usable, dflt, pick, cand; } locrow_t;   /* LOCATIONS: one drive */
 typedef struct {
     pthread_t th;
@@ -134,6 +150,8 @@ typedef struct {
     int migrate, migrate_seen;   /* MPC OS 3.10.1: "move to VST2 Plugins" is queued; it was offered once this session (cleared, it stays off) */
     pthread_t web;   /* the local web page (web.c) */
     int web_on;
+    patch_t pt[8]; int npt, ptpage, ptidx;   /* PATCHES: the list (loaded on each refresh), the page shown (3 per page), the one being checked */
+    int show_beta, web_pref;        /* SETTINGS (saved in <base>/.openmpcpm-settings): list beta plugins in Discover, serve the web page */
     char regq[4][200]; int nregq;   /* LOCATIONS: drives queued for REGISTER (a Synths folder to add to MPC.settings at APPLY) */
     locrow_t locs[16]; int nlocs, locpage;   /* LOCATIONS rows (built by the worker on each refresh), the page shown (4 per page) */
 } mgr_t;
@@ -962,6 +980,165 @@ static void loc_build(mgr_t *m) {
     free(rows);
 }
 
+/* ---- PATCHES tab ---- */
+static const char *pt_arr_join(const char *v, char *out, size_t n) {   /* ["a", "b"] -> "a, b" */
+    const char *p = ws(v);
+    size_t k = 0;
+    out[0] = 0;
+    if (*p != '[') return NULL;
+    p = ws(p + 1);
+    while (*p == '"') {
+        char one[120];
+        p = jstr(p, one, sizeof one);
+        if (!p) return NULL;
+        k += snprintf(out + k, k < n ? n - k : 0, "%s%s", k ? ", " : "", one);
+        if (k >= n) k = n - 1;
+        p = ws(p);
+        if (*p == ',') p = ws(p + 1);
+    }
+    return *p == ']' ? p + 1 : NULL;
+}
+static const char *pt_script(const char *key, const char *v, void *ud) {
+    patch_t *x = ud;
+    if (!strcmp(key, "url") && *v == '"') return jstr(v, x->url, sizeof x->url);
+    if (!strcmp(key, "sha256") && *v == '"') return jstr(v, x->sha, sizeof x->sha);
+    return NULL;
+}
+static const char *pt_supports(const char *key, const char *v, void *ud) {
+    patch_t *x = ud;
+    if (!strcmp(key, "os") && *v == '"') return jstr(v, x->os, sizeof x->os);
+    if (!strcmp(key, "arch") && *v == '"') return jstr(v, x->arch, sizeof x->arch);
+    return NULL;
+}
+static const char *pt_member(const char *key, const char *v, void *ud) {
+    patch_t *x = ud;
+    if (!strcmp(key, "id") && *v == '"') return jstr(v, x->id, sizeof x->id);
+    if (!strcmp(key, "title") && *v == '"') return jstr(v, x->title, sizeof x->title);
+    if (!strcmp(key, "summary") && *v == '"') return jstr(v, x->summary, sizeof x->summary);
+    if (!strcmp(key, "author") && *v == '"') return jstr(v, x->author, sizeof x->author);
+    if (!strcmp(key, "backup") && *v == '"') return jstr(v, x->backup, sizeof x->backup);
+    if (!strcmp(key, "restarts_mpc")) { x->restarts = *v == 't'; return jskip(v); }
+    if (!strcmp(key, "reversible")) { x->reversible = *v == 't'; return jskip(v); }
+    if (!strcmp(key, "modifies")) return pt_arr_join(v, x->modifies, sizeof x->modifies);
+    if (!strcmp(key, "script")) return jobject(v, pt_script, x);
+    if (!strcmp(key, "supports")) return jobject(v, pt_supports, x);
+    return NULL;
+}
+typedef struct { patch_t *a; int n; } ptlist_t;
+static const char *pt_top(const char *key, const char *v, void *ud) {
+    ptlist_t *l = ud;
+    if (strcmp(key, "patches")) return NULL;
+    const char *p = ws(v);
+    if (*p != '[') return NULL;
+    p = ws(p + 1);
+    while (*p == '{' && l->n < 8) {
+        patch_t *x = &l->a[l->n];
+        memset(x, 0, sizeof *x);
+        p = jobject(p, pt_member, x);
+        if (!p) return NULL;
+        if (x->id[0] && safe(x->id) && x->title[0]) l->n++;
+        p = ws(p);
+        if (*p == ',') p = ws(p + 1);
+    }
+    return *p == ']' ? p + 1 : NULL;
+}
+static void patches_load(mgr_t *m) {   /* the worker, on each refresh; nothing changes on the device */
+    patch_t *tmp = calloc(8, sizeof *tmp);
+    if (!tmp) return;
+    ptlist_t l = {tmp, 0};
+    sink_t s = {0};
+    int ok = fetch(m, PATCHES_URL, &s) == 0 && s.buf && jobject(s.buf, pt_top, &l);
+    if (!ok && PATCHES_URL_FALLBACK[0]) {
+        free(s.buf);
+        memset(&s, 0, sizeof s);
+        l.n = 0;
+        ok = fetch(m, PATCHES_URL_FALLBACK, &s) == 0 && s.buf && jobject(s.buf, pt_top, &l);
+    }
+    free(s.buf);
+    if (!ok) { free(tmp); return; }   /* offline: keep the list we had */
+    pthread_mutex_lock(&m->mu);
+    for (int i = 0; i < l.n; i++)   /* a check made earlier still stands if the script is the same */
+        for (int k = 0; k < m->npt; k++)
+            if (!strcmp(m->pt[k].id, tmp[i].id) && !strcmp(m->pt[k].sha, tmp[i].sha) && m->pt[k].checked) {
+                tmp[i].checked = 1; tmp[i].supported = m->pt[k].supported;
+                snprintf(tmp[i].state, sizeof tmp[i].state, "%s", m->pt[k].state);
+                snprintf(tmp[i].reason, sizeof tmp[i].reason, "%s", m->pt[k].reason);
+            }
+    memcpy(m->pt, tmp, (size_t)l.n * sizeof *tmp);
+    m->npt = l.n;
+    if (m->ptpage * 3 >= l.n) m->ptpage = l.n ? (l.n - 1) / 3 : 0;
+    m->rev++;
+    pthread_mutex_unlock(&m->mu);
+    free(tmp);
+}
+static int pt_arch_ok(const mgr_t *m, const patch_t *p) {
+    char a[48];
+    snprintf(a, sizeof a, "%s", m->dev->arch);
+    return !p->arch[0] || strstr(p->arch, a) != NULL;
+}
+
+/* CHECK: fetch the patch's script, verify its sha256 against patches.json, and run `status` (the contract: it changes nothing). The script's
+ * last "STATE state=<s> supported=<0|1> ... reason=<text>" line is what the page shows. */
+static void do_patch(mgr_t *m) {
+    pthread_mutex_lock(&m->mu);
+    int k = m->ptidx;
+    patch_t p = k >= 0 && k < m->npt ? m->pt[k] : (patch_t){0};
+    pthread_mutex_unlock(&m->mu);
+    if (!p.id[0]) return;
+    char state[20] = "error", reason[100] = "", file[300];
+    int sup = 0;
+    snprintf(file, sizeof file, WORK "/patch-%s.sh", p.id);
+    sink_t s = {0};
+    if (strlen(p.sha) != 64 || !p.url[0]) snprintf(reason, sizeof reason, "no script in the list");
+    else if (fetch(m, p.url, &s) || !s.buf || !s.len) snprintf(reason, sizeof reason, "the script could not be fetched");
+    else {
+        FILE *f = fopen(file, "w");
+        if (f) { fwrite(s.buf, 1, s.len, f); fclose(f); }
+        char cmd[400], out[2048] = "", hash[80] = "";
+        snprintf(cmd, sizeof cmd, "sha256sum '%s' 2>/dev/null | cut -d' ' -f1", file);
+        FILE *h = popen(cmd, "r");
+        if (h) { if (fgets(hash, sizeof hash, h)) hash[strcspn(hash, "\r\n")] = 0; pclose(h); }
+        if (strcmp(hash, p.sha)) snprintf(reason, sizeof reason, "the script does not match its checksum: not run");
+        else {
+            /* a clean environment (no LD_PRELOAD of MPC's addins), output to a file, and a 60 s watchdog (busybox here has no `timeout`) */
+            snprintf(cmd, sizeof cmd, "env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/root sh -c "
+                     "'sh \"$1\" status >\"$2\" 2>&1 </dev/null & p=$!; ( sleep 60; kill $p ) >/dev/null 2>&1 & w=$!; wait $p; kill $w 2>/dev/null' sh '%s' '" WORK "/patch-out.txt'", file);
+            sh(cmd);
+            FILE *r = fopen(WORK "/patch-out.txt", "r");
+            size_t n = 0;
+            while (r && n < sizeof out - 1 && fgets(out + n, (int)(sizeof out - n), r)) n = strlen(out);
+            if (r) fclose(r);
+            unlink(WORK "/patch-out.txt");
+            char *st = strstr(out, "STATE state=");
+            while (st && strstr(st + 1, "STATE state=")) st = strstr(st + 1, "STATE state=");
+            if (!st) snprintf(reason, sizeof reason, "the script gave no STATE line");
+            else {
+                char *e = st + strcspn(st, "\r\n");
+                *e = 0;
+                sscanf(st, "STATE state=%19s", state);
+                char *sp = strstr(st, "supported=");
+                sup = sp && sp[10] == '1';
+                char *rs = strstr(st, "reason=");
+                if (rs) snprintf(reason, sizeof reason, "%s", rs + 7);
+            }
+        }
+        unlink(file);
+    }
+    free(s.buf);
+    logf_("patch %s status: %s supported=%d %s", p.id, state, sup, reason);
+    pthread_mutex_lock(&m->mu);
+    for (int i = 0; i < m->npt; i++)
+        if (!strcmp(m->pt[i].id, p.id)) {
+            m->pt[i].checked = 1;
+            m->pt[i].supported = sup;
+            snprintf(m->pt[i].state, sizeof m->pt[i].state, "%s", state);
+            snprintf(m->pt[i].reason, sizeof m->pt[i].reason, "%s", reason);
+        }
+    m->sticky = 0;
+    m->rev++;
+    pthread_mutex_unlock(&m->mu);
+}
+
 /* The theme: the skin the device runs is the folder "Plugin Skins" in this plugin's own folder. Both skins ship there as "Plugin Skins.dark"
  * and "Plugin Skins.light"; an apply copies the wanted one over it while MPC is stopped (MPC keeps skins in memory, so a swap shows after a
  * restart). The wanted theme is kept in <base>/.openmpcpm-theme; the one in place is named by the file ".theme" inside each skin folder. */
@@ -998,6 +1175,42 @@ static void theme_init(mgr_t *m) {   /* after the device probe: where the settin
         m->theme = theme_read(m->dev->base, ".openmpcpm-theme", 1);   /* light is the default */
         snprintf(a, sizeof a, "%s/Plugin Skins", m->own);
         m->theme_applied = theme_read(a, ".theme", 1);   /* inside the skin itself: a reinstall of this plugin brings the packaged (dark) skin and this file together */
+    }
+}
+
+/* SETTINGS: "key=0|1" lines in <base>/.openmpcpm-settings beside the theme preference; a missing file or key keeps the default (both on). */
+static int cfg_get(const char *base, const char *key, int def) {
+    char f[320], l[64];
+    snprintf(f, sizeof f, "%s/.openmpcpm-settings", base);
+    FILE *fp = fopen(f, "r");
+    size_t kl = strlen(key);
+    while (fp && fgets(l, sizeof l, fp)) if (!strncmp(l, key, kl) && l[kl] == '=') { fclose(fp); return l[kl + 1] == '1'; }
+    if (fp) fclose(fp);
+    return def;
+}
+static void cfg_save(const mgr_t *m) {   /* tmp, then rename */
+    char f[320], t[330];
+    snprintf(f, sizeof f, "%s/.openmpcpm-settings", m->dev->base);
+    snprintf(t, sizeof t, "%s.new", f);
+    FILE *fp = fopen(t, "w");
+    if (!fp) return;
+    fprintf(fp, "beta=%d\nweb=%d\n", m->show_beta, m->web_pref);
+    fclose(fp);
+    rename(t, f);
+}
+/* where the settings live before the first device probe (the web page starts with the plugin): the same two folders probe_device() looks in */
+static void cfg_base_guess(char *out, size_t n) {
+    static const char *dirs[] = {"/media/az01-internal/Settings", "/data/Settings"};
+    out[0] = 0;
+    for (int i = 0; i < 2 && !out[0]; i++) {
+        DIR *sd = opendir(dirs[i]);
+        struct dirent *e;
+        while (sd && (e = readdir(sd)) && !out[0]) {
+            char p[300];
+            snprintf(p, sizeof p, "%s/%s/MPC.settings", dirs[i], e->d_name);
+            if (e->d_name[0] != '.' && is_file(p)) snprintf(out, n, "%.*s", (int)(strstr(dirs[i], "/Settings") - dirs[i]), dirs[i]);
+        }
+        if (sd) closedir(sd);
     }
 }
 
@@ -1738,9 +1951,12 @@ static void do_refresh(mgr_t *m) {
     probe_device(m->dev);
     l.n = add_local(m->dev, tmp, l.n);
     theme_init(m);
+    m->show_beta = cfg_get(m->dev->base, "beta", 1);
+    m->web_pref = cfg_get(m->dev->base, "web", 1);
     if (!m->confirm) target_init(m);   /* a pick still open on the prompt is kept */
     write_report(m->dev);
     loc_build(m);
+    patches_load(m);
     scan_installed(m->dev, tmp, l.n);
     detect_orphans(m->dev);
     l.n = add_orphans(m->dev, tmp, l.n);
@@ -2110,6 +2326,7 @@ static void *worker(void *ud) {
         if (job == J_REFRESH) do_refresh(m);
         else if (job == J_PREPARE) do_prepare(m);
         else if (job == J_LAUNCH) do_launch(m);
+        else if (job == J_PATCH) do_patch(m);
         pthread_mutex_lock(&m->mu);
         m->busy = 0;
         m->rev++;
@@ -2185,6 +2402,7 @@ static int visible_now(const mgr_t *m, int *idx) {
         if (m->kindf == 2 && strcmp(p->kind, "effect")) continue;
         if (m->kindf == 3 && !is_addin(p)) continue;
         if (m->tab == 0 && installed(p)) continue;   /* DISCOVER: what isn't on this MPC yet */
+        if (!m->show_beta && !installed(p) && !strcmp(p->channel, "beta")) continue;   /* SETTINGS: beta plugins hidden */
         if (m->tag[0] && !has_tag(p, m->tag)) continue;
         if (m->q[0] && !matches(p, m->q)) continue;
         if (m->tab == 1 && !installed(p)) continue;
@@ -2229,6 +2447,11 @@ static int count_updates(const mgr_t *m) {
     int n = 0;
     for (int i = 0; i < m->npkg; i++) n += has_update(&m->pkg[i]);
     return n;
+}
+
+static int installs_queued(const mgr_t *m) {   /* a plugin or addin will be written to a drive */
+    for (int i = 0; i < m->npkg; i++) if (m->pkg[i].queued == Q_INSTALL) return 1;
+    return 0;
 }
 
 static int count_queued(const mgr_t *m) {
@@ -2392,7 +2615,13 @@ static void *mgr_create(const char *data_dir) {
     m->dev = calloc(1, sizeof *m->dev);
     if (!m->dev) { free(m); return NULL; }
     if (pthread_create(&m->th, NULL, worker, m)) { free(m->dev); free(m); return NULL; }
-    m->web_on = !getenv("PM_NO_WEB") && !pthread_create(&m->web, NULL, web_thread, m);
+    m->show_beta = m->web_pref = 1;
+    {
+        char b0[200];
+        cfg_base_guess(b0, sizeof b0);
+        if (b0[0]) { m->show_beta = cfg_get(b0, "beta", 1); m->web_pref = cfg_get(b0, "web", 1); }
+    }
+    m->web_on = m->web_pref && !getenv("PM_NO_WEB") && !pthread_create(&m->web, NULL, web_thread, m);
     return m;
 }
 
@@ -2461,7 +2690,7 @@ static int repeated(long long *last, int ms) {
 /* the trigger params (a tap), not the option params the host steps on purpose (kind, sort, ...), the keyboard keys or THEME (its own window) */
 static int is_button(const char *key) {
     static const char *const end[] = {"_act", "_open", "_more", "_reinstall", "_remove", "_btn", "_pick1", "_pick2", "_pick3", "_pick4",
-                                      "_close", "_back", "_cancel", "_go", "_clear", "_next", "_prev", "_reg", "_pick", "_rescan"};
+                                      "_close", "_back", "_cancel", "_go", "_clear", "_next", "_prev", "_reg", "_pick", "_rescan", "_chk"};
     size_t kl = strlen(key);
     if (!strcmp(key, "theme_btn")) return 0;
     if (!strcmp(key, "update_all") || !strcmp(key, "apply") || !strcmp(key, "refresh") || !strncmp(key, "d_tag", 5)) return 1;
@@ -2597,7 +2826,23 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
             } else if (m->nregq < 4) snprintf(m->regq[m->nregq++], sizeof m->regq[0], "%s", m->locs[ri].path);
             m->ready = 0;   /* a prepared apply.sh does not have it */
         }
-    } else if (!strcmp(key, "loc_prev") && m->locpage > 0) m->locpage--;
+    } else if (!strcmp(key, "set_beta_btn")) {   /* SETTINGS: beta plugins in Discover */
+        m->show_beta = !m->show_beta;
+        cfg_save(m);
+        m->page = 0;
+    } else if (!strcmp(key, "set_web_btn")) {   /* SETTINGS: the web page, from the next MPC start */
+        m->web_pref = !m->web_pref;
+        cfg_save(m);
+    } else if (!strncmp(key, "pat", 3) && key[3] >= '1' && key[3] <= '3' && !strcmp(key + 4, "_chk") && !m->busy && !m->job) {   /* PATCHES: CHECK */
+        int pi = m->ptpage * 3 + key[3] - '1';
+        if (pi < m->npt && pt_arch_ok(m, &m->pt[pi])) {
+            m->ptidx = pi;
+            say_locked(m, OK, "Checking \"%s\": running its status (nothing is changed)\xe2\x80\xa6", m->pt[pi].title);
+            post(m, J_PATCH);
+        }
+    } else if (!strcmp(key, "pat_prev") && m->ptpage > 0) m->ptpage--;
+    else if (!strcmp(key, "pat_next") && (m->ptpage + 1) * 3 < m->npt) m->ptpage++;
+    else if (!strcmp(key, "loc_prev") && m->locpage > 0) m->locpage--;
     else if (!strcmp(key, "loc_next") && (m->locpage + 1) * 4 < m->nlocs) m->locpage++;
     else if (!strcmp(key, "loc_rescan") && !busy) post(m, J_REFRESH);
     else if (!strcmp(key, "d_back")) { m->detail[0] = 0; m->menu = -1; }
@@ -2690,6 +2935,36 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
         else if (!strcmp(f, "state")) snprintf(b, n, "%s", r ? (queued ? "Queued: press APPLY on the PLUGINS tab (MPC restarts)" : r->state) : " ");
         else ok = 0;
     }
+    else if (!strncmp(key, "pat", 3) && key[3] >= '1' && key[3] <= '3' && key[4] == '_') {   /* PATCHES tab, rows 1..3 of the page */
+        int pi = m->ptpage * 3 + key[3] - '1';
+        const patch_t *p = pi < m->npt ? &m->pt[pi] : NULL;
+        const char *f = key + 5;
+        if (!strcmp(f, "vis")) snprintf(b, n, "%d", p != NULL);
+        else if (!strcmp(f, "title")) snprintf(b, n, "%s", p ? p->title : " ");
+        else if (!strcmp(f, "s1") || !strcmp(f, "s2")) { if (p) wrap_line(p->summary, f[1] - '1', 2, 104, b, n); else snprintf(b, n, " "); }
+        else if (!strcmp(f, "meta")) {
+            if (p) snprintf(b, n, "Changes %s  \xc2\xb7  %s  \xc2\xb7  %s  \xc2\xb7  by %s", p->modifies[0] ? p->modifies : "?",
+                            p->restarts ? "restarts MPC" : "no restart", p->reversible ? "can be undone" : "not reversible", p->author);
+            else snprintf(b, n, " ");
+        }
+        else if (!strcmp(f, "for")) {
+            if (!p) snprintf(b, n, " ");
+            else if (!pt_arch_ok(m, p)) snprintf(b, n, "Not for this device: built for %s, this MPC is %s", p->arch, m->dev->arch);
+            else if (p->checked) snprintf(b, n, "Checked on this MPC: %s%s%s", p->state, p->reason[0] ? "  \xc2\xb7  " : "", p->reason);
+            else snprintf(b, n, "For: %.108s", p->os);
+        }
+        else if (!strcmp(f, "pill"))   /* none, not checked, stock (can apply), applied, not supported, other device, check failed */
+            snprintf(b, n, "%d", !p ? 0 : !pt_arch_ok(m, p) ? 5 : !p->checked ? 1 : !strcmp(p->state, "error") ? 6
+                                  : p->supported && !strcmp(p->state, "stock") ? 2 : !strcmp(p->state, "patched") ? 3 : 4);
+        else if (!strcmp(f, "canchk")) snprintf(b, n, "%d", p && pt_arch_ok(m, p) ? 1 + p->checked : 0);   /* off, check, check again */
+        else ok = 0;
+    }
+    else if (!strcmp(key, "pat_pages")) snprintf(b, n, "%d", m->npt > 3);
+    else if (!strcmp(key, "pat_page")) snprintf(b, n, "%d / %d", m->ptpage + 1, m->npt ? (m->npt + 2) / 3 : 1);
+    else if (!strcmp(key, "pat_foot")) snprintf(b, n, m->npt ? "%d device patches. CHECK runs a patch's status on this MPC and changes nothing." : "No patch list yet (needs the network).", m->npt);
+    else if (!strcmp(key, "set_theme_txt")) snprintf(b, n, "%s%s", m->theme ? "LIGHT" : "DARK", theme_dirty(m) ? "  \xc2\xb7  restart" : "");
+    else if (!strcmp(key, "set_beta_txt")) snprintf(b, n, "%s", m->show_beta ? "SHOWN" : "HIDDEN");
+    else if (!strcmp(key, "set_web_txt")) snprintf(b, n, "%s%s", m->web_pref ? "ON" : "OFF", m->web_pref != m->web_on ? "  \xc2\xb7  restart" : "");
     else if (!strcmp(key, "loc_pages")) snprintf(b, n, "%d", m->nlocs > 4);
     else if (!strcmp(key, "loc_page")) snprintf(b, n, "%d / %d", m->locpage + 1, m->nlocs ? (m->nlocs + 3) / 4 : 1);
     else if (!strcmp(key, "loc_foot")) {
@@ -2748,9 +3023,10 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
     else if (!strcmp(key, "theme_can")) snprintf(b, n, "%d", m->theme_can);
     else if (!strcmp(key, "theme")) snprintf(b, n, "%d", m->theme);
     else if (!strcmp(key, "theme_txt")) snprintf(b, n, "%s%s", m->theme ? "LIGHT" : "DARK", theme_dirty(m) ? "  after restart" : "");
-    else if (!strcmp(key, "confirm_pick")) snprintf(b, n, "%d", m->confirm && m->ready && !busy && ntargets(m) > 1);
+    else if (!strcmp(key, "confirm_pick")) snprintf(b, n, "%d", m->confirm && m->ready && !busy && ntargets(m) > 1 && installs_queued(m));
     else if (!strcmp(key, "confirm_dest")) {
-        if (ntargets(m) > 1) snprintf(b, n, "Install to: %s  (%d of %d)", dest(m), m->tsel % ntargets(m) + 1, ntargets(m));
+        if (!installs_queued(m)) snprintf(b, n, " ");   /* only a register, a move or a theme: nothing is installed */
+        else if (ntargets(m) > 1) snprintf(b, n, "Install to: %s  (%d of %d)", dest(m), m->tsel % ntargets(m) + 1, ntargets(m));
         else snprintf(b, n, "Install to: %s", dest(m));
     }
     else if (!strcmp(key, "confirm_txt1") || !strcmp(key, "confirm_txt2")) {
