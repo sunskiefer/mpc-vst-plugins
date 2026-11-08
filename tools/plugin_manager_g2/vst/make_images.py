@@ -109,7 +109,8 @@ def main():
         + text(40, 599, "Kept beside MPC.settings. Changes marked \"restart\" apply the next time MPC starts.", 22, DIM, 600))
     for nm, title, desc in (("theme", "THEME", "Light or dark. MPC keeps skins in memory, so a change shows after the next restart."),
                             ("beta", "BETA PLUGINS", "Show beta releases in Discover. Plugins you have installed always show."),
-                            ("web", "WEB PAGE", "Serve the plugin list on your network (port 8790). Takes effect when MPC starts.")):
+                            ("web", "WEB PAGE", "Serve the plugin list on your network (port 8790). Takes effect when MPC starts."),
+                            ("cache", "IMAGE CACHE", "MPC's skin cache fills up and then skins draw black. Clearing restarts MPC (APPLY).")):
         svg("set_row_%s.svg" % nm, 1232, 108, '<rect x="0.5" y="0.5" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE)
             + text(28, 42, title, 29, INK, 700, spacing=1) + text(28, 78, desc, 22, DIM, 600))
     svg("set_btn.svg", 150, 46, '<rect x="1" y="1" width="148" height="44" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)

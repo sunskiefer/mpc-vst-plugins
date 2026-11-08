@@ -3864,6 +3864,18 @@
    "name": "Patch 3 apply or undo button",
    "type": "trigger",
    "momentary": true
+  },
+  {
+   "key": "set_cache_txt",
+   "name": "Setting: image cache",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "set_cache_btn",
+   "name": "Setting: clear image cache",
+   "type": "trigger",
+   "momentary": true
   }
  ]
 }

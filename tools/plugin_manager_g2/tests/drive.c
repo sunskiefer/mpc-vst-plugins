@@ -200,6 +200,8 @@ int main(int argc, char **argv) {
     printf("after: beta=%s web=%s\n", get("set_beta_txt"), get("set_web_txt"));
     press("set_beta_btn");
     printf("again: beta=%s\n", get("set_beta_txt"));
+    printf("cache: |%s|\n", get("set_cache_txt")); press("set_cache_btn");
+    printf("cache queued: |%s| apply=%s\n", get("set_cache_txt"), get("apply_state"));
     e->destroy(m); return 0;
   }
   if (argc > 1 && !strcmp(argv[1], "patches")) {   /* PATCHES: the list, CHECK runs status after the checksum, a wrong checksum is never run */

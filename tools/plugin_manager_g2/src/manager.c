@@ -148,6 +148,7 @@ typedef struct {
     unsigned rev;   /* bumped whenever the worker changes text, polled by the wrapper as "display_rev" */
     char status[160];
     device_t *dev;   /* probed by the worker on each refresh */
+    int clearcache;   /* SETTINGS: empty MPC's image cache at the next APPLY (it can only be emptied while MPC is stopped) */
     int migrate, migrate_seen;   /* MPC OS 3.10.1: "move to VST2 Plugins" is queued; it was offered once this session (cleared, it stays off) */
     pthread_t web;   /* the local web page (web.c) */
     int web_on;
@@ -2582,7 +2583,7 @@ static int installs_queued(const mgr_t *m) {   /* a plugin or addin will be writ
 }
 
 static int count_queued(const mgr_t *m) {
-    int n = theme_dirty(m) + m->migrate + m->nregq;   /* a theme change (or the move to VST2 Plugins) is applied like an install: stop MPC, ..., start MPC */
+    int n = theme_dirty(m) + m->migrate + m->nregq + m->clearcache;   /* a theme change (or the move to VST2 Plugins) is applied like an install: stop MPC, ..., start MPC */
     for (int i = 0; i < m->npkg; i++) n += m->pkg[i].queued != 0;
     return n;
 }
@@ -2599,6 +2600,7 @@ static void changes_text(const mgr_t *m, char *b, int n) {   /* the restart prom
         else if (p->queued) k += snprintf(b + k, n - k, "%s+ %s %s", sep, p->name, p->latest);
     }
     if (theme_dirty(m) && k < n) k += snprintf(b + k, n - k, "%sTheme: %s", k ? "\xc2\xa0\xc2\xb7  " : "", m->theme ? "light" : "dark");
+    if (m->clearcache && k < n) k += snprintf(b + k, n - k, "%sClear image cache", k ? "\xc2\xa0\xc2\xb7  " : "");
     for (int r = 0; r < m->nregq && k < n; r++) k += snprintf(b + k, n - k, "%sRegister %s", k ? "\xc2\xa0\xc2\xb7  " : "", m->regq[r]);
     if (m->migrate && k < n) snprintf(b + k, n - k, "%sMove %d plugin%s to VST2 Plugins", k ? "\xc2\xa0\xc2\xb7  " : "", m->dev->nmove, m->dev->nmove == 1 ? "" : "s");
 }
@@ -2624,6 +2626,7 @@ static void queue_text(const mgr_t *m, char *b, int n) {
         if (m->pkg[i].queued)
             k += snprintf(b + k, n - k, "  %s%s", m->pkg[i].queued == Q_REMOVE ? "\xe2\x88\x92" : "+", m->pkg[i].name);
     if (theme_dirty(m) && k < n) k += snprintf(b + k, n - k, "  Theme: %s", m->theme ? "light" : "dark");
+    if (m->clearcache && k < n) k += snprintf(b + k, n - k, "  Clear image cache");
     for (int r = 0; r < m->nregq && k < n; r++) k += snprintf(b + k, n - k, "  Register %s", m->regq[r]);
     if (m->migrate && k < n) snprintf(b + k, n - k, "  Move %d to VST2 Plugins", m->dev->nmove);
 }
@@ -2957,6 +2960,9 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
         m->show_beta = !m->show_beta;
         cfg_save(m);
         m->page = 0;
+    } else if (!strcmp(key, "set_cache_btn")) {   /* SETTINGS: queue / cancel emptying the image cache (done by APPLY, MPC stopped) */
+        m->clearcache = !m->clearcache;
+        m->ready = 0;
     } else if (!strcmp(key, "set_web_btn")) {   /* SETTINGS: the web page, from the next MPC start */
         m->web_pref = !m->web_pref;
         cfg_save(m);
@@ -3112,6 +3118,12 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
     else if (!strcmp(key, "pat_foot")) snprintf(b, n, m->npt ? "%d device patches. CHECK runs a patch's status on this MPC and changes nothing." : "No patch list yet (needs the network).", m->npt);
     else if (!strcmp(key, "set_theme_txt")) snprintf(b, n, "%s%s", m->theme ? "LIGHT" : "DARK", theme_dirty(m) ? "  \xc2\xb7  restart" : "");
     else if (!strcmp(key, "set_beta_txt")) snprintf(b, n, "%s", m->show_beta ? "SHOWN" : "HIDDEN");
+    else if (!strcmp(key, "set_cache_txt")) {
+        int cp = cache_used_pct();
+        char u[24] = "unknown";
+        if (cp >= 0) snprintf(u, sizeof u, "%d%% used", cp);
+        snprintf(b, n, "%s%s", u, m->clearcache ? "  \xc2\xb7  clears on APPLY" : cp >= 85 ? "  \xc2\xb7  FULL" : "");
+    }
     else if (!strcmp(key, "set_web_txt")) snprintf(b, n, "%s%s", m->web_pref ? "ON" : "OFF", m->web_pref != m->web_on ? "  \xc2\xb7  restart" : "");
     else if (!strcmp(key, "loc_pages")) snprintf(b, n, "%d", m->nlocs > 4);
     else if (!strcmp(key, "loc_page")) snprintf(b, n, "%d / %d", m->locpage + 1, m->nlocs ? (m->nlocs + 3) / 4 : 1);

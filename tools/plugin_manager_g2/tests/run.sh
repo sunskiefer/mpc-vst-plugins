@@ -171,8 +171,9 @@ grep -qF "<Location>/media/STICK/Synths</Location>" /tmp/ms.after
 # SETTINGS: beta plugins and the web page toggle, saved beside the theme preference
 rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
 sh tests/devices/two-targets.sh
-PM_NO_WEB=1 /tmp/drive_addins settings > /tmp/settings.out
+PM_CACHE_PCT=99 PM_NO_WEB=1 /tmp/drive_addins settings > /tmp/settings.out
 grep -qF "before: beta=SHOWN web=ON" /tmp/settings.out && grep -qF "after: beta=HIDDEN web=OFF" /tmp/settings.out && grep -qF "again: beta=SHOWN" /tmp/settings.out || { cat /tmp/settings.out; exit 1; }
+grep -qF "cache queued: |99% used  ·  clears on APPLY| apply=1" /tmp/settings.out || { cat /tmp/settings.out; exit 1; }
 grep -qx "beta=1" /media/az01-internal/.openmpcpm-settings && grep -qx "web=0" /media/az01-internal/.openmpcpm-settings || { cat /media/az01-internal/.openmpcpm-settings; exit 1; }
 # PATCHES: the list from patches.json, CHECK runs a patch status only after its checksum matches; another CPU gets no button
 rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts /tmp/patch-evil-ran; mkdir -p /media
