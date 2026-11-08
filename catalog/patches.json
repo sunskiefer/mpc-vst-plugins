@@ -19,23 +19,6 @@
       "reversible": true
     },
     {
-      "id": "drive-exec",
-      "title": "Drive exec: run plugins from a noexec drive (an MPC/Force's SSD)",
-      "summary": "Replaced by Auto exec (use that instead; this one is kept so it can still be uninstalled). UNTESTED on a device by this project. MPC cannot load a plugin from a drive mounted noexec: it is listed but only shows Load Plugin. This makes one folder of the drive (Synths) executable, through a small boot-time service; the drive itself stays noexec.",
-      "author": "timomacquis (adapted by sd88me)",
-      "license": "MIT",
-      "docs": "tools/mpc_patch/drive_exec/README.md",
-      "script": {
-        "url": "https://raw.githubusercontent.com/open-mpc/mpc-vst-plugins/f036a8791daff1ccf426c3953e84a8942c979564/tools/mpc_patch/drive_exec/drive-exec-patch.sh",
-        "sha256": "500b5ccdfbc4b735a810e747d03c4bab38dec279dff31b682a89a905970d0594"
-      },
-      "supports": {"os": "MPC OS Gen1 (tried on a Force, MPC OS 3.9.1)", "arch": "armv7l"},
-      "modifies": ["/etc/drive-exec", "/etc/systemd/system/drive-exec.timer", "/usr/lib/systemd/system/drive-exec-bootstrap.service", "/media/<your drive>/Synths (an executable bind mount of the folder)"],
-      "backup": "/data/mpc-vst-plugins/backups",
-      "restarts_mpc": false,
-      "reversible": true
-    },
-    {
       "id": "auto-exec",
       "title": "Auto exec: run plugins from any noexec drive, no setup",
       "summary": "Recommended for a noexec drive. MPC cannot load a plugin from a drive mounted noexec (SSD, USB stick, SD card): it is listed but only shows Load Plugin. This makes the Synths folder of every noexec drive executable through a small boot-time service, with nothing to choose; the drives stay noexec. Tried on a Force with two USB sticks, a plugin loaded and survived a power cycle (not yet tried: an eject without its release command); 0.3.1 also starts after a reboot when an overlay is mounted on /usr (tried on a second Force, two reboots), and 0.3.2 finds drives with a space in the name. Apply updates an installed 0.3.0 or 0.3.1 in place. Replaces drive exec.",

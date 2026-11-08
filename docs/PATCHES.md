@@ -136,3 +136,5 @@ checks that (1) a wrong sha256 is refused before anything is copied, (2) `status
 - The device is shared with the owner's live setup: every device step in this work was run by the owner, with the project saved, from commands we wrote. Keep it that way.
 
 **To resume.** Read this file, NOTES 2026-10-03 and 2026-10-04, `tools/mpc_patch/README.md`, then run `go test -race ./...` in `tools/desktop`, `python3 tools/test_patches.py`, `python3 tools/patch_check.py` and `python3 tools/desktop/ui_test/ui_patches.py` (needs Playwright and a Chromium) to see the baseline.
+
+**Retired (2026-11-08).** The drive exec patch is no longer in `catalog/patches.json`: Auto exec replaces it. Its source stays in `tools/mpc_patch/drive_exec` (and its tests) so an install made earlier can still be removed by hand with `sh drive-exec-patch.sh uninstall`.
