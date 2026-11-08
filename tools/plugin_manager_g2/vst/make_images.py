@@ -82,6 +82,7 @@ def main():
         + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
         + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
         + text(1256, 38, "LOCATIONS", 20, MUTED, 700, anchor="end", spacing=2)
+        + "".join('<rect x="24.5" y="%g" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (80.5 + 120 * i, PANEL, LINE) for i in range(4))   # the cards are part of the page: art switched by `when=` was cut short by MPC
         + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE))
     svg("loc_row.svg", 1232, 108, '<rect x="0.5" y="0.5" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE))
     svg("loc_ok.svg", 140, 30, '<rect width="140" height="30" fill="%s"/><rect x="1" y="1" width="138" height="28" rx="14" fill="none" stroke="#3fbf7f" stroke-width="2"/>' % PANEL
@@ -119,6 +120,7 @@ def main():
         + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
         + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
         + text(1256, 38, "DEVICE PATCHES", 20, MUTED, 700, anchor="end", spacing=2)
+        + "".join('<rect x="24.5" y="%g" width="1231" height="131" rx="8" fill="%s" stroke="%s"/>' % (76.5 + 148 * i, PANEL, LINE) for i in range(3))
         + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE))
     svg("pat_row.svg", 1232, 140, '<rect x="0.5" y="0.5" width="1231" height="131" rx="8" fill="%s" stroke="%s"/>' % (PANEL, LINE))
     for nm, label, col, tx in (("unchecked", "NOT CHECKED", AMBER, AMBER_TX), ("stock", "CAN APPLY", "#3fbf7f", GREEN), ("applied", "APPLIED", "#3fbf7f", GREEN),

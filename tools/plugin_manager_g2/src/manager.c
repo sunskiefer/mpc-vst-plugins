@@ -86,6 +86,7 @@ typedef struct {
     char id[48], name[48], author[32], kind[16], dist[16], latest[24], url[512], sha[72];
     char style[32], tags[96], channel[16], cpu[8], tested[48];   /* the card's badges and meta line */
     char summary[720];    /* the detail view's text */
+    char devices[96];     /* the catalog's "devices" ("|mpc-sample|"): empty = any device; else only these (hidden elsewhere unless installed) */
     char alltags[200];    /* every tag, as "|a|b|" (tag search, the detail view's tag buttons) */
     char date[12], cpu_pct[12], whatsnew[480];   /* the latest version's release date, CPU p99, What's new */
     char updated[12], first[12];   /* last release (catalog "updated"), first release: the sort orders */
@@ -535,6 +536,18 @@ static const char *pkg_member(const char *k, const char *v, void *ud) {
         }
         return q && *q == ']' ? q + 1 : NULL;
     }
+    if (!strcmp(k, "devices") && *v == '[') {   /* the devices it is for; none listed = every device */
+        const char *q = ws(v + 1);
+        while (q && *q == '"') {
+            char t[40];
+            q = jstr(q, t, sizeof t);
+            if (q && strlen(x->devices) + strlen(t) + 2 < sizeof x->devices)
+                snprintf(x->devices + strlen(x->devices), sizeof x->devices - strlen(x->devices), "%s%s|", x->devices[0] ? "" : "|", t);
+            q = q ? ws(q) : NULL;
+            if (q && *q == ',') q = ws(q + 1);
+        }
+        return q && *q == ']' ? q + 1 : NULL;
+    }
     if (!strcmp(k, "components") && *v == '[') {   /* build-yourself: the VST uids it installs */
         const char *p = ws(v + 1);
         for (int c = 0; *p != ']'; c++) {
@@ -713,6 +726,7 @@ static const char *top_member(const char *k, const char *v, void *ud) {
 typedef struct { char name[64], uid[16], file[256]; } entry_t;
 typedef struct { char id[48], version[24], folder[256]; int removable; } addin_t;   /* an installed addin folder */
 struct device {
+    char model_id[48];   /* "mpc-live-iii": /proc/device-tree/model without "Akai Professional", lower case, dashes; "" when unknown (nothing is hidden) */
     char settings[200], base[200], state[220], arch[32], target[200], problem[24], keys[160], via[48];
     char loc[8][200];
     char uname[8][32];     /* their names in the drive menu: "Internal" or the drive's label (/media/<label>) */
@@ -1416,6 +1430,20 @@ static void probe_device(device_t *d) {
     memset(d, 0, sizeof *d);
     struct utsname u;
     snprintf(d->arch, sizeof d->arch, "%s", uname(&u) == 0 ? u.machine : "?");
+    {   /* which MPC this is, for the catalog's per-device entries */
+        char mb[96] = "";
+        FILE *mf = fopen("/proc/device-tree/model", "r");
+#ifdef FS_ANY
+        if (getenv("PM_MODEL")) snprintf(mb, sizeof mb, "%s", getenv("PM_MODEL")); else
+#endif
+        if (mf && fgets(mb, sizeof mb, mf)) {}
+        if (mf) fclose(mf);
+        char *p = mb;
+        if (!strncmp(p, "Akai Professional ", 18)) p += 18;
+        size_t k = 0;
+        for (; *p && *p != '\n' && k + 1 < sizeof d->model_id; p++) d->model_id[k++] = *p == ' ' ? '-' : (*p >= 'A' && *p <= 'Z') ? *p + 32 : *p;
+        d->model_id[k] = 0;
+    }
     int gen2 = !strcmp(d->arch, "aarch64");
     /* Gen2 (aarch64: Live III, confirmed; One G2/Key(s) G2 assumed to match): Settings lives under /data, not
      * /media/az01-internal (that path doesn't exist at all on a verity rootfs with no /sdcard). Same two-glob
@@ -2495,6 +2523,11 @@ static int visible_now(const mgr_t *m, int *idx) {
         if (m->kindf == 1 && strcmp(p->kind, "instrument")) continue;
         if (m->kindf == 2 && strcmp(p->kind, "effect")) continue;
         if (m->kindf == 3 && !is_addin(p)) continue;
+        if (p->devices[0] && m->dev->model_id[0] && !installed(p)) {   /* made for other MPCs only (the catalog's "devices"): not offered here */
+            char tag[64];
+            snprintf(tag, sizeof tag, "|%s|", m->dev->model_id);
+            if (!strstr(p->devices, tag)) continue;
+        }
         if (m->tab == 0 && installed(p)) continue;   /* DISCOVER: what isn't on this MPC yet */
         if (!m->show_beta && !installed(p) && !strcmp(p->channel, "beta")) continue;   /* SETTINGS: beta plugins hidden */
         if (m->tag[0] && !has_tag(p, m->tag)) continue;

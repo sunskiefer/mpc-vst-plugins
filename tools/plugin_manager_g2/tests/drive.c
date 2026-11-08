@@ -237,6 +237,16 @@ int main(int argc, char **argv) {
     printf("restarting: |%s| pill=%s act=%s\n", get("pat1_title"), get("pat1_pill"), get("pat1_canact"));
     e->destroy(m); return 0;
   }
+  if (argc > 1 && !strcmp(argv[1], "models")) {   /* entries for other devices are hidden when the model is known */
+    set("kind", "3");   /* addins */
+    int seen = 0;
+    for (int pg = 0; pg < 8; pg++) {
+      for (int r = 1; r <= 5; r++) { char k[24]; snprintf(k, sizeof k, "card%d", r); if (strstr(get(k), "Sample only")) seen = 1; }
+      press("page_next");
+    }
+    printf("sample entry seen: %d (model %s)\n", seen, getenv("PM_MODEL") ? getenv("PM_MODEL") : "unknown");
+    e->destroy(m); return 0;
+  }
   if (argc > 1 && !strcmp(argv[1], "pickshow")) {   /* a fresh start: which place does the restart prompt name first? */
     set("kind", "1"); press("r1_act"); press("apply");
     for (int i = 0; i < 60 && strcmp(get("apply_state"), "3") && strcmp(get("apply_state"), "4"); i++) sleep(1);

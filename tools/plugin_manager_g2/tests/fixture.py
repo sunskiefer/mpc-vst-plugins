@@ -79,6 +79,10 @@ pkg("Wrongarch", [("Wrongarch-1.0.0/install.sh", "#!/bin/sh\nexit 0\n"), ("Wrong
 pkg("Newlib", [("Newlib-1.0.0/install.sh", "#!/bin/sh\nexit 0\n"), ("Newlib-1.0.0/mpc-plugin.json", '{"arch": "armv7", "max_glibc": "9.99"}\n')], "2024-12-01")
 pkg("Oldos", [("Oldos-1.0.0/install.sh", "#!/bin/sh\nexit 0\n"), ("Oldos-1.0.0/mpc-plugin.json", '{"arch": "armv7", "os_compat": ["2.x"]}\n')], "2024-11-01")
 pkg("Evil", [("Evil-1.0.0/install.sh", "#!/bin/sh\nexit 0\n"), ("Evil-1.0.0/../escape.txt", "x")], "2025-01-01")
+import copy
+so = copy.deepcopy(plugins[0])   # an entry made for another MPC (the catalog's "devices"): hidden when the model is known and not listed
+so.update({"id": "sample-only", "name": "Sample only addin", "devices": ["mpc-sample"]})
+plugins.append(so)
 json.dump({"schema": 1, "plugins": plugins}, open(os.path.join(out, "catalog.json"), "w"), indent=1)
 # patches.json: one patch whose script reports a stock device, one whose script does not match its checksum, one for another CPU
 stock = ("#!/bin/sh\nM=/tmp/fx-patch-marker\n"

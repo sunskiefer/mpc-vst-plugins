@@ -192,6 +192,13 @@ grep -qF "applied: pill=3 act=2 |Fixture stock: applied. Now: patched.|" /tmp/pa
 grep -qF "undone: pill=2 act=1 |Fixture stock: removed. Now: stock.|" /tmp/papply.out || { cat /tmp/papply.out; exit 1; }
 grep -qF "restarting: |Fixture restarting| pill=2 act=0" /tmp/papply.out || { cat /tmp/papply.out; exit 1; }
 [ ! -e /tmp/fx-patch-marker ] || { echo "the marker is still there"; exit 1; }
+# per-device catalog entries: shown when the model is unknown or listed, hidden on another MPC
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/two-targets.sh
+PM_MODEL="Akai Professional MPC Live III" /tmp/drive_addins models > /tmp/models-a.out
+PM_MODEL="Akai Professional MPC Sample" /tmp/drive_addins models > /tmp/models-b.out
+/tmp/drive_addins models > /tmp/models-c.out
+grep -qF "sample entry seen: 0 (model Akai Professional MPC Live III)" /tmp/models-a.out && grep -qF "sample entry seen: 1 (model Akai Professional MPC Sample)" /tmp/models-b.out && grep -qF "sample entry seen: 1 (model unknown)" /tmp/models-c.out || { cat /tmp/models-a.out /tmp/models-b.out /tmp/models-c.out; exit 1; }
 echo "pick OK"
 fi # pick
 if want theme; then
