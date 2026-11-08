@@ -14,9 +14,12 @@ Branch `local/post-launch` in `~/mpc-vst-plugins-postlaunch`, local only (keep M
 - Force (3.9.1, 192.168.1.187): new armv7 build deployed 2026-11-08, six addins loaded. Old 0.9.0 in `/sdcard/pm-090-backup-20261108` (roll back: move back, `systemctl restart acvs`). **Not yet verified on its screen; the owner is testing.** Do not apply patches there.
 
 ## To do (from the owner)
-1. **LOCATIONS: make the current default obvious.** Today only the state text says "Default install location". Add a visible marker (e.g. a DEFAULT pill or highlighted card border) on that card.
+1. ~~LOCATIONS default marker~~ done: green DEFAULT pill beside USABLE (check on a device).
 2. **Retire the Drive exec patch** (`drive-exec` in `catalog/patches.json`, `tools/mpc_patch/drive_exec`): Auto exec replaces it. Keep uninstall working for existing users; mark it retired/hidden for new installs; update `docs/PATCHES.md` and the site.
-3. **Bug: installs fail with download errors on the Force** ("8w8 failed after 3 retries"). Not investigated yet; cause unknown. Start with `/tmp/openmpc-pm/manager.log` and `apply.log` on the Force, whether libcurl works there (DNS/TLS/CA file), the 8w8 asset URL and sha in the catalog, free space (`/sdcard` had 2.4 GB), and whether the Live III does the same.
+3. **Bug (partly diagnosed): installs fail with download errors on the Force** ("8w8 failed after 3 retries"). On the Force 2026-11-08 plain wget and libcurl (same options as the Manager, with and without the CA file) both fetched the 8w8 zip and the catalog fine and the sha matches, so the network and certs are fine. The Manager now reports the real reason in the failure message (`download failed after 3 retries (<reason>)`); retry on the Force and read it. Also check `/tmp/openmpc-pm/manager.log` and `apply.log` on the Force, whether libcurl works there (DNS/TLS/CA file), the 8w8 asset URL and sha in the catalog, free space (`/sdcard` had 2.4 GB), and whether the Live III does the same.
+
+## Also built after the first handoff
+- SETTINGS: IMAGE CACHE row (fill %, CLEAR queues emptying it at APPLY).
 
 ## Known smaller items
 - Web page (port 8790) does not apply the per-device filter or the new tabs.

@@ -147,6 +147,7 @@ typedef struct {
     char disk_free[32];
     unsigned rev;   /* bumped whenever the worker changes text, polled by the wrapper as "display_rev" */
     char status[160];
+    char fetch_err[120];   /* the last failed download's reason (libcurl's words), shown when a download gives up */
     device_t *dev;   /* probed by the worker on each refresh */
     int clearcache;   /* SETTINGS: empty MPC's image cache at the next APPLY (it can only be emptied while MPC is stopped) */
     int migrate, migrate_seen;   /* MPC OS 3.10.1: "move to VST2 Plugins" is queued; it was offered once this session (cleared, it stays off) */
@@ -307,7 +308,10 @@ static int fetch_from(mgr_t *m, const char *url, sink_t *s, const char *label, l
     cu.setopt(c, CU_XFERINFOFUNCTION, on_progress);
     cu.setopt(c, CU_XFERINFODATA, &g);
     int rc = cu.perform(c);
-    if (rc) logf_("fetch %s: %s", url, cu.strerror(rc));
+    if (rc) {
+        logf_("fetch %s: %s", url, cu.strerror(rc));
+        snprintf(m->fetch_err, sizeof m->fetch_err, "%s", cu.strerror(rc));
+    }
     cu.cleanup(c);
     return rc ? -1 : 0;
 }
@@ -323,6 +327,7 @@ static int sha_ok(const char *sha, const char *path) {
 /* Download to path until its sha256 matches: a kept zip that already matches is reused, a broken transfer resumes
  * where it stopped, a wrong file starts over. 0 on success. */
 static int download(mgr_t *m, const pkg_t *p, const char *path) {
+    m->fetch_err[0] = 0;
     for (int attempt = 1; attempt <= 4 && !m->quit; attempt++) {
         if (sha_ok(p->sha, path)) return 0;
         struct stat st;
@@ -330,10 +335,10 @@ static int download(mgr_t *m, const pkg_t *p, const char *path) {
         if (attempt > 1) say(m, WARN, "%s: connection stalled  \xc2\xb7  resuming, retry %d/3", p->name, attempt - 1);
         sink_t s = {0};
         s.f = fopen(path, have ? "ab" : "wb");
-        if (!s.f) return -1;
+        if (!s.f) { snprintf(m->fetch_err, sizeof m->fetch_err, "cannot write %s: %s", path, strerror(errno)); return -1; }
         int rc = fetch_from(m, p->url, &s, p->name, have);
         fclose(s.f);
-        if (rc == 0 && !sha_ok(p->sha, path)) unlink(path);   /* complete but wrong (a server that ignored the range) */
+        if (rc == 0 && !sha_ok(p->sha, path)) { snprintf(m->fetch_err, sizeof m->fetch_err, "the file did not match its checksum"); unlink(path); }   /* complete but wrong (a server that ignored the range) */
         else if (rc == 0) return 0;
     }
     return -1;
@@ -2204,7 +2209,11 @@ static void prepare(mgr_t *m, pkg_t *q) {
         if (is_addin(p) && p->queued == Q_REMOVE) continue;   /* removed by the uninstall.sh in its folder: nothing to fetch */
         if (!p->url[0] || strlen(p->sha) != 64 || !safe(p->id) || !safe(p->name)) { err = "has no download in the catalog"; break; }
         snprintf(path, sizeof path, WORK "/%s.zip", p->id);
-        if (download(m, p, path)) { err = "download failed after 3 retries"; break; }
+        if (download(m, p, path)) {
+            snprintf(why, sizeof why, "download failed after 3 retries (%s)", m->fetch_err[0] ? m->fetch_err : "no connection error: the file was incomplete or its checksum did not match");
+            err = why;
+            break;
+        }
         if ((err = inspect_zip(path))) break;
         snprintf(cmd, sizeof cmd, "rm -rf '" WORK "/%s' && unzip -q -o '%s' -d '" WORK "/%s'", p->id, path, p->id);
         if (sh(cmd)) { err = "could not be unpacked"; break; }
@@ -3074,6 +3083,7 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
         int queued = 0;
         for (int q = 0; r && q < m->nregq; q++) queued |= !strcmp(m->regq[q], r->path);
         if (!strcmp(f, "vis")) snprintf(b, n, "%d", r != NULL);
+        else if (!strcmp(f, "def")) snprintf(b, n, "%d", r && r->dflt);
         else if (!strcmp(f, "canpick")) snprintf(b, n, "%d", r && r->pick);
         else if (!strcmp(f, "canreg")) snprintf(b, n, "%d", r && r->cand && r->usable && m->dev->hasloclist ? 1 + queued : 0);   /* off, register, queued */
         else if (!strcmp(f, "bar")) snprintf(b, n, "%d", r ? r->bar : 0);

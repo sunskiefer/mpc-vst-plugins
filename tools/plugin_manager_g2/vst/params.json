@@ -3876,6 +3876,42 @@
    "name": "Setting: clear image cache",
    "type": "trigger",
    "momentary": true
+  },
+  {
+   "key": "loc1_def",
+   "name": "Location 1 is the default",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc2_def",
+   "name": "Location 2 is the default",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc3_def",
+   "name": "Location 3 is the default",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "loc4_def",
+   "name": "Location 4 is the default",
+   "live": true,
+   "options": [
+    "off",
+    "on"
+   ]
   }
  ]
 }

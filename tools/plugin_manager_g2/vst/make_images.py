@@ -136,6 +136,8 @@ def main():
                                         ("confapply", "TAP AGAIN: APPLY", RED, RED, "#ffffff"), ("confundo", "TAP AGAIN: UNDO", AMBER, AMBER, "#1a1205")):
         svg("pat_%s.svg" % nm, 180, 36, '<rect x="1" y="1" width="178" height="34" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (fill, stroke)
             + text(90, 24, label, 15, tx, 700, anchor="middle", spacing=1.2))
+    svg("loc_dflt.svg", 150, 30, '<rect width="150" height="30" fill="%s"/><rect x="1" y="1" width="148" height="28" rx="14" fill="#1e7a52"/>' % PANEL
+        + text(75, 21, "DEFAULT", 15, "#ffffff", 700, anchor="middle", spacing=1.5))
     svg("net_on.svg", 100, 24, '<circle cx="5" cy="12" r="4.5" fill="#3fbf7f"/>' + text(16, 17, "ONLINE", 15, MUTED, 600, spacing=1))
     svg("net_off.svg", 100, 24, '<circle cx="5" cy="12" r="4.5" fill="%s"/>' % RED + text(16, 17, "OFFLINE", 15, "#ff9a93", 600, spacing=1))
     # a plugin card (the list row's own picture): the thumbnail tile is part of it
