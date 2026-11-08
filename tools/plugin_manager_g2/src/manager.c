@@ -2525,6 +2525,18 @@ static int matches(const pkg_t *p, const char *q) {   /* the search: name, autho
     return has_text(p->name, q) || has_text(p->author, q) || has_text(p->alltags, q);
 }
 
+/* not offered on this MPC: the catalog's "devices" does not list this model (an unknown model hides nothing), or it is a beta and SETTINGS hides
+ * betas. Something installed always shows. The screen and the web page both use this. */
+static int hidden_here(const mgr_t *m, const pkg_t *p) {
+    if (installed(p)) return 0;
+    if (p->devices[0] && m->dev->model_id[0]) {
+        char tag[64];
+        snprintf(tag, sizeof tag, "|%s|", m->dev->model_id);
+        if (!strstr(p->devices, tag)) return 1;
+    }
+    return !m->show_beta && !strcmp(p->channel, "beta");
+}
+
 static int visible_now(const mgr_t *m, int *idx) {
     int n = 0;
     for (int i = 0; i < m->npkg; i++) {
@@ -2533,13 +2545,8 @@ static int visible_now(const mgr_t *m, int *idx) {
         if (m->kindf == 1 && strcmp(p->kind, "instrument")) continue;
         if (m->kindf == 2 && strcmp(p->kind, "effect")) continue;
         if (m->kindf == 3 && !is_addin(p)) continue;
-        if (p->devices[0] && m->dev->model_id[0] && !installed(p)) {   /* made for other MPCs only (the catalog's "devices"): not offered here */
-            char tag[64];
-            snprintf(tag, sizeof tag, "|%s|", m->dev->model_id);
-            if (!strstr(p->devices, tag)) continue;
-        }
+        if (hidden_here(m, p)) continue;   /* made for other MPCs, or a beta with beta hidden */
         if (m->tab == 0 && installed(p)) continue;   /* DISCOVER: what isn't on this MPC yet */
-        if (!m->show_beta && !installed(p) && !strcmp(p->channel, "beta")) continue;   /* SETTINGS: beta plugins hidden */
         if (m->tag[0] && !has_tag(p, m->tag)) continue;
         if (m->q[0] && !matches(p, m->q)) continue;
         if (m->tab == 1 && !installed(p)) continue;

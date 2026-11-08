@@ -351,6 +351,9 @@ rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir 
 sh tests/devices/mpc-one.sh && sh tests/addins.sh && /tmp/drive_addins web > /tmp/web.out
 grep -q "Content-Type: application/json" /tmp/web.out
 grep -q "\"plugins\":\[{\"id\":" /tmp/web.out
+PM_MODEL="Akai Professional MPC Live III" /tmp/drive_addins web > /tmp/web-live3.out 2>&1 || true
+grep -q "\"id\":\"alpha-addin\"" /tmp/web-live3.out && ! grep -q "\"id\":\"sample-only\"" /tmp/web-live3.out || { echo "the web page must hide an entry made for another MPC"; exit 1; }
+grep -q "\"id\":\"sample-only\"" /tmp/web.out   # an unknown model hides nothing
 grep -q "<h1>Plugin Manager</h1>" /tmp/web.out
 grep -q "^screen status: On your phone or computer: http://[0-9.]*:8790$" /tmp/web.out   # the address on the screen
 grep -q "404 Not Found" /tmp/web.out

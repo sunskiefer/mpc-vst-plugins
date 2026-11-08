@@ -21,6 +21,21 @@ Branch `local/post-launch` in `~/mpc-vst-plugins-postlaunch`, local only (keep M
 ## Also built after the first handoff
 - SETTINGS: IMAGE CACHE row (fill %, CLEAR queues emptying it at APPLY).
 
+## Decisions (2026-11-09)
+- 1.0.0 was never released publicly, so this build REPLACES r3 as Plugin Manager 1.0.0 (call the build r4; no version bump). Force screen check: owner says it worked.
+- Drive exec patch retired from catalog/patches.json (source + tests kept; `sh drive-exec-patch.sh uninstall` for old installs).
+- Web page (port 8790) now applies the same hiding as the screen (other-MPC entries, hidden betas) via `hidden_here()`. It still has no tabs for Locations/Patches/Settings (screen only).
+- Pre-existing, unrelated: `tools/test_patches.py` test_confirmed_install_needs_no_typed_word_then_undo fails (drum-pad md5) with or without my catalog change.
+
+## Plan to ship as 1.0.0 (r4)
+1. Build r4: CI `plugin-manager-g2.yml` (dry_run first) or local; zips armv7+aarch64 and Gen1/Gen2 folder zips into `~/mpc-310-private/release-drafts/pm-1.0.0-r4/`.
+2. Rebuild the 3.9.1 stick: `tools/usb_g2/build_stick.py --firmware ~/roms/Force-3.9.1-update.img --g2-dir <zips> --zip ...`.
+3. Re-pin: `catalog/downloads.json` and `tools/desktop/g2stick-pin.json` (hashes of r4 zips + stick).
+4. `tools/compat/run.sh` (released Managers/installers vs candidate catalog) before any catalog PR.
+5. `tested.json` records (Force 3.9.1, Live III 3.10.1) and DEVICE_TESTS.md rows for the new tabs.
+6. Retest the Force 8w8 download error with the new failure text; fix if it recurs.
+7. Launch week: separate PRs (Manager; catalog/patches; site/docs); keep 3.10.1 details out of public branches until Akai publishes.
+
 ## Known smaller items
 - Web page (port 8790) does not apply the per-device filter or the new tabs.
 - Restart prompt on a Register-only apply no longer shows "Install to", but is otherwise unchanged.

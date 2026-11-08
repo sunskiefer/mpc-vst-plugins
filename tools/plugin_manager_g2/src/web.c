@@ -82,6 +82,7 @@ static void web_state(mgr_t *m, wbuf_t *w) {
     for (int i = 0, n = 0; i < m->npkg; i++) {
         const pkg_t *p = &m->pkg[i];
         if (!p->url[0] && !installed(p)) continue;   /* as the screen: no download for this MPC (a Gen1-only zip on a Gen2), not listed */
+        if (hidden_here(m, p)) continue;   /* as the screen: made for other MPCs, or a hidden beta */
         wput(w, "%s{\"id\":\"", n++ ? "," : "");
         wesc(w, p->id, 0);
         wput(w, "\",\"name\":\"");
