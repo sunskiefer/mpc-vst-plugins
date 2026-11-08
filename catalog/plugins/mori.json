@@ -1,0 +1,5 @@
+{ "id": "mori", "name": "MORI", "author": "L'Cronx", "repo": "sunskiefer/MORI",
+  "kind": "effect", "style": "delay", "tags": ["delay", "reverb", "granular", "looper", "ambient", "dub", "sound-design", "filter"],
+  "license": "PolyForm-Noncommercial-1.0.0", "source_available": true, "asset_pattern": "*-mpc-armv7.zip",
+  "screenshot": "https://raw.githubusercontent.com/sunskiefer/MORI/v0.3.1/docs/screenshots/page_0.png",
+  "summary": "A love letter to MEMENTO | Enjoy-Lab, with its own circuitry programmed by logic. A tempo-synced DUB loop you can record into, a stereo tempo delay, a multi-head and grain TEXTURE memory, reverb with shimmer, a bipolar filter and master FX, joined by a 14-way routing matrix. Five pages. MPC OS 3.x." }
