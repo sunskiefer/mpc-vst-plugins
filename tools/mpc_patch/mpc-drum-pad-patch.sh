@@ -24,7 +24,7 @@
 #
 # WARNINGS
 #  - It modifies the factory MPC OS. Do it only if you are comfortable with that; you use it at your own risk.
-#  - It works ONLY on the builds it knows (Force / MPC OS 3.9.1.2, Gen1 MPC OS 3.10.0, Gen2 3.9.1 and 3.10.0), checked by the exact
+#  - It works ONLY on the builds it knows (Force / MPC OS 3.9.1.2, Gen1 MPC OS 3.10.0, Gen2 3.9.1, 3.10.0 and 3.10.1), checked by the exact
 #    checksum of /usr/bin/MPC. On anything else it refuses.
 #  - A firmware update replaces /usr/bin/MPC and removes the patch. Run this again after updating (it will refuse until
 #    this project supports the new build).
@@ -34,7 +34,7 @@
 #  - Nothing of Akai's is in this file: only the changed bytes and checksums. The device uses its own copy.
 #  - Not affiliated with Akai Professional / inMusic.
 #
-# Version 8. Source and plugin-name table: see the README of the repository this came from.
+# Version 9. Source and plugin-name table: see the README of the repository this came from.
 set -u
 STOCK_MD5=592eebc8e1ce0797dc8c98e7002143b8
 PATCHED_MD5=7cf96599ec61b1079688f253f3b65b9f
@@ -268,8 +268,10 @@ G2_ROOTMPC=${MPC_G2_ROOTMPC:-/usr/bin/MPC}
 G2_TEST=${MPC_G2_TEST:-}                  # set: no systemctl, no running-MPC check (offline tests)
 STOCK_G2_391=a7ace6a9993df33afeae50571755bbf9
 STOCK_G2_310=15a664f6b6ae591c8b78baae8b376f02
+STOCK_G2_3101=4280be032878fc321b7f58a6801cb1ea
 PATCHED_G2_391=0c819376e5a72803ec97c5c8b582f36e
 PATCHED_G2_310=b6a49a4f20055cf0aa937e55acd9856f
+PATCHED_G2_3101=c139fc3525ea3e111726db2368999cfa
 PATCH_DATA_G2_391='4b3b908 f51300f915028052800640f9a1060051e20fa052a41e7597b506007161ffff54800640f963d27517
 4b3b930 020040f9a10a00f021f03c9124004039a4010034e30302aa64144038251440389f00056b8100005484ffff3520008052c0035fd6c5feff3425144038e5ffff35f3ffff17e101009021e03a91314d1317
 4c92f3c 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d3738003957390054522d4d5043004c75636b79204469700000
@@ -294,6 +296,18 @@ PATCH_DATA_G2_310='79a71a0 f51300f915028052800640f9a1060051e20fa052d6fec496b5060
 1796f8c 01028052
 179702c 01028052
 179733c 01028052'
+PATCH_DATA_G2_3101='7b10070 f51300f915028052800640f9a1060051e20fa052b279c096b506007161ffff54800640f9d112c516
+7b10098 020040f90100009021a0039124004039a4010034e30302aa64144038251440389f00056b8100005484ffff3520008052c0035fd6c5feff3425144038e5ffff35f3ffff17619ffe9021600791072b5516
+7b100e8 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d3738003957390054522d4d5043004c75636b79204469700000
+2c549c4 b5ed3a15
+2c549c8 1f2003d51f2003d5
+2c54bb0 30ed3a15
+17b20a8 01028052
+17b2b48 01028052
+17b2d00 01028052
+17b3dcc 01028052
+17b3e6c 01028052
+17b417c 01028052'
 
 g2_sysd() { [ -n "$G2_TEST" ] || systemctl "$@"; }
 g2_source() {   # the MPC this system runs when we are not installed: a bind-mount drop-in of someone else's, else the root's
@@ -309,6 +323,7 @@ g2_pick() {   # $1 = stock md5 -> sets G2_ID, G2_STOCK, G2_PATCHED, G2_DATA; ret
     case "$1" in
         "$STOCK_G2_391") G2_ID=3.9.1; G2_STOCK=$STOCK_G2_391; G2_PATCHED=$PATCHED_G2_391; G2_DATA=$PATCH_DATA_G2_391 ;;
         "$STOCK_G2_310") G2_ID=3.10.0; G2_STOCK=$STOCK_G2_310; G2_PATCHED=$PATCHED_G2_310; G2_DATA=$PATCH_DATA_G2_310 ;;
+        "$STOCK_G2_3101") G2_ID=3.10.1; G2_STOCK=$STOCK_G2_3101; G2_PATCHED=$PATCHED_G2_3101; G2_DATA=$PATCH_DATA_G2_3101 ;;
         *) return 1 ;;
     esac
 }
@@ -334,7 +349,7 @@ g2_cmd_status() {
     echo "MPC this system runs: $SRC (checksum $SRC_MD5)"
     prepared=0; [ -f "$G2/MPC" ] && [ -f "$G2/STOCK" ] && [ "$(cat "$G2/STOCK")" = "$SRC_MD5" ] && prepared=1
     if [ -z "$G2_ID" ]; then
-        st=unsupported; sup=0; echo "State: not a Gen2 build this script knows (MPC OS 3.9.1 or 3.10.0). 'install' will not touch it."
+        st=unsupported; sup=0; echo "State: not a Gen2 build this script knows (MPC OS 3.9.1, 3.10.0 or 3.10.1). 'install' will not touch it."
     elif [ -f "$G2_DROPIN" ] && [ "$(g2_running_md5)" = "$G2_PATCHED" ]; then
         st=patched; sup=1; echo "State: PATCHED and running (Gen2 $G2_ID; plugin names: Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC, Lucky Dip)."
     else

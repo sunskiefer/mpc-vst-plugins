@@ -24,7 +24,7 @@
 #
 # WARNINGS
 #  - It modifies the factory MPC OS. Do it only if you are comfortable with that; you use it at your own risk.
-#  - It works ONLY on the builds it knows (Force / MPC OS 3.9.1.2, Gen1 MPC OS 3.10.0, Gen2 3.9.1 and 3.10.0), checked by the exact
+#  - It works ONLY on the builds it knows (Force / MPC OS 3.9.1.2, Gen1 MPC OS 3.10.0, Gen2 3.9.1, 3.10.0 and 3.10.1), checked by the exact
 #    checksum of /usr/bin/MPC. On anything else it refuses.
 #  - A firmware update replaces /usr/bin/MPC and removes the patch. Run this again after updating (it will refuse until
 #    this project supports the new build).
@@ -248,10 +248,13 @@ G2_ROOTMPC=${MPC_G2_ROOTMPC:-/usr/bin/MPC}
 G2_TEST=${MPC_G2_TEST:-}                  # set: no systemctl, no running-MPC check (offline tests)
 STOCK_G2_391=@@STOCK_391@@
 STOCK_G2_310=@@STOCK_310@@
+STOCK_G2_3101=@@STOCK_3101@@
 PATCHED_G2_391=@@PATCHED_391@@
 PATCHED_G2_310=@@PATCHED_310@@
+PATCHED_G2_3101=@@PATCHED_3101@@
 PATCH_DATA_G2_391='@@PATCH_391@@'
 PATCH_DATA_G2_310='@@PATCH_310@@'
+PATCH_DATA_G2_3101='@@PATCH_3101@@'
 
 g2_sysd() { [ -n "$G2_TEST" ] || systemctl "$@"; }
 g2_source() {   # the MPC this system runs when we are not installed: a bind-mount drop-in of someone else's, else the root's
@@ -267,6 +270,7 @@ g2_pick() {   # $1 = stock md5 -> sets G2_ID, G2_STOCK, G2_PATCHED, G2_DATA; ret
     case "$1" in
         "$STOCK_G2_391") G2_ID=3.9.1; G2_STOCK=$STOCK_G2_391; G2_PATCHED=$PATCHED_G2_391; G2_DATA=$PATCH_DATA_G2_391 ;;
         "$STOCK_G2_310") G2_ID=3.10.0; G2_STOCK=$STOCK_G2_310; G2_PATCHED=$PATCHED_G2_310; G2_DATA=$PATCH_DATA_G2_310 ;;
+        "$STOCK_G2_3101") G2_ID=3.10.1; G2_STOCK=$STOCK_G2_3101; G2_PATCHED=$PATCHED_G2_3101; G2_DATA=$PATCH_DATA_G2_3101 ;;
         *) return 1 ;;
     esac
 }
@@ -292,7 +296,7 @@ g2_cmd_status() {
     echo "MPC this system runs: $SRC (checksum $SRC_MD5)"
     prepared=0; [ -f "$G2/MPC" ] && [ -f "$G2/STOCK" ] && [ "$(cat "$G2/STOCK")" = "$SRC_MD5" ] && prepared=1
     if [ -z "$G2_ID" ]; then
-        st=unsupported; sup=0; echo "State: not a Gen2 build this script knows (MPC OS 3.9.1 or 3.10.0). 'install' will not touch it."
+        st=unsupported; sup=0; echo "State: not a Gen2 build this script knows (MPC OS 3.9.1, 3.10.0 or 3.10.1). 'install' will not touch it."
     elif [ -f "$G2_DROPIN" ] && [ "$(g2_running_md5)" = "$G2_PATCHED" ]; then
         st=patched; sup=1; echo "State: PATCHED and running (Gen2 $G2_ID; plugin names: @@NAMES@@)."
     else

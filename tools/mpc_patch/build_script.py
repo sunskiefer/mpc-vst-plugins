@@ -7,7 +7,7 @@ import os
 import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "8"
+VERSION = "9"
 
 patch = open(os.path.join(HERE, "mpc-3.9.1.2.patch")).read().splitlines()
 patched_md5 = next(l.split()[1] for l in patch if l.startswith("patched_md5"))
@@ -29,12 +29,14 @@ def gen1(build):
 sg1, pg1, dg1 = gen1("3.10.0")
 s391, p391, d391 = gen2("3.9.1")
 s310, p310, d310 = gen2("3.10.0")
+s3101, p3101, d3101 = gen2("3.10.1")
 names = re.findall(r'\.asciz\s+"([^"]+)"', open(os.path.join(HERE, "matcher.S")).read())
 tpl = open(os.path.join(HERE, "script.template.sh")).read()
 out = (tpl.replace("@@PATCH@@", "\n".join(body))
           .replace("@@PATCHED_MD5@@", patched_md5)
           .replace("@@STOCK_391@@", s391).replace("@@PATCHED_391@@", p391).replace("@@PATCH_391@@", d391)
           .replace("@@STOCK_310@@", s310).replace("@@PATCHED_310@@", p310).replace("@@PATCH_310@@", d310)
+          .replace("@@STOCK_3101@@", s3101).replace("@@PATCHED_3101@@", p3101).replace("@@PATCH_3101@@", d3101)
           .replace("@@STOCK_G1_310@@", sg1).replace("@@PATCHED_G1_310@@", pg1).replace("@@PATCH_G1_310@@", dg1)
           .replace("@@NAMES@@", ", ".join(names))
           .replace("@@COUNT@@", str(len(names)))
