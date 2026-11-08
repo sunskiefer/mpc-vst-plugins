@@ -1,0 +1,4 @@
+{ "id": "remixxxl", "name": "reMixXXL", "author": "L'Cronx", "repo": "sunskiefer/reMixXXL",
+  "kind": "instrument", "style": "dj", "tags": ["dj", "decks", "mixer", "cdj", "jog-wheel", "mixxx", "midi-learn", "browser"],
+  "license": "GPL-3.0-or-later", "screenshot": "https://raw.githubusercontent.com/sunskiefer/reMixXXL/v0.1.22/docs/img/wheel.png",
+  "summary": "Four Mixxx-engine DJ decks for the Force: CDJ-style jog wheels you spin with a finger (VINYL scratches, CDJ nudges the pitch), mixer, two effect units, a track browser, a phone/PC companion page and Mixxx controller maps, with a big-button touchscreen skin and Q-Links." }
