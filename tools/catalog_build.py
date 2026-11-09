@@ -164,6 +164,22 @@ def tier_of(entry, versions):
     return "verified" if verified_on(versions) else "listed"
 
 
+UNANSWERED_DAYS = 60   # an open issue with no comment for this long counts as unanswered (docs/CATALOG_QUALITY.md, step 5)
+
+
+def maintenance_of(raw, now):
+    """The catalog's "maintenance" record from GitHub.maintenance() data, or None when it could not be read. Informational: it feeds
+    the quality bar and the site's Maintenance row, never the tier (docs/CATALOG_QUALITY.md, step 5, "no time-based expiry")."""
+    if not raw:
+        return None
+    cutoff = (now - datetime.timedelta(days=UNANSWERED_DAYS)).strftime("%Y-%m-%d")
+    late = sorted(d for d in raw.get("unanswered", []) if d and d <= cutoff)
+    out = {"archived": bool(raw.get("archived")), "open_issues": int(raw.get("open_issues", 0)), "unanswered": len(late)}
+    if late:
+        out["oldest_unanswered"] = late[0]
+    return out
+
+
 BAR = {   # id -> what the author sees. Informational: it never hides or demotes a plugin (docs/CATALOG_QUALITY.md, step 1).
     "stable-release": "publish a stable (non-beta) release",
     "screenshot": "add a screenshot of the plugin screen to the registry entry",
@@ -173,11 +189,13 @@ BAR = {   # id -> what the author sees. Informational: it never hides or demotes
     "tested": "add a tested.json entry for the newest release on a Gen1 device (device and MPC OS version)",
     "tested-gen2": "add a tested.json entry for the newest release's Gen2 build (a device naming Gen2, e.g. \"MPC Live III (Gen2)\")",
     "tested-sample": "add a tested.json entry for the newest release on an MPC Sample (device \"MPC Sample\")",
+    "issues-unanswered": "answer the issues that have waited more than %d days with no reply" % UNANSWERED_DAYS,
+    "archived": "the source repo is archived: unarchive it, or hand the plugin to a new maintainer",
 }
 
 
-def bar_of(entry, versions):
-    """Ids of the BAR items a plugin does not meet yet, in display order."""
+def bar_of(entry, versions, maint=None):
+    """Ids of the BAR items a plugin does not meet yet, in display order. maint: the plugin's maintenance record (maintenance_of)."""
     live = [v for v in versions if v["channel"] == "stable" and not v["yanked"]]
     m = (live[0].get("manifest") or {}) if live else {}
     out = []
@@ -192,6 +210,10 @@ def bar_of(entry, versions):
         out.append("cpu-fail")
     elif live and entry["kind"] != "addin" and entry.get("distribution", "release") == "release" and not cpu:
         out.append("cpu-bench")
+    if maint and maint["unanswered"]:
+        out.append("issues-unanswered")
+    if maint and maint["archived"]:
+        out.append("archived")
     gens = verified_on(versions)
     if entry.get("devices"):   # an entry for named devices only: tested on those, Gen1/Gen2 tests don't apply
         if live and "mpc-sample" in entry["devices"] and "sample" not in gens:
@@ -481,6 +503,25 @@ class GitHub:
                 return []
             raise
 
+    def maintenance(self, repo):
+        """{archived, open_issues, unanswered: [YYYY-MM-DD opened]} for a repo, read once per build (a repo can host many entries).
+        Open issues only, pull requests left out; unanswered = no comments and not opened by the repo owner. At most 300 issues."""
+        cache = self.__dict__.setdefault("_maint", {})
+        if repo.lower() not in cache:
+            r = self._get("https://api.github.com/repos/%s" % repo)
+            issues = []
+            if r.get("has_issues", True):
+                for page in (1, 2, 3):
+                    chunk = self._get("https://api.github.com/repos/%s/issues?state=open&per_page=100&page=%d" % (repo, page))
+                    issues += [i for i in chunk if "pull_request" not in i]
+                    if len(chunk) < 100:
+                        break
+            owner = ((r.get("owner") or {}).get("login") or "").lower()
+            cache[repo.lower()] = {"archived": bool(r.get("archived")), "open_issues": len(issues),
+                                   "unanswered": [(i.get("created_at") or "")[:10] for i in issues
+                                                  if not i.get("comments") and ((i.get("user") or {}).get("login") or "").lower() != owner]}
+        return cache[repo.lower()]
+
     def download(self, asset, dest):
         req = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "mpc-vst-catalog"})
         with urllib.request.urlopen(req, timeout=300) as r, open(dest + ".part", "wb") as f:
@@ -696,6 +737,13 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
                     item[k] = json.loads(json.dumps(e[k]))   # a copy: the registry entry stays untouched
             item["build"].setdefault("needs", [])
         item["versions"] = versions
+        if hasattr(src, "maintenance"):
+            try:
+                m = maintenance_of(src.maintenance(e["repo"]), now or datetime.datetime.now(datetime.timezone.utc))
+            except Exception:   # informational: a failed read only leaves the row out
+                m = None
+            if m:
+                item["maintenance"] = m
         derive(item, e, added)
         item["downloads"] = all_time
         plugins.append(item)
@@ -729,7 +777,7 @@ def derive(item, e, added=None):
     versions = item["versions"]
     item["tier"] = tier_of(e, versions)
     item["verified_on"] = verified_on(versions) if item["tier"] == "verified" else []
-    item["bar_missing"] = bar_of(e, versions)
+    item["bar_missing"] = bar_of(e, versions, item.get("maintenance"))
     item["featured"] = bool(e.get("featured")) and item["tier"] != "experimental"
     item["latest"] = next((v["version"] for v in versions if v["channel"] == "stable" and not v["yanked"]), None)
     item["latest_beta"] = next((v["version"] for v in versions if v["channel"] == "beta" and not v["yanked"]), None)

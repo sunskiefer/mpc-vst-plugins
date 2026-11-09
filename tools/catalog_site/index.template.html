@@ -435,6 +435,15 @@ function detailsHint(v) {
   return t.length ? "Tested on " + t.join(", ") : "Not yet tested";
 }
 /* The author's one line of extra requirements (release.py --requires: ROMs, a network connection, root SSH), from the shown version. */
+/* Maintenance (catalog.json "maintenance", docs/CATALOG_QUALITY.md step 5): informational, from the nightly build; absent when unread. */
+function maintRow(p) {
+  var m = p.maintenance;
+  if (!m) return "";
+  var parts = [m.open_issues ? m.open_issues + " open issue" + (m.open_issues === 1 ? "" : "s") : "No open issues"];
+  if (m.unanswered) parts.push(m.unanswered + " waiting over 60 days for a reply (oldest " + m.oldest_unanswered + ")");
+  if (m.archived) parts.push("source repo archived");
+  return '<dt>Maintenance</dt><dd>' + esc(parts.join(" \u00b7 ")) + '</dd>';
+}
 function needsRow(v) { return v && v.requires ? '<dt>Needs</dt><dd>' + esc(v.requires) + '</dd>' : ""; }
 /* Other catalog plugins this version needs or must not be installed with (catalog_build.py: depends, rules resolved, and conflicts).
    The installers add what is missing and refuse a conflict unless forced. */
@@ -510,7 +519,7 @@ function card(p, big) {
     (v && ID_RE.test(p.id) ? '<label class="pick"><input type="checkbox" data-pick="' + esc(p.id) + '"' + (state.sel.indexOf(p.id) >= 0 ? " checked" : "") + '> Add to install list</label>' : '') +
     '</div><div class="folds">' +
     '<details class="more fold"' + (big ? " open" : "") + '><summary>Details<span class="hint">' + esc(detailsHint(v)) + '</span></summary>' +
-    '<dl class="meta"><dt>Updated</dt><dd>' + esc(p.updated || "n/a") + '</dd><dt>Downloads</dt><dd>' + p.downloads.toLocaleString() + '</dd>' + testedRow(v) + needsRow(v) + depsRow(v) + (deviceTag(p) ? '<dt>Devices</dt><dd>' + esc(p.devices.map(function (x) { return DEVICES[x] || x; }).join(", ")) + ' only</dd>' : p.kind !== "addin" ? osRow(v) + genRow(v) : "") + romRow(v) + installRow(p) +
+    '<dl class="meta"><dt>Updated</dt><dd>' + esc(p.updated || "n/a") + '</dd><dt>Downloads</dt><dd>' + p.downloads.toLocaleString() + '</dd>' + maintRow(p) + testedRow(v) + needsRow(v) + depsRow(v) + (deviceTag(p) ? '<dt>Devices</dt><dd>' + esc(p.devices.map(function (x) { return DEVICES[x] || x; }).join(", ")) + ' only</dd>' : p.kind !== "addin" ? osRow(v) + genRow(v) : "") + romRow(v) + installRow(p) +
     (v && p.kind !== "addin" ? '<dt>Projects</dt><dd>Compat ' + v.param_compat + ' (saved projects break only when this changes)</dd>' : '') + '<dt>Source</dt><dd>' + esc(p.repo) + '</dd></dl></details>' + barLine(p) + hist + '</div></article>';
 }
 function render() {
