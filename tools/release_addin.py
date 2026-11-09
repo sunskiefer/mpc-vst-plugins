@@ -27,7 +27,7 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from catalog_check import ADDIN_FILE, ADDIN_SCRIPTS, ID, SEMVER, max_glibc, parse_addin_manifest  # noqa: E402
+from catalog_check import ADDIN_FILE, ADDIN_SCRIPTS, ID, SEMVER, addin_manifest_problems, max_glibc, parse_addin_manifest  # noqa: E402
 import deps  # noqa: E402
 
 
@@ -62,6 +62,8 @@ def main():
         am = parse_addin_manifest(text)
     except ValueError as e:
         raise SystemExit(str(e))
+    for problem in addin_manifest_problems(am):
+        raise SystemExit("addin.manifest: " + problem)
     aid, so = am.get("ADDIN_ID", ""), am.get("ADDIN_SO", "")
     if not ID.fullmatch(aid):
         raise SystemExit("ADDIN_ID %r: the catalog needs lowercase letters, digits and hyphens" % aid)

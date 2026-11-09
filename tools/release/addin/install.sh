@@ -56,7 +56,7 @@ mkdir -p "$DIR"
 for f in "$ADDIN_SO" $ADDIN_FILES; do   # staged, then renamed: a running MPC keeps the old file mapped
     cp "$f" "$DIR/$f.new"
     # executable by content too: a copy through a FAT or exFAT card or stick (no file modes) loses the bit
-    case "$(head -c 4 "$f" | tr -d '\000\177')" in ELF*|'#!'*) x=1 ;; *) x=0 ;; esac
+    case "$(dd if="$f" bs=4 count=1 2>/dev/null | tr -d '\000\177')" in ELF*|'#!'*) x=1 ;; *) x=0 ;; esac
     if [ -x "$f" ] || [ $x = 1 ]; then chmod 755 "$DIR/$f.new"; else chmod 644 "$DIR/$f.new"; fi
     mv "$DIR/$f.new" "$DIR/$f"
 done

@@ -167,11 +167,35 @@ starts). The ones in the catalog, and what anyone who can reach the port can the
 | `remote` | HTTP 6720 | none | see and touch the screen, send any MIDI into MPC, and read text files in the `mcp_files` folders through its MCP endpoint (read-only; `mcp=0` turns MCP off). The MCP endpoint refuses requests from a web page on another site (`Origin` and `Host` checks); the rest of the server has no such check |
 | `commander` | HTTP and WebSocket 6730 | none | change any parameter of the VST plugins MPC has loaded, send MIDI and transport commands into MPC, write to the control-surface injector file, read the most recent project file and the plugins' skins. There is no `Origin` check yet, so a web page open in a browser on the same network can reach it too |
 | `filebrowser` | HTTP 6760 | password: `admin`, default `mpcadmin` (the same on every device until changed: in FileBrowser, or `password=` in the settings) | after logging in as admin: read, upload, change and delete any file in the folders it shows (`sources`, default `/media:/storage`; on Gen1 `/media/az01-internal` is all of `/data`, MPC's settings included). FileBrowser Quantum runs as root, as its own process beside MPC |
+| `gateway` | HTTPS 443, plus port + 10000 for each declared addin without `ADDIN_WEB_PATH` | password: `mpc`, default `mpc` (the same on every device until changed on its Settings page) | after logging in: everything every declared addin's page allows (the rows above), and change the gateway's own settings (its password, `bind`, forwards). Caddy runs as root, as its own process beside MPC |
 
 `install.sh` asks about this itself for an addin with `ADDIN_NETWORK=1`, on a first interactive install (`-y` keeps the safe default), and after restarting MPC it checks that the library is in the new MPC's `LD_PRELOAD`, warning if a launcher dropped it.
 
 An upgrade keeps the user's settings file, so a device that installed an older release with `bind=0.0.0.0` keeps
 listening on the network until `bind` is changed by hand.
+
+### One address with one password: the gateway
+
+The `gateway` addin (jacob-sabella/mpc-addin-gateway) runs Caddy beside MPC as a single HTTPS address (port 443, one login:
+`mpc` / `mpc` until changed on its Settings page, which edits all its settings; certificates from a certificate authority
+the device makes itself) in front of the addins' web pages, so one tunnel, or `bind=0.0.0.0` on the gateway alone, reaches all of them while each addin keeps listening on
+127.0.0.1. Its start page lists the addins that declare a web page (below), each marked running or not from the kernel's
+socket table. It never finds services any other way.
+
+### Declaring a web page
+
+An addin with a web page says so in its `addin.manifest`, and the installer and `tools/catalog_check.py` check the values:
+
+- `ADDIN_WEB_PORT`: the port its server listens on, on 127.0.0.1.
+- `ADDIN_WEB_PORT_SETTING`: the key in its settings file (`ADDIN_CONF`, which it then needs) that moves that port; a reader takes the
+  port from there when the key holds one.
+- `ADDIN_WEB_PATH`: `/name/` (one or more plain path segments, each ending in `/`) when every page and link works under that
+  prefix. The gateway then serves it at `https://<device>/name/`. Without it, the gateway gives it a port of its own, its port
+  plus 10000, since the addin holds its own port.
+- `ADDIN_LOGIN=1`, for an addin whose network service has a password of its own (the gateway, FileBrowser).
+
+The setting and the path need `ADDIN_WEB_PORT`. A reader treats the manifest as text (`sed`), never sources it. A request
+through the gateway arrives with `Host: 127.0.0.1:<port>`, as through a tunnel.
 
 ## addin.manifest
 
@@ -187,6 +211,10 @@ ADDIN_CONF=mpc_remote_addin.conf      # installed only when the folder has none 
 ADDIN_FILES="standalone"              # other files, replaced on every install ("" none)
 ADDIN_DONE="Open http://<device>:6720 in a browser."   # printed at the end ("" none)
 ADDIN_NETWORK=1                       # the settings file has bind=127.0.0.1: a first interactive install asks to open it ("" none)
+ADDIN_LOGIN=1                         # its network service asks for a password: the install prompt says so instead of "no login" ("" none)
+ADDIN_WEB_PORT=6720                   # it serves a web page on 127.0.0.1:<port> (1-65535; "" none): see "Declaring a web page"
+ADDIN_WEB_PORT_SETTING=port           # optional: the key in ADDIN_CONF that changes that port (letters, digits, _ . -)
+ADDIN_WEB_PATH=/files/                # optional: its pages work under this path (all links relative or under it)
 ```
 
 `ADDIN_VERSION` is added by `tools/release_addin.py`. File names are plain names (no `/`, no leading `.`) and may not

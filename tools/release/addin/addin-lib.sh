@@ -234,6 +234,9 @@ boot_reload_remove() {   # service: once the shared drop-in is gone (the last ad
 #   ADDIN_FILES   other files, replaced on every install ("" none)
 #   ADDIN_DONE    a line printed after installing ("" none)
 #   ADDIN_NETWORK 1 if ADDIN_CONF has a bind= setting: a first interactive install asks whether to open it to the network ("" or 0 none)
+#   ADDIN_LOGIN   1 if what it serves asks for a password (the network question then says so) ("" or 0 none)
+#   ADDIN_WEB_PORT, ADDIN_WEB_PORT_SETTING, ADDIN_WEB_PATH  the web page it serves on 127.0.0.1, for the gateway addin's
+#                 start page and routes (docs/ADDINS.md, "Declaring a web page"); the installer only checks them ("" none)
 #   ADDIN_VERSION X.Y.Z, written by tools/release_addin.py ("" for a build that was not released)
 # Only plain assignments: tools/catalog_check.py refuses a manifest with anything else in it.
 SELF_FILES="addin.manifest addin-lib.sh uninstall.sh install.sh mpc-plugin.json"   # copied into the folder too, so it
@@ -244,6 +247,7 @@ SELF_FILES="addin.manifest addin-lib.sh uninstall.sh install.sh mpc-plugin.json"
 load_manifest() {
     [ -f addin.manifest ] || die "addin.manifest is missing next to install.sh"
     ADDIN_ID=""; ADDIN_NAME=""; ADDIN_SO=""; ADDIN_CONF=""; ADDIN_FILES=""; ADDIN_DONE=""; ADDIN_NETWORK=""; ADDIN_VERSION=""
+    ADDIN_LOGIN=""; ADDIN_WEB_PORT=""; ADDIN_WEB_PORT_SETTING=""; ADDIN_WEB_PATH=""
     . ./addin.manifest
     case "$ADDIN_ID" in ""|*[!A-Za-z0-9_-]*) die "addin.manifest: bad ADDIN_ID '$ADDIN_ID'" ;; esac
     for f in "$ADDIN_SO" $ADDIN_CONF $ADDIN_FILES; do
@@ -254,6 +258,15 @@ load_manifest() {
         case " $SELF_FILES " in *" $f "*) die "addin.manifest: $f is the installer's own file" ;; esac
     done
     case "$ADDIN_NETWORK" in ""|0|1) ;; *) die "addin.manifest: ADDIN_NETWORK must be 1 or empty" ;; esac
+    case "$ADDIN_LOGIN" in ""|0|1) ;; *) die "addin.manifest: ADDIN_LOGIN must be 1 or empty" ;; esac
+    case "$ADDIN_WEB_PORT" in "") ;; *[!0-9]*) die "addin.manifest: ADDIN_WEB_PORT must be a port number" ;; *)
+        [ "$ADDIN_WEB_PORT" -ge 1 ] && [ "$ADDIN_WEB_PORT" -le 65535 ] || die "addin.manifest: ADDIN_WEB_PORT must be a port number" ;;
+    esac
+    case "$ADDIN_WEB_PORT_SETTING" in *[!A-Za-z0-9_.-]*) die "addin.manifest: bad ADDIN_WEB_PORT_SETTING" ;; esac
+    case "$ADDIN_WEB_PATH" in ""|/*/) ;; *) die "addin.manifest: ADDIN_WEB_PATH must start and end with /" ;; esac
+    case "$ADDIN_WEB_PATH" in *//*|*[!A-Za-z0-9/._~-]*|*/./*|*/../*) die "addin.manifest: bad ADDIN_WEB_PATH" ;; esac
+    [ -n "$ADDIN_WEB_PORT" ] || [ -z "$ADDIN_WEB_PORT_SETTING$ADDIN_WEB_PATH" ] ||
+        die "addin.manifest: ADDIN_WEB_PORT_SETTING and ADDIN_WEB_PATH need ADDIN_WEB_PORT"
     case "$ADDIN_VERSION" in ""|[0-9]*.[0-9]*.[0-9]*) ;; *) die "addin.manifest: bad ADDIN_VERSION '$ADDIN_VERSION'" ;; esac
     case "$ADDIN_VERSION" in *[!0-9.]*) die "addin.manifest: bad ADDIN_VERSION '$ADDIN_VERSION'" ;; esac
     [ -n "$ADDIN_NAME" ] || ADDIN_NAME="$ADDIN_ID"
@@ -356,8 +369,14 @@ check_loaded() {   # so
 # A first install of an addin that listens on the network asks whether to open it (bind=0.0.0.0); -y leaves the safe default.
 ask_bind() {   # conf-file
     [ "$ADDIN_NETWORK" = 1 ] && [ $YES = 0 ] && [ -f "$1" ] && grep -q '^bind=127.0.0.1' "$1" || return 0
-    echo "$ADDIN_NAME listens on this device only (reach it through an SSH tunnel). It has no login: opened to the network,"
-    printf "anyone who can reach the port gets what it offers (docs/ADDINS.md). Open it to the network? [y/N] "; read -r ok
+    if [ "$ADDIN_LOGIN" = 1 ]; then
+        echo "$ADDIN_NAME listens on this device only (reach it through an SSH tunnel). It asks for a password: opened to the"
+        printf "network, anyone who can reach it can try to log in (docs/ADDINS.md). Open it to the network? [y/N] "
+    else
+        echo "$ADDIN_NAME listens on this device only (reach it through an SSH tunnel). It has no login: opened to the network,"
+        printf "anyone who can reach the port gets what it offers (docs/ADDINS.md). Open it to the network? [y/N] "
+    fi
+    read -r ok
     case "$ok" in y|Y|yes) sed -i 's/^bind=.*/bind=0.0.0.0/' "$1"; echo "  bind=0.0.0.0" ;; esac
     return 0
 }

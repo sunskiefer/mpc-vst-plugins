@@ -28,7 +28,10 @@ MAX_GLIBC = (2, 36)   # the newest glibc a catalog plugin may need: MPC OS 3.x a
 # Above skin_compat.MAX_GLIBC_2X (2.32, MPC OS 2.x) it is listed as MPC OS 3.x only; it is not rejected.
 SEMVER = re.compile(r"\d+\.\d+\.\d+")
 ID = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
-ADDIN_KEYS = ("ADDIN_ID", "ADDIN_NAME", "ADDIN_SO", "ADDIN_CONF", "ADDIN_FILES", "ADDIN_DONE", "ADDIN_NETWORK", "ADDIN_VERSION")
+ADDIN_KEYS = ("ADDIN_ID", "ADDIN_NAME", "ADDIN_SO", "ADDIN_CONF", "ADDIN_FILES", "ADDIN_DONE", "ADDIN_NETWORK", "ADDIN_VERSION",
+              "ADDIN_LOGIN", "ADDIN_WEB_PORT", "ADDIN_WEB_PORT_SETTING", "ADDIN_WEB_PATH")
+# ADDIN_WEB_PATH: /seg/ or /seg/seg/ (letters, digits . _ ~ -), no empty, . or .. segments (docs/ADDINS.md, "Declaring a web page")
+ADDIN_WEB_PATH = re.compile(r"/(?:(?!\.\.?/)[A-Za-z0-9._~-]+/)+")
 ADDIN_SCRIPTS = ("install.sh", "uninstall.sh", "addin-lib.sh")
 ADDIN_FILE = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9._-]*")
 
@@ -186,6 +189,28 @@ def parse_addin_manifest(text):
     return out
 
 
+def addin_manifest_problems(am):
+    """The values the installer and the gateway read from addin.manifest that parse_addin_manifest doesn't check: a list of
+    problems (empty when fine)."""
+    out = []
+    if am.get("ADDIN_NETWORK", "") not in ("", "0", "1"):
+        out.append("ADDIN_NETWORK must be 1 or empty")
+    if am.get("ADDIN_LOGIN", "") not in ("", "0", "1"):
+        out.append("ADDIN_LOGIN must be 1 or empty")
+    port, setting, path = (am.get(k, "") for k in ("ADDIN_WEB_PORT", "ADDIN_WEB_PORT_SETTING", "ADDIN_WEB_PATH"))
+    if port and not (port.isdigit() and 1 <= int(port) <= 65535):
+        out.append("ADDIN_WEB_PORT must be a port number (1-65535)")
+    if (setting or path) and not port:
+        out.append("ADDIN_WEB_PORT_SETTING and ADDIN_WEB_PATH need ADDIN_WEB_PORT")
+    if setting and not re.fullmatch(r"[A-Za-z0-9_.-]+", setting):
+        out.append("ADDIN_WEB_PORT_SETTING must be a settings key (letters, digits, _ . -)")
+    if setting and not am.get("ADDIN_CONF"):
+        out.append("ADDIN_WEB_PORT_SETTING needs ADDIN_CONF (the settings file it is read from)")
+    if path and not ADDIN_WEB_PATH.fullmatch(path):
+        out.append("ADDIN_WEB_PATH must start and end with / (like /files/), with letters, digits and . _ ~ - between")
+    return out
+
+
 def check(zpath, catalog=False, expect_id=None, expect_repo=None, require_portable=False):
     errors, warnings = [], []
     err, warn = errors.append, warnings.append
@@ -333,6 +358,8 @@ def check(zpath, catalog=False, expect_id=None, expect_repo=None, require_portab
         except ValueError as e:
             err(str(e))
             am = None
+        for problem in addin_manifest_problems(am or {}):
+            err("addin.manifest: " + problem)
         conf, extra = m.get("conf") or "", m.get("files") or []
         own = [m["so"]] + ([conf] if conf else []) + list(extra)
         for f in own:

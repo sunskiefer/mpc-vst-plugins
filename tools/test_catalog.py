@@ -606,6 +606,24 @@ class AddinTest(Base):
                                 "-o", os.path.join(self.tmp, "o")], capture_output=True, text=True)
             self.assertNotEqual(r.returncode, 0, bad)
 
+    def test_web_page_keys(self):
+        # a declared web page (docs/ADDINS.md, "Declaring a web page") packages and checks clean; bad values are refused by
+        # both release_addin.py and the checker
+        good = self.MANIFEST + "ADDIN_LOGIN=1\nADDIN_WEB_PORT=6760\nADDIN_WEB_PORT_SETTING=port\nADDIN_WEB_PATH=/files/\n"
+        errors, _, _ = catalog_check.check(self.build_addin(manifest=good), catalog=True)
+        self.assertEqual(errors, [])
+        for bad, expect in (("ADDIN_WEB_PORT=99999\n", "port number"), ("ADDIN_WEB_PORT=6760\nADDIN_WEB_PATH=/x/../y/\n", "ADDIN_WEB_PATH"),
+                            ("ADDIN_WEB_PORT=6760\nADDIN_WEB_PATH=/files\n", "ADDIN_WEB_PATH"),
+                            ("ADDIN_WEB_PATH=/files/\n", "need ADDIN_WEB_PORT"), ("ADDIN_LOGIN=yes\n", "ADDIN_LOGIN"),
+                            ("ADDIN_WEB_PORT=6760\nADDIN_WEB_PORT_SETTING=a;b\n", "ADDIN_WEB_PORT_SETTING")):
+            open(os.path.join(self.tmp, "pkg", "addin.manifest"), "w").write(self.MANIFEST + bad)
+            r = subprocess.run([sys.executable, os.path.join(HERE, "release_addin.py"), "--dir", os.path.join(self.tmp, "pkg"),
+                                "--version", "1.2.0", "-o", os.path.join(self.tmp, "o")], capture_output=True, text=True)
+            self.assertNotEqual(r.returncode, 0, bad)
+            self.assertIn(expect, r.stderr, bad)
+            z = self.rezip(self.build_addin(), lambda d: d.__setitem__("addin.manifest", d["addin.manifest"] + bad.encode()))
+            self.assertTrue(any(expect in e for e in self.errors(z)), "%s: %s" % (bad, self.errors(z)))
+
     def test_tampering_is_caught(self):
         z = self.build_addin()
         cases = [

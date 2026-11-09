@@ -219,7 +219,9 @@ zip uses `layout: "addin"`:
   `requires`, `source_repo`, `license`, `cpu: null`. No `uid`, `skin` or `folder`.
 - **Validator:** the plugin rules that apply (paths, checksums, id, version, glibc, `--catalog` fields, registry match), plus:
   `addin.manifest` is only plain assignments of the known `ADDIN_*` keys and agrees with `mpc-plugin.json` (id, name, so, conf,
-  files, version); the `.so` is a 32-bit ARM ELF; nothing else is in the package. A changed installer is a warning, as for plugins.
+  files, version); `ADDIN_NETWORK` and `ADDIN_LOGIN` are empty, `0` or `1`; `ADDIN_WEB_PORT` is 1-65535;
+  `ADDIN_WEB_PORT_SETTING` (letters, digits, `_ . -`, and an `ADDIN_CONF`) and `ADDIN_WEB_PATH` (`/seg/…/`, no `.` or `..` segments) need
+  `ADDIN_WEB_PORT` (`docs/ADDINS.md`, "Declaring a web page"); `release_addin.py` refuses the same; the `.so` is a 32-bit ARM ELF; nothing else is in the package. A changed installer is a warning, as for plugins.
   `defer` is true for the installer (it understands `-n`).
 - **Registry:** `"kind": "addin"` on a release entry (never `build-yourself`); the builder refuses a release whose zip is an addin
   under a plugin entry, or the reverse.

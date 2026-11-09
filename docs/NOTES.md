@@ -2441,3 +2441,26 @@ Force, Live II and X are out. `tested.json` is unchanged: its entries only mean 
 possible by flipping the mux and relaying the hub's devices back through the computer (the board is pure ALSA rawmidi in MPC:
 `snd_card_next`/`snd_ctl_card_info`, `snd_rawmidi_open("hw:%d,%d,%u")`, ~20 calls; the Key 37's board is the same kind, `09e8:0057`,
 `/dev/snd/midiC0D0`), with the SATA drive gone meanwhile unless served back over a USB network function. Not started.
+
+## 2026-11-09: a Caddy gateway in front of the addins' web pages, on the Key 37 and the MPC Sample (device)
+
+mpc-addin-gateway (Caddy 2.11.9, static, run by an addin library's script beside MPC at nice 19, idle I/O class, `GOMAXPROCS=1`)
+tested on a Key 37 (Gen1, 3.9.1.2) and an MPC Sample (1.3.0.12):
+
+- **Startup:** HTTPS on 443 about 4 s after MPC starts on the Key 37, about 1 s on the Sample. `tls internal` issues certificates
+  for bare IP addresses (served without SNI), and they verify against the device's own root certificate.
+- **Cost:** Caddy's RSS is 46-47 MB (Key 37) and 49-51 MB (Sample). On the Key 37 it takes 0% of a core idle and while
+  MPC plays, under 1% while relaying Remote's screen stream, and about 20% of one core over 200 back-to-back logged-in page
+  loads; MPC's own share didn't move (20-22% while playing). The Sample: 9% under the same load. Basic auth is a bcrypt
+  check (0.17 s on the Key 37 for a wrong password); a right one is cached after the first, then pages take about 20 ms.
+- **Routing:** FileBrowser, Remote (`/info`, `/screen.png`, and the multipart `/stream`, which arrives unbuffered; Remote has no
+  WebSocket) and Commander (its `/ws` WebSocket upgrades with 101, and its page shows "connected" in Chromium through basic
+  auth over `wss`) all work through the gateway's ports, with `Host: 127.0.0.1:<port>` as through a tunnel.
+- **Up or down** comes from the LISTEN rows of `/proc/net/tcp` and `tcp6`. On the Key 37, MPC's own `MPC Main Thread` holds
+  6740, 6750 and 41401, and `az0x-webserver` has 80. Nothing in that table tells MPC's ports from an addin's, which is why
+  the gateway lists only what manifests declare (`ADDIN_WEB_*`, `docs/ADDINS.md`).
+- **The MPC Sample's process name is `MPC Sample`** (`/usr/bin/MPC Sample`), not `MPC`. An addin that only starts in a
+  process named `MPC` never starts there (FileBrowser and Remote check only `MPC` today). Its `LD_PRELOAD` drop-in goes in
+  `/run/systemd/system/ac50.service.d/` (`/etc` isn't persistent; the service is `ac50`, the Key 37's `acvs`).
+- **Both devices' BusyBox (1.36.1) lacks `head -c` and `head -<N>`;** `head -n N` and `dd bs=1 count=N` work. A script made
+  on a desktop that uses either fails on the device.
