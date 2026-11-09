@@ -144,13 +144,16 @@ no valid tag, script missing at the newest tag, and (loudly, `LICENCE RISK`) a G
 
 ## `catalog.json` (generated)
 `{"schema": 1, "generated": <ISO time>, "plugins": [ <registry fields> + "versions": [ <record>, ... ], "latest",
-"latest_beta", "downloads", "updated", "tier", "verified_on", "bar_missing", "featured" ]}`, versions
+"latest_beta", "downloads", "updated", "tier", "verified_on", "bar_missing", "featured", "maintenance"? ]}`, versions
 newest first. A record is what `catalog_check.py --json` prints (`version`, `size`, `sha256` of the zip,
 `param_compat`, `max_glibc`, `os_compat`, `os_compat_why`, `cpu`, `defer`, `requires`, `manifest`, and for an addin `hooks`) plus `url`, `date`, `channel` (`stable`|`beta`), `notes`, `yanked`
 and `tested` (`[{device, firmware, date}]`), added by the builder. `tier` is `verified`|`listed`|`experimental`; `verified_on`
 (`[]`, or `gen1`, `gen2` and/or `sample`) says which devices the newest stable release was tested on: a `tested` device naming the MPC
 Sample is `sample` and one naming Gen2 is `gen2` (both only on a version with an aarch64 build), any other is `gen1`. `devices` (optional,
-from the registry) lists the only devices the plugin is for (`"mpc-sample"`); clients must not offer it on others. Readers must treat a missing `verified_on` on a verified plugin as `["gen1"]`.
+from the registry) lists the only devices the plugin is for (`"mpc-sample"`); clients must not offer it on others. Readers must treat a missing `verified_on` on a verified plugin as `["gen1"]`. `maintenance` (optional, 2026-11-09; absent when the
+repo could not be read): `{archived, open_issues, unanswered, oldest_unanswered?}`, from the repo's open issues (pull requests left
+out); `unanswered` counts issues waiting more than 60 days with no comment, not opened by the repo owner. Informational: it never
+changes `tier` (docs/CATALOG_QUALITY.md step 5).
 A version may also carry `assets.aarch64` and `gen2: true` (a Gen2 build beside the armv7 zip, docs/GEN2.md). **Gen2 only:** an entry whose `asset_pattern` names the
 aarch64 zip and no armv7 one (`"*-mpc-aarch64.zip"`) lists that zip alone: `assets: {aarch64: {...}}`, `gen2: true`, `gen2_only: true`, and `url`/`sha256`/`size` are the
 aarch64 zip (a reader that knows no `gen2_only` still parses it); in `catalog.tsv` the size, sha256 and url columns are `-`. A client on a Gen1 device or a Force must not offer a

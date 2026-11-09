@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline test of the release manifest and validator: builds a fake package with tools/release.py and checks that
 tools/catalog_check.py accepts it and rejects tampered copies. No device, no toolchain: python3 tools/test_catalog.py"""
+import datetime
 import json
 import os
 import re
@@ -1002,6 +1003,43 @@ class BuildTest(Base):
         cat, _ = catalog_build.build([self.ENTRY], FakeGitHub({"acme/test-synth": []}, {}), os.path.join(self.tmp, "bar3"), set())
         self.assertEqual(cat["plugins"][0]["bar_missing"][0], "stable-release")
         self.assertNotIn("tested", cat["plugins"][0]["bar_missing"])
+
+    def test_maintenance_record_and_bar(self):
+        now = datetime.datetime(2026, 11, 9, tzinfo=datetime.timezone.utc)
+        gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
+        gh.maintenance = lambda repo: {"archived": False, "open_issues": 3, "unanswered": ["2026-11-01", "2026-08-01", "2026-06-15"]}
+        cat, _ = catalog_build.build([self.ENTRY], gh, os.path.join(self.tmp, "m1"), set(), now=now)
+        p = cat["plugins"][0]
+        self.assertEqual(p["maintenance"], {"archived": False, "open_issues": 3, "unanswered": 2, "oldest_unanswered": "2026-06-15"})
+        self.assertIn("issues-unanswered", p["bar_missing"])
+        self.assertNotIn("archived", p["bar_missing"])
+        self.assertEqual(p["tier"], "listed")   # informational: the tier is unchanged
+        gh.maintenance = lambda repo: {"archived": True, "open_issues": 0, "unanswered": ["2026-11-01"]}
+        p = catalog_build.build([self.ENTRY], gh, os.path.join(self.tmp, "m1"), set(), now=now)[0]["plugins"][0]
+        self.assertEqual(p["maintenance"], {"archived": True, "open_issues": 0, "unanswered": 0})
+        self.assertEqual([k for k in p["bar_missing"] if k in ("issues-unanswered", "archived")], ["archived"])
+        def boom(repo):
+            raise RuntimeError("403")
+        gh.maintenance = boom   # a failed read leaves the field out and the build goes on
+        p = catalog_build.build([self.ENTRY], gh, os.path.join(self.tmp, "m1"), set(), now=now)[0]["plugins"][0]
+        self.assertNotIn("maintenance", p)
+        self.assertNotIn("issues-unanswered", p["bar_missing"])
+
+    def test_github_maintenance_reads_issues_once_per_repo(self):
+        calls = []
+        def get(url):
+            calls.append(url)
+            if url.endswith("/repos/acme/x"):
+                return {"archived": False, "has_issues": True, "owner": {"login": "Acme"}}
+            return [{"created_at": "2026-01-02T00:00:00Z", "comments": 0, "user": {"login": "bob"}},
+                    {"created_at": "2026-01-03T00:00:00Z", "comments": 2, "user": {"login": "bob"}},
+                    {"created_at": "2026-01-04T00:00:00Z", "comments": 0, "user": {"login": "acme"}},
+                    {"created_at": "2026-01-05T00:00:00Z", "comments": 0, "user": {"login": "bob"}, "pull_request": {}}]
+        g = catalog_build.GitHub()
+        g._get = get
+        self.assertEqual(g.maintenance("acme/x"), {"archived": False, "open_issues": 3, "unanswered": ["2026-01-02"]})
+        g.maintenance("Acme/X")
+        self.assertEqual(len(calls), 2)
 
     def test_unreadable_repo_is_reported_not_fatal(self):
         cat, problems = catalog_build.build([self.ENTRY], FakeGitHub({}, {}), os.path.join(self.tmp, "c"), set())

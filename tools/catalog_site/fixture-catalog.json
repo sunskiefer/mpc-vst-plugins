@@ -534,7 +534,13 @@
    "verified_on": [
     "gen1",
     "gen2"
-   ]
+   ],
+   "maintenance": {
+    "archived": false,
+    "open_issues": 4,
+    "unanswered": 1,
+    "oldest_unanswered": "2026-08-01"
+   }
   },
   {
    "id": "pack-drive",
@@ -1235,7 +1241,9 @@
  ],
  "bar": {
   "screenshot": "add a screenshot of the plugin screen to the registry entry",
-  "tested": "add a tested.json entry for the newest release (device and MPC OS version)"
+  "tested": "add a tested.json entry for the newest release (device and MPC OS version)",
+  "issues-unanswered": "answer the issues that have waited more than 60 days with no reply",
+  "archived": "the source repo is archived: unarchive it, or hand the plugin to a new maintainer"
  },
  "collections": [
   {
