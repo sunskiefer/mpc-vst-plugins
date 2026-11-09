@@ -107,14 +107,35 @@ Each step stands alone. Stop after any of them.
   in addition to the author's own `tested.json`. Start with the maintainer alone.
 - Compatibility reports through GitHub Discussions or an issue template ("works / doesn't work on device + OS").
 
-### Step 5: only if people ask
-- Abandonment and delisting policy: entries are pointers to the author's repo; broken or abandoned ones are noticed and
-  then moved down or removed.
+### Step 5: unsupported plugins (planned 2026-11-09, maintainer; 5a built, offline)
+Now that the site reads each plugin's GitHub issues and people report "Works for me", unsupported plugins can be handled from
+evidence. The rule: **act on breakage, not on age.** A finished plugin that still works is not penalised for being quiet (see
+"No time-based expiry" below). Yanking stays a manual action for a broken or unsafe version; it is never automatic.
+- **5a. Show maintenance (built 2026-11-09, offline: unit tests and the site browser test).** The nightly build reads each
+  repo once (`GitHub.maintenance` in `tools/catalog_build.py`: archived or not, open issues without pull requests, and which have no
+  comment and were not opened by the repo owner) and writes `maintenance` per plugin (`maintenance_of`: `archived`, `open_issues`,
+  `unanswered` = issues waiting more than `UNANSWERED_DAYS` (60) with no reply, `oldest_unanswered`). The popup's Details show a
+  Maintenance row ("4 open issues · 1 waiting over 60 days for a reply (oldest 2026-08-01) · source repo archived"), and two bar
+  items join "To improve this listing": `issues-unanswered` and `archived`. Informational only: the tier, the sort and the
+  download are unchanged. A failed read leaves the field out. Not yet run against the live catalog (the nightly build will be the first).
+- **5b. Losing Verified, partly automated (next).** The "Losing Verified" rule below, with the evidence read by the build: an open
+  issue on the newest stable version marked "does not work" (a label such as `doesnt-work`, or a box in the prefilled Report an issue
+  text), and no Works for me report on that version since the issue opened, drops the plugin to Listed. A maintainer confirms the first
+  cases by hand before it runs unattended. A fix release, a new `tested.json` entry or a closed issue restores it.
+- **5c. Experimental on confirmed breakage (later).** The newest stable version has confirmed "does not work" reports on the current
+  MPC OS, no Works for me on that OS, and the author has not answered for 60 days: the catalog opens an issue on the plugin's repo
+  saying it will move to Experimental (hidden by default) in 30 days, then moves it. A fixed release, or a Works for me report on the
+  current OS, reverses it. Never on age alone.
+- **5d. Yank stays manual.** `catalog/yanked.json`, by a maintainer or at the author's request, for a security problem, a broken
+  installer or data loss.
+- **5e. Delisting** only when the repo is gone or archived *and* the plugin is reported broken (5c met). The entry file is removed
+  in a PR that says why.
 - Losing Verified (decided 2026-10-11, not built): a confirmed "doesn't work" report on the newest stable version (an issue
   or Discussion, reproduced by the maintainer or a listed verifier) drops the plugin to Listed until a fixed release, or a
   new `tested.json` entry, wins it back. No time-based expiry: an unchanged plugin does not get worse with age. (A new
   release without a `tested.json` entry already drops to Listed today.)
-- A within-tier tiebreaker (reactions or "N people use this"), never a way into a higher tier.
+- A within-tier tiebreaker (reactions or "N people use this"), never a way into a higher tier. (Done another way 2026-11-05:
+  Works for me and likes count in the Recommended sort.)
 - A hand-picked Featured row (`"featured": true`, already supported).
 
 ## Community signals proposal (2026-11-04, research only, nothing built)
