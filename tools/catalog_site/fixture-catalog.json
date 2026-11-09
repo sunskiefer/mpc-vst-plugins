@@ -530,9 +530,7 @@
    "added": "2026-10-15",
    "tier": "verified",
    "featured": true,
-   "bar_missing": [
-    "issues-unanswered"
-   ],
+   "bar_missing": [],
    "verified_on": [
     "gen1",
     "gen2"
