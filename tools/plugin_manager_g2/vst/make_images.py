@@ -117,6 +117,21 @@ def main():
         + text(75, 30, "CLEAR", 17, INK, 700, anchor="middle", spacing=1.5))
     svg("set_btn.svg", 150, 46, '<rect x="1" y="1" width="148" height="44" rx="8" fill="%s" stroke="%s" stroke-width="2"/>' % (PANEL, DIM)
         + text(75, 30, "CHANGE", 17, INK, 700, anchor="middle", spacing=1.5))
+    # the ABOUT tab: header, footer and four cards; the version, the installed copy and this MPC are live readouts, the credits are drawn in
+    svg("about_bg.svg", 1280, 628,
+        '<rect width="1280" height="628" fill="%s"/>' % BG
+        + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
+        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
+        + text(1256, 38, "ABOUT", 20, MUTED, 700, anchor="end", spacing=2)
+        + "".join('<rect x="24.5" y="%g" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (80.5 + 120 * i, PANEL, LINE) for i in range(4))
+        + text(48, 112, "VERSION", 22, MUTED, 700, spacing=2)
+        + text(48, 232, "INSTALLED COPY", 22, MUTED, 700, spacing=2)
+        + text(48, 352, "THIS MPC", 22, MUTED, 700, spacing=2)
+        + text(48, 472, "CREDITS AND LICENCES", 22, MUTED, 700, spacing=2)
+        + text(48, 504, "Built on poloq's mpc-vst-manager (MIT). Addin support: jacob-sabella. Plugin licences are shown on each card.", 22, DIM, 600)
+        + text(48, 534, "github.com/open-mpc/mpc-vst-plugins  \u00b7  NOTICE.md lists every licence.", 22, DIM, 600)
+        + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
+        + text(40, 599, "Include the version above when you report a problem.", 22, DIM, 600))
     # the PATCHES tab: header, footer, three cards, state pills and the CHECK buttons
     svg("pat_bg.svg", 1280, 628,
         '<rect width="1280" height="628" fill="%s"/>' % BG

@@ -72,6 +72,10 @@ typedef struct {
 #ifndef PATCHES_URL_FALLBACK
 #define PATCHES_URL_FALLBACK ""
 #endif
+/* The version of this build, shown on the ABOUT page. The release workflow fails when its version input differs from this. */
+#ifndef PM_VERSION
+#define PM_VERSION "1.0.0"
+#endif
 #define WORK "/tmp/openmpc-pm"
 #define MAXPKG 256
 #define ROWS 5      /* plugin cards per page */
@@ -3135,6 +3139,19 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
     else if (!strcmp(key, "pat_pages")) snprintf(b, n, "%d", m->npt > 3);
     else if (!strcmp(key, "pat_page")) snprintf(b, n, "%d / %d", m->ptpage + 1, m->npt ? (m->npt + 2) / 3 : 1);
     else if (!strcmp(key, "pat_foot")) snprintf(b, n, m->npt ? "%d device patches. CHECK runs a patch's status on this MPC and changes nothing." : "No patch list yet (needs the network).", m->npt);
+    else if (!strcmp(key, "about_ver")) snprintf(b, n, "Plugin Manager G2 %s", PM_VERSION);
+    else if (!strcmp(key, "about_inst")) {   /* the manifest of the copy on disk, which can differ from the running build */
+        const char *iv = "";
+        for (int i = 0; i < m->npkg; i++) if (!strcmp(m->pkg[i].id, "plugin-manager-g2")) iv = m->pkg[i].installed;
+        if (!iv[0]) snprintf(b, n, "Not listed as installed");
+        else if (!strcmp(iv, "?")) snprintf(b, n, "Installed copy: version unknown");
+        else if (!strcmp(iv, PM_VERSION)) snprintf(b, n, "Installed copy: %s (matches)", iv);
+        else snprintf(b, n, "Installed copy says %s, this build is %s", iv, PM_VERSION);
+    }
+    else if (!strcmp(key, "about_dev"))
+        snprintf(b, n, "%s  \xc2\xb7  %s  \xc2\xb7  glibc %s (MPC OS %s, inferred)", m->dev->model_id[0] ? m->dev->model_id : "unknown model", m->dev->arch,
+                 dev_glibc(), glibc_less(dev_glibc(), "2.39") ? "2.x" : "3.x");
+    else if (!strcmp(key, "about_net")) snprintf(b, n, "Catalog: %s", m->online ? "online" : "offline");
     else if (!strcmp(key, "set_theme_txt")) snprintf(b, n, "%s%s", m->theme ? "LIGHT" : "DARK", theme_dirty(m) ? "  \xc2\xb7  restart" : "");
     else if (!strcmp(key, "set_beta_txt")) snprintf(b, n, "%s", m->show_beta ? "SHOWN" : "HIDDEN");
     else if (!strcmp(key, "set_cache_txt")) {

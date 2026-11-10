@@ -4146,6 +4146,30 @@
     "off",
     "on"
    ]
+  },
+  {
+   "key": "about_ver",
+   "name": "About: version",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "about_inst",
+   "name": "About: installed copy",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "about_dev",
+   "name": "About: this MPC",
+   "type": "readout",
+   "display": "string"
+  },
+  {
+   "key": "about_net",
+   "name": "About: catalog",
+   "type": "readout",
+   "display": "string"
   }
  ]
 }

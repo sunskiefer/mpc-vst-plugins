@@ -204,6 +204,10 @@ int main(int argc, char **argv) {
     printf("cache queued: |%s| apply=%s\n", get("set_cache_txt"), get("apply_state"));
     e->destroy(m); return 0;
   }
+  if (argc > 1 && !strcmp(argv[1], "about")) {   /* ABOUT: the running version, the installed copy, this MPC */
+    printf("about: |%s|\n|%s|\n|%s|\n|%s|\n", get("about_ver"), get("about_inst"), get("about_dev"), get("about_net"));
+    e->destroy(m); return 0;
+  }
   if (argc > 1 && !strcmp(argv[1], "patches")) {   /* PATCHES: the list, CHECK runs status after the checksum, a wrong checksum is never run */
     for (int i = 1; i <= 3; i++) {
       char t[24], p[24], c[24], f[24];

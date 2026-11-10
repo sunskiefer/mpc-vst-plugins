@@ -25,6 +25,13 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Release version matches PM_VERSION in manager.c (the ABOUT page shows it)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          v=$(sed -n 's/^#define PM_VERSION "\(.*\)"/\1/p' tools/plugin_manager_g2/src/manager.c)
+          [ "$v" = "$VERSION" ] || { echo "::error::PM_VERSION is $v but the release version is $VERSION: bump PM_VERSION in manager.c"; exit 1; }
       - name: Offline tests (host test under ASan, every fake device, the fixture flows; they read the live catalog)
         run: tools/plugin_manager_g2/tests/run.sh
   release:
