@@ -1037,9 +1037,64 @@ class BuildTest(Base):
                     {"created_at": "2026-01-05T00:00:00Z", "comments": 0, "user": {"login": "bob"}, "pull_request": {}}]
         g = catalog_build.GitHub()
         g._get = get
-        self.assertEqual(g.maintenance("acme/x"), {"archived": False, "open_issues": 3, "unanswered": ["2026-01-02"]})
+        m = g.maintenance("acme/x")
+        self.assertEqual({k: m[k] for k in ("archived", "open_issues", "unanswered")}, {"archived": False, "open_issues": 3, "unanswered": ["2026-01-02"]})
+        self.assertEqual([(i["number"], i["team"]) for i in m["issues"]], [(None, False), (None, False), (None, True)])
         g.maintenance("Acme/X")
         self.assertEqual(len(calls), 2)
+
+    def issue(self, n, user, version="1.0.0", device="MPC Live III", os_="3.9.1", broken=True, created="2026-09-01", labels=(),
+              comments=0, team=False):
+        body = "Plugin: Test Synth %s\nDevice: %s\nMPC OS: %s\n\n- [%s] It does not work (it does not load, crashes or makes no sound)\n" % (
+            version, device, os_, "x" if broken else " ")
+        return {"number": n, "created": created, "user": user, "team": team, "labels": list(labels), "comments": comments, "body": body}
+
+    def test_breakage_routes(self):
+        now = datetime.datetime(2026, 11, 9, tzinfo=datetime.timezone.utc)
+        e, B = self.ENTRY, catalog_build.breakage_of
+        three = [self.issue(1, "a"), self.issue(2, "b", device="MPC One G2"), self.issue(3, "c", os_="3.9")]
+        b = B(e, "1.0.0", {"issues": three}, {}, now)
+        self.assertEqual((b["route"], b["device"], b["os"], b["people"], b["issues"]), ("reports", "gen2", "3.9", 3, [1, 2, 3]))
+        # one person three times, or two people, is not enough
+        self.assertIsNone(B(e, "1.0.0", {"issues": [self.issue(n, "a") for n in (1, 2, 3)]}, {}, now))
+        self.assertIsNone(B(e, "1.0.0", {"issues": three[:2]}, {}, now))
+        # an older version, another device class or MPC OS, an unticked box: not the same breakage
+        self.assertIsNone(B(e, "1.1.0", {"issues": three}, {}, now))
+        self.assertIsNone(B(e, "1.0.0", {"issues": three[:2] + [self.issue(3, "c", device="MPC Live II")]}, {}, now))
+        self.assertIsNone(B(e, "1.0.0", {"issues": three[:2] + [self.issue(3, "c", os_="3.10")]}, {}, now))
+        self.assertIsNone(B(e, "1.0.0", {"issues": three[:2] + [self.issue(3, "c", broken=False)]}, {}, now))
+        # too recent: the author gets BREAKAGE_SILENCE_DAYS to answer
+        self.assertIsNone(B(e, "1.0.0", {"issues": [dict(i, created="2026-11-01") for i in three]}, {}, now))
+        # the author labelled one as user error: it no longer counts
+        self.assertIsNone(B(e, "1.0.0", {"issues": three[:2] + [self.issue(3, "c", labels=["user-error"])]}, {}, now))
+        # the author replied on one: not silent
+        replied = three[:2] + [self.issue(3, "c", comments=1)]
+        self.assertIsNone(B(e, "1.0.0", {"issues": replied}, {}, now, team_replied=lambda n: n == 3))
+        self.assertEqual(B(e, "1.0.0", {"issues": replied}, {}, now, team_replied=lambda n: False)["route"], "reports")
+        # the author confirmed a single report: enough, at once
+        b = B(e, "1.0.0", {"issues": [self.issue(7, "a", created="2026-11-08", labels=["confirmed"])]}, {}, now)
+        self.assertEqual((b["route"], b["issues"]), ("author", [7]))
+        # a catalog maintainer reproduced it
+        self.assertEqual(B(e, "1.0.0", None, {"test-synth@1.0.0": "reproduced on a Live II"}, now)["route"], "maintainer")
+        self.assertIsNone(B(e, None, {"issues": three}, {}, now))
+
+    def test_breakage_dry_run_never_changes_the_tier(self):
+        now = datetime.datetime(2026, 11, 9, tzinfo=datetime.timezone.utc)
+        gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
+        gh.tested = lambda repo: [{"version": "1.0.0", "device": "MPC Live III (Gen2)"}, {"version": "1.0.0", "device": "Force"}]
+        iss = [self.issue(n, u) for n, u in ((1, "a"), (2, "b"), (3, "c"))]
+        gh.maintenance = lambda repo: {"archived": False, "open_issues": 3, "unanswered": [], "issues": iss}
+        cat, _ = catalog_build.build([self.ENTRY], gh, os.path.join(self.tmp, "bk"), set(), now=now)
+        self.assertEqual(cat["plugins"][0]["tier"], "verified")
+        self.assertNotIn("_issues", cat["plugins"][0])
+        self.assertEqual([(b["id"], b["route"]) for b in catalog_build.catalog_breakage], [("test-synth", "reports")])
+
+    def test_report_fields(self):
+        f = catalog_build.report_fields("Plugin: Test Synth 1.2.0\r\nDevice: MPC Key 61\r\nMPC OS: 3.10.1 beta\r\n\r\n* [X] It does not work")
+        self.assertEqual(f, {"version": "1.2.0", "device": "MPC Key 61", "os": "3.10", "broken": True})
+        self.assertFalse(catalog_build.report_fields("- [ ] It does not work")["broken"])
+        self.assertEqual([catalog_build.report_class(d) for d in ("MPC Live III", "Key 37 G2", "MPC XL", "Live II", "MPC Sample", "Force")],
+                         ["gen2", "gen2", "gen2", "gen1", "sample", "gen1"])
 
     def test_unreadable_repo_is_reported_not_fatal(self):
         cat, problems = catalog_build.build([self.ENTRY], FakeGitHub({}, {}), os.path.join(self.tmp, "c"), set())
