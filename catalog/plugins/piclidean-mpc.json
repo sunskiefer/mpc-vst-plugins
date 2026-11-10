@@ -14,6 +14,6 @@
     "euclidean",
     "generative"
   ],
-  "screenshot": "https://raw.githubusercontent.com/timomacquis/piClideaN16-MPC/657e7ca8ac8139eeb1678f8639afa2b40ac7faa0/Cover.png",
+  "screenshot": "https://raw.githubusercontent.com/timomacquis/piClideaN-MPC/657e7ca8ac8139eeb1678f8639afa2b40ac7faa0/Cover.png",
   "asset_pattern": "ClideaN-MPC-*-mpc-armv7.zip"
 }
