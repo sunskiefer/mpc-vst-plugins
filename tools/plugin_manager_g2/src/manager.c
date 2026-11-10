@@ -1929,7 +1929,9 @@ static void scan_installed(const device_t *d, pkg_t *pkg, int n) {
         for (int i = 0; i < n; i++) {
             pkg_t *p = &pkg[i];
             if (is_addin(p)) continue;
-            int hit = mf.id[0] ? !strcmp(mf.id, p->id) : !strcmp(en->name, p->name);
+            /* a local zip's card is "local-<id>": it is the same plugin as the installed <id> (else it would offer Install forever, never Remove) */
+            const char *pid = !strncmp(p->id, "local-", 6) ? p->id + 6 : p->id;
+            int hit = mf.id[0] ? !strcmp(mf.id, pid) : !strcmp(en->name, p->name);
             for (int c = 0; c < 4 && !hit; c++) hit = p->uids[c][0] && !strcasecmp(p->uids[c], en->uid);
             if (!hit || p->installed[0]) continue;
             snprintf(p->installed, sizeof p->installed, "%s", mf.version[0] ? mf.version : "?");

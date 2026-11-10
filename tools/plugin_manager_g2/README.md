@@ -126,6 +126,8 @@ for new installs; updates always stay where the plugin already is. You can also 
    the catalog loaded. The zip appears as a card marked **local zip**, newest first, named after the file; search for part of the file name if the list is long.
 4. **Tap the card, then INSTALL, then APPLY.** Check the summary (it shows where the plugin will go; **CHANGE** steps through the usable places) and
    confirm. Save your project first: MPC restarts once, exactly as for a catalog plugin.
+5. **To remove it later,** open the manager, find the same zip's card (or the plugin's own card) under **INSTALLED**, tap it, then **Remove** and **APPLY**. A zip
+   of a plugin that is already installed shows as installed (matched by the `id` in its `mpc-plugin.json`); before 0.9.1 it offered INSTALL again and never Remove.
 
 Nothing vouches for a local zip: the card shows the zip's own SHA-256 (the first 16 characters), so compare it with the checksum on the page you downloaded
 it from. The other checks still apply: the zip is inspected (no absolute or `..` paths), its manifest must match your device (architecture, glibc, MPC OS),

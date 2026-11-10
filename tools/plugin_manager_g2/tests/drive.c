@@ -268,6 +268,15 @@ int main(int argc, char **argv) {
     set("k_back", "1"); set("k_back", "1"); printf("one BACK tap delivered twice: |%s|\n", get("q_txt"));
     e->destroy(m); return 0;
   }
+  if (argc > 1 && !strcmp(argv[1], "localcard")) {   /* a local zip of an installed plugin (#782): its card is INSTALLED and offers Reinstall/Remove */
+    set("kind", "1"); printf("INSTRUMENTS, all:\n"); cards();
+    set("tab", "1"); printf("INSTALLED:\n"); cards();
+    press("r1_act"); press("r1_remove"); printf("Remove queued:\n"); cards();
+    press("apply");
+    for (int i = 0; i < 60 && strcmp(get("apply_state"), "3") && strcmp(get("apply_state"), "4"); i++) sleep(1);
+    printf("after APPLY:\n"); cards();
+    e->destroy(m); return 0;
+  }
   if (argc > 1 && !strcmp(argv[1], "status")) { cards(); e->destroy(m); return 0; }   /* what the manager says on its own (the last apply) */
   if (argc > 2 && !strcmp(argv[1], "one")) {   /* queue the effect called argv[2] and APPLY: the prepare step's verdict */
     if (argc > 4) set("tab", argv[4]);

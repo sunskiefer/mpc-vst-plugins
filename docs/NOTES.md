@@ -2215,3 +2215,10 @@ Not yet seen on a Gen1 device running 3.10.1. The image's board list has no Forc
   compared by device and inode (`same_folder`). device.txt lists the `usable:` targets.
 - Tests: tests/devices/label-space, same-storage, gen2-310-label-space (the first two fail on the old code). The reporter also had a
   patch with ARMv7 tests.
+## 2026-11-10: Plugin Manager G2: a local zip of an installed plugin showed INSTALL forever (#782), offline only
+
+`scan_installed()` in `tools/plugin_manager_g2/src/manager.c` matches an installed plugin to a card by the `id` in its `mpc-plugin.json`. A zip put in
+`local-plugins/` is a card with id `local-<id>`, so it never matched: the card stayed "not installed" (INSTALL, no Remove), and the reporter had to rename
+`uninstall.sh` to `install.sh` inside the zip to remove a plugin. The match now strips the `local-` prefix. Offline test (`tests/run.sh` safety section, `drive localcard`
+on the fake MPC One): before the fix the local card was state=1 inst=0; after it is state=3 inst=1, Remove queues and APPLY reaches ready with the zip's `uninstall.sh`
+in apply.sh. Not yet checked on a device. A local zip whose `mpc-plugin.json` has no `id` is still matched by name only (the card is named after the file).
