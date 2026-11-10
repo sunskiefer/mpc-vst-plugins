@@ -214,6 +214,13 @@ grep -q "apply_state 3" /tmp/safe-offline.out || { cat /tmp/safe-offline.out; ex
 sh /tmp/openmpc-pm/apply.sh
 grep -q "^local-Mine-1.0.0|ok|install local" /tmp/openmpc-pm/result || { cat /tmp/openmpc-pm/result /tmp/openmpc-pm/apply.log; exit 1; }
 rm -rf "$LD"
+# a zip of a plugin that is already installed (#782): its card is INSTALLED and offers Remove, not Install forever (mpc-one has mpc-plaits)
+mkdir -p "$LD"; cp /p/vst/build/tests/Plaits-local.zip "$LD/"
+rm -rf /tmp/openmpc-pm; /tmp/drive_addins localcard > /tmp/safe-localcard.out
+grep -q "card 1: PL .* state=3 inst=1 .* local zip" /tmp/safe-localcard.out || { cat /tmp/safe-localcard.out; echo "FAIL: a local zip of an installed plugin is not shown as installed"; exit 1; }
+grep -q "card 1: PL .* state=6 " /tmp/safe-localcard.out && grep -q "apply_state 3" /tmp/safe-localcard.out || { cat /tmp/safe-localcard.out; echo "FAIL: Remove on the card of a local zip did not queue and reach ready"; exit 1; }
+grep -q "^item .local-mpc-plaits. .. remove" /tmp/openmpc-pm/apply.sh || { echo "FAIL: no remove step for the local card"; exit 1; }
+rm -rf "$LD"
 # backups pile up: after a success only the newest 10 MPC.settings.bak-* stay, and nothing else is touched
 SD=$(dirname "$(find /media /data -name MPC.settings 2>/dev/null | head -n 1)")
 for k in 01 02 03 04 05 06 07 08 09 10 11 12 13 14; do echo b > "$SD/MPC.settings.bak-t$k"; touch -d "2026-01-$k 10:00" "$SD/MPC.settings.bak-t$k"; done
