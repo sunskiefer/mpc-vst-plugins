@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "MIT AND LicenseRef-Patternarium",
   "source_available": true,
-  "summary": "Eight-voice percussion synthesizer with oscillator and noise sound design, 150 Patternarium kits, per-voice sends, shared reverb and delay.",
+  "summary": "A Microtonic-inspired drum machine. πToniC features 8 independent drum voices, each combining filtered noise with a morphing oscillator or WAV sample playback. Its sound engine includes pitch modulation, amplitude envelopes, drive, EQ and individual voice controls. Shared stereo reverb and tempo-synced delay complete the engine.",
   "style": "drum-machine",
   "tags": [
     "drum-machine",
