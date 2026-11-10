@@ -165,7 +165,7 @@ with sync_playwright() as p:
     rows = det_v.locator("table > tbody > tr:not(.sig-vi), table > tr:not(.sig-vi)")
     rowtxt = [r.inner_text().replace("\t", " ").lower() for r in rows.all()]   # the CSS uppercases some labels
     check("each version row has its downloads, working count and open/closed issues", any("v1.1.0" in t and "3 downloads" in t and "4 working" in t and "2 open" in t and "closed" not in t.split("4 working")[1] for t in rowtxt) and any("v1.0.0" in t and "3 downloads" in t and "5 working" in t and "1 open · 1 closed" in t for t in rowtxt), rowtxt)
-    check("the history's summary counts the open issues", "3 open · 1 closed issues" in det_v.locator("summary").inner_text().lower(), det_v.locator("summary").inner_text())
+    check("the issue count is said once, above the history, not again in its summary", "open" not in det_v.locator("summary").inner_text().lower(), det_v.locator("summary").inner_text())
     check("issues start collapsed", det_v.locator("tr.sig-vi:visible").count() == 0)
     det_v.locator('[data-sig-vi="1.0.0"]').click()
     li = det_v.locator("tr.sig-vi:visible li")

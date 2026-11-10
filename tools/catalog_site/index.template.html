@@ -906,7 +906,6 @@ put("pads", h);
         (issues.length ? '<button type="button" class="linkbtn" data-sig-vi="' + esc(v) + '" aria-expanded="false">' + stateText(st) + '</button>' : (g && g.has_issues ? 'no issues' : '')) + '</td>');
       if (issues.length) { all.open += st.open; all.closed += st.closed; tr.insertAdjacentHTML("afterend", '<tr class="sig-vi" hidden><td colspan="9"><ul class="sig-issues">' + openFirst(issues).map(issueLi).join("") + '</ul></td></tr>'); }
     });
-    if (all.open || all.closed) det.querySelector("summary").insertAdjacentHTML("beforeend", ' <span class="sig-v">&middot; ' + stateText(all) + ' ' + (all.open + all.closed === 1 ? "issue" : "issues") + '</span>');
   }
   function fill() {
     var el = $("modal-body").querySelector("[data-sig-detail]:not([data-filled])"); if (!el) return;
