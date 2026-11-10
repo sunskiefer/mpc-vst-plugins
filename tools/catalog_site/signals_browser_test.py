@@ -147,20 +147,25 @@ with sync_playwright() as p:
     pop = pg.locator("#modal-body")
     check("popup has the same strip, with the Community section right after it", pop.locator(".sig").count() == 1)
     det = pop.locator(".sig-detail")
+    fold = det.locator("details.sig-fold")
+    check("Community starts folded, with a one-line summary", fold.get_attribute("open") is None and "Reported on" not in det.inner_text()
+          and "4 on v1.1.0" in fold.locator("summary").inner_text(), fold.locator("summary").inner_text())
+    fold.locator("summary").click(); pg.wait_for_timeout(100)
     check("popup lists who reported on what", "Reported on" in det.inner_text() and "MPC Live II" in det.inner_text() and "4 people" in det.inner_text() and "Force" in det.inner_text(), det.inner_text()[:300])
     check("popup lists the latest reports", "Latest reports" in det.inner_text() and "2026-11-04" in det.inner_text())
     check("popup shows the newest-version count", "4 on v1.1.0" in det.inner_text(), det.inner_text()[:200])
     check("popup lists the person's own report with a withdraw button", pop.locator("[data-sig-wd]").count() == 1)
     gh_t = pop.locator(".sig-gh").inner_text()
-    check("popup counts open and closed issues by version (pull requests left out, GitHub's own count ignored)", "3 open · 1 closed issues by version: v1.1.0 (2 open), v1.0.0 (1 open · 1 closed)" in gh_t and "99" not in gh_t, gh_t)
+    check("popup counts open and closed issues (pull requests left out, GitHub's own count ignored)", "3 open · 1 closed issues on GitHub, listed under each version below." in gh_t and "99" not in gh_t, gh_t)
     check("it links to report, all issues and discussions", pop.locator('a:has-text("Report an issue")').count() == 1 and "All issues" in gh_t and pop.locator('a:has-text("Discussions")').count() == 1)
-    pop.locator("[data-sig-showvers]").click(); pg.wait_for_timeout(200)
-    det_v = pop.locator("details.vers")
-    check("Show them in the version history opens it", det_v.get_attribute("open") is not None)
+    det_v = pop.locator(".sig-detail .sig-vers details.vers")
+    check("the version history sits under Versions and issues, folded", det_v.count() == 1 and pop.locator(".folds details.vers").count() == 0
+          and det_v.get_attribute("open") is None and "version history (2)" in det_v.locator("summary").inner_text().lower(), det_v.locator("summary").inner_text())
+    det_v.locator("summary").click(); pg.wait_for_timeout(100)
     rows = det_v.locator("table > tbody > tr:not(.sig-vi), table > tr:not(.sig-vi)")
     rowtxt = [r.inner_text().replace("\t", " ").lower() for r in rows.all()]   # the CSS uppercases some labels
     check("each version row has its downloads, working count and open/closed issues", any("v1.1.0" in t and "3 downloads" in t and "4 working" in t and "2 open" in t and "closed" not in t.split("4 working")[1] for t in rowtxt) and any("v1.0.0" in t and "3 downloads" in t and "5 working" in t and "1 open · 1 closed" in t for t in rowtxt), rowtxt)
-    check("the history's summary counts the open issues", "3 open · 1 closed issues" in det_v.locator("summary").inner_text().lower(), det_v.locator("summary").inner_text())
+    check("the issue count is said once, above the history, not again in its summary", "open" not in det_v.locator("summary").inner_text().lower(), det_v.locator("summary").inner_text())
     check("issues start collapsed", det_v.locator("tr.sig-vi:visible").count() == 0)
     det_v.locator('[data-sig-vi="1.0.0"]').click()
     li = det_v.locator("tr.sig-vi:visible li")
@@ -173,6 +178,7 @@ with sync_playwright() as p:
     n = len(gh.calls); pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
     pg.locator('a[data-open="test-synth"]').first.click(); pg.wait_for_timeout(500)
     check("reopening the popup does not ask GitHub again", len(gh.calls) == n, (n, len(gh.calls)))
+    pg.locator("#modal-body details.sig-fold > summary").click(); pg.wait_for_timeout(100)
     pg.locator("[data-sig-wd]").click(); pg.wait_for_timeout(500)
     check("withdrawing in the popup sends DELETE and lowers the count", any(c[0] == "DELETE" and c[1] == "/api/working" for c in svc.calls) and pg.locator("#modal-body [data-sig-wd]").count() == 0 and "7" in pg.locator('#modal-body .sig-n').inner_text())
     pg.keyboard.press("Escape")
@@ -267,7 +273,7 @@ with sync_playwright() as p:
     # 8. GitHub failing or Issues turned off
     for mode, want in (("down", "Could not load issues"), ("no-issues", "turned Issues off")):
         svc = Service(); ctx, pg, errs, gh = page(b, svc, gh=GitHub(mode)); pg.locator('a[data-open="test-synth"]').first.click(); pg.wait_for_timeout(700)
-        check("github %s: says so, the rest of the popup works" % mode, want in pg.locator("#modal-body .sig-gh").inner_text() and "Reported on" in pg.locator("#modal-body .sig-comm").inner_text() and "working" in pg.locator("#modal-body details.vers").text_content(), pg.locator("#modal-body .sig-gh").inner_text())
+        check("github %s: says so, the rest of the popup works" % mode, want in pg.locator("#modal-body .sig-gh").inner_text() and "Reported on" in pg.locator("#modal-body .sig-comm").text_content() and "working" in pg.locator("#modal-body details.vers").text_content(), pg.locator("#modal-body .sig-gh").inner_text())
         ctx.close()
     # 9. a dead service leaves the page working
     svc = Service(up=False); ctx, pg, errs, gh = page(b, svc)
@@ -280,7 +286,7 @@ with sync_playwright() as p:
     svc = Service(); svc.me = {"user": {"id": "u1", "name": "<img src=x onerror=window.__x=1>"}, "likes": [], "reports": [{"plugin_id": "test-synth", "version": "1.1.0", "device": "<b>d</b>", "os": "<i>o</i>"}]}
     svc.detail["devices"][0]["device"] = "<u>dev</u>"
     ctx, pg, errs, gh = page(b, svc, signed_in=True); pg.locator('a[data-open="test-synth"]').first.click(); pg.wait_for_timeout(700)
-    check("names and report fields are escaped", pg.evaluate("window.__x") is None and pg.locator(".bar img").count() == 0 and pg.locator("#modal-body .sig-detail u, #modal-body .sig-detail b, #modal-body .sig-detail i").count() == 0 and "<u>dev</u>" in pg.locator("#modal-body .sig-comm").inner_text())
+    check("names and report fields are escaped", pg.evaluate("window.__x") is None and pg.locator(".bar img").count() == 0 and pg.locator("#modal-body .sig-detail u, #modal-body .sig-detail b, #modal-body .sig-detail i").count() == 0 and "<u>dev</u>" in pg.locator("#modal-body .sig-comm").text_content())
     ctx.close()
     # 11. phone: header button reachable, no sideways scroll, strip fits
     svc = Service(); ctx, pg, errs, gh = page(b, svc, size=(375, 800))
