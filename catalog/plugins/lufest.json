@@ -17,6 +17,6 @@
   ],
   "license": "PolyForm-Noncommercial-1.0.0",
   "source_available": true,
-  "screenshot": "https://raw.githubusercontent.com/sunskiefer/LUFest/v0.1.1/images/skin-background-0.1.1.png",
+  "screenshot": "https://raw.githubusercontent.com/sunskiefer/LUFest/v0.1.2/images/screenshot-0.1.2.png",
   "summary": "Loudness meter for the master channel's effects: momentary, short-term and integrated LUFS, LRA, 4x oversampled true peak, held L/R sample peaks, green/yellow/red level bars with a CLIP lamp, and large readouts. Audio passes through untouched. Tested on an Akai Force; numbers not yet checked against a reference meter. MPC OS 3.x."
 }
