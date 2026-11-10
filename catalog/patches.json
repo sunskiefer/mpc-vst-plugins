@@ -68,6 +68,79 @@
       "backup": "/data/mpc-vst-plugins/backups",
       "restarts_mpc": true,
       "reversible": true
+    },
+    {
+      "id": "addin-restore",
+      "title": "MPC Add-Ins patch for 3.10: restore addins after a reboot",
+      "summary": "On MPC OS 3.10 (Gen2), addins load through a systemd drop-in in /run (tmpfs) that is lost after every reboot. This patch installs a Lua device script on the persistent content drive that MPC runs at every start. If addins in /data/mpc-addins are not loaded, it writes the /run drop-in and restarts MPC once. The user sees one automatic restart after a reboot; after that, all addins work. Does not modify the system image. Tested on a Live III (MPC OS 3.10, 2026-11-03): survives a full reboot, five addins restored.",
+      "author": "sd88me",
+      "license": "MIT",
+      "docs": "tools/mpc_patch/addin_restore/README.md",
+      "script": {
+        "url": "https://raw.githubusercontent.com/sd88me/mpc-vst-plugins/c5a1a5e42eef0f6b561d14f11f96cf0d16c6fc95/tools/mpc_patch/addin_restore/addin-restore-patch.sh",
+        "sha256": "e412105d511cadae08d97fd13d0ed2c5a18faa8194cbafb7496a5050e434f19b"
+      },
+      "supports": {"os": "MPC OS 3.10 Gen2 (tested on Live III, 2026-11-03)", "arch": "aarch64"},
+      "modifies": ["/nvme/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/nvme/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/nvme/MPC Documents/Devices/Addin Restore/addin_restore.so", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.so"],
+      "backup": "none (files are new, nothing overwritten)",
+      "restarts_mpc": false,
+      "reversible": true
+    },
+    {
+      "id": "retrolooper-mpc-controls",
+      "title": "Retrolooper Controls for MPC 3.10.0.49",
+      "summary": "Experimental, optional track and pad integration for Retrolooper One, including Audio track timeline bounce.",
+      "tier": "experimental",
+      "requires": "MPC One+ 3.10.0.49 (modified host) on ARMv7 (host build bc141062ea5ea5be619d98366f423c8102574365)",
+      "author": "Retroloop USA / IAMTHEBAND LLC",
+      "license": "GPL-3.0-only",
+      "docs": "docs/retrolooper-controls-mpc.md",
+      "script": {
+        "sha256": "49eef0dfde51fac46cf7b678111be0fcc93c7d75bdac1a5c5b6b2b45f8637207",
+        "url": "https://raw.githubusercontent.com/asearan/Retrolooper-One-MPC-Force/c2ad478c48002949af1b9047eecf2b60efbb3f74/device-patches/retrolooper-mpc-controls-0.2.13.sh"
+      },
+      "supports": {
+        "os": "MPC One+ 3.10.0.49 (modified host); host build bc141062ea5ea5be619d98366f423c8102574365",
+        "arch": "armv7l",
+        "mpc_md5": [
+          "b6cc8e7a398bdf6c3fd8f7176eecd3ee"
+        ]
+      },
+      "modifies": [
+        "/data/mpc-addins/retrolooper-buttons/retrolooper_buttons.so",
+        "/etc/systemd/system/acvs.service.d/90-mpc-addins.conf"
+      ],
+      "backup": "/data/retrolooper-controls/backups/retrolooper-buttons",
+      "restarts_mpc": true,
+      "reversible": true
+    },
+    {
+      "id": "retrolooper-force-controls",
+      "title": "Retrolooper Controls for Force 3.10",
+      "summary": "Experimental, optional track and pad integration for Retrolooper One, including Matrix clip bounce.",
+      "tier": "experimental",
+      "requires": "Akai Force 3.10 (verified host image) on ARMv7 (host build 154ae9752e0f3c6490912a703b0dfe4b668b343d)",
+      "author": "Retroloop USA / IAMTHEBAND LLC",
+      "license": "GPL-3.0-only",
+      "docs": "docs/retrolooper-controls-force.md",
+      "script": {
+        "sha256": "60489f5d77f858c87a8f5f8a6bf77cc3a0cbc7c06ddfb8fa363ca24b8341d287",
+        "url": "https://raw.githubusercontent.com/asearan/Retrolooper-One-MPC-Force/c2ad478c48002949af1b9047eecf2b60efbb3f74/device-patches/retrolooper-force-controls-0.2.10.sh"
+      },
+      "supports": {
+        "os": "Akai Force 3.10 (verified host image); host build 154ae9752e0f3c6490912a703b0dfe4b668b343d",
+        "arch": "armv7l",
+        "mpc_md5": [
+          "a282a259d094223b7f7c7d74c1c6f1fb"
+        ]
+      },
+      "modifies": [
+        "/data/mpc-addins/retrolooper-force-controls/retrolooper_force_controls.so",
+        "/etc/systemd/system/acvs.service.d/90-mpc-addins.conf"
+      ],
+      "backup": "/data/retrolooper-controls/backups/retrolooper-force-controls",
+      "restarts_mpc": true,
+      "reversible": true
     }
   ]
 }

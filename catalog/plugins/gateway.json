@@ -1,0 +1,9 @@
+{ "id": "gateway", "name": "MPC Gateway", "author": "jacob-sabella", "repo": "jacob-sabella/mpc-addin-gateway",
+  "kind": "addin",
+  "style": "utility",
+  "tags": ["network", "https", "login", "web", "gateway"],
+  "license": "MIT AND Apache-2.0",
+  "summary": "One HTTPS address and one login (mpc / mpc until you change it on its Settings page) for every addin's web page. A start page lists the services addins declare (ADDIN_WEB_PORT), each routed behind the password. Runs Caddy beside MPC. Device only by default (reach it through an SSH tunnel); bind=0.0.0.0 opens it to your network.",
+  "screenshot": "https://raw.githubusercontent.com/jacob-sabella/mpc-addin-gateway/f17f7722faee4805da75955d1b09e572a366d8b3/docs/card.png",
+  "asset_pattern": "MPC-Gateway-*-mpc-armv7.zip",
+  "flags_reviewed": ["runs programs"] }

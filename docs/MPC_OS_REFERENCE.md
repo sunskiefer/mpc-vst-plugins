@@ -7,6 +7,13 @@ unresolved. Before you rely on a fact, check `docs/NOTES.md`. If you verify one,
 
 Gen1 only. Nothing here was checked on Gen2 (see `docs/GEN2.md`).
 
+**Cross-checked against inMusic's published source (2026-11-08, offline; `docs/AZ0X_SOURCE.md`).** The Gen1 hardware facts
+below match the G1 kernel tree: RK3288, PREEMPT_RT at 1000 Hz with the `performance` governor, Panfrost, ConfigFS gadget
+functions (MIDI, UAC2, HID, mass storage), `uinput`, perf events, no ftrace, LoadPin and dm-verity compiled in (whether they
+enforce is not in the source), and the product codes (ACVB, ACV8, ACV5, ACV5S, ACVA, ACVA2, ACVM, ACVR; the Force is
+**ADA2**). The source has no plugin host, skin loader or updater, so the app, skin, SMEX and update-image sections stay as
+the guide gave them. It also explains the default `noexec` on removable drives (`edisksd`, see `AZ0X_SOURCE.md`).
+
 ## Where it differs from what we know (read this first)
 
 | Guide says | What we know |

@@ -9,6 +9,8 @@ T=$(mktemp -d); trap 'chmod -R u+w "$T"; rm -rf "$T"' EXIT
 fails=0
 ok() { echo "ok   $1"; }
 bad() { echo "FAIL $1"; fails=$((fails + 1)); }
+# The devices' BusyBox (1.36.1) has no head -c and no head -<N> (docs/NOTES.md, 2026-11-09); a full BusyBox or the host has.
+if grep -nE 'head +-c|head +-[0-9]' ./*.sh; then bad "the installer uses head -c or head -<N>"; else ok "no head -c or head -<N> in the installer"; fi
 elf() {   # elf <file> <class+data> <e_type> <e_machine>: the first 20 bytes of an ELF header, then padding
     printf "\\177ELF$2\\001\\000\\000\\000\\000\\000\\000\\000\\000\\000$3$4padding" > "$1"
 }
@@ -139,7 +141,7 @@ refused() {   # refused <what> <id> [args]: install must fail
 fresh; unit 'Environment=LD_PRELOAD=/usr/lib/x.so'
 refused "an odd folder" a -t '/data/x;rm'
 refused "a relative folder" a -t 'rel/dir'
-for m in 'ADDIN_VERSION=1.x' 'ADDIN_VERSION="1.0.0;x"' 'ADDIN_CONF=uninstall.sh' 'ADDIN_FILES=addin-lib.sh' 'ADDIN_ID="../x"' 'ADDIN_ID=' 'ADDIN_SO=../../usr/lib/evil.so' 'ADDIN_SO=liba.txt' 'ADDIN_CONF=/etc/passwd' 'ADDIN_FILES="ok.dat ../x"'; do
+for m in 'ADDIN_VERSION=1.x' 'ADDIN_VERSION="1.0.0;x"' 'ADDIN_CONF=uninstall.sh' 'ADDIN_FILES=addin-lib.sh' 'ADDIN_ID="../x"' 'ADDIN_ID=' 'ADDIN_SO=../../usr/lib/evil.so' 'ADDIN_SO=liba.txt' 'ADDIN_CONF=/etc/passwd' 'ADDIN_FILES="ok.dat ../x"' 'ADDIN_WEB_PORT=99999' 'ADDIN_WEB_PORT=x1' 'ADDIN_WEB_PATH=/files/' 'ADDIN_LOGIN=yes'; do
     pkg a; echo "$m" >> "$T/pkg-a/addin.manifest"; refused "manifest $m" a -t "$T/addins/a"
 done
 pkg a; rm "$T/pkg-a/a.dat"; refused "a missing file" a -t "$T/addins/a"
@@ -213,8 +215,12 @@ printf 'y\ny\n' | ADDIN_INSTALL_TEST=1 SYSTEMD_ROOT="$T/root" ADDIN_TEST_LOG="$T
 grep -qx 'bind=0.0.0.0' "$T/addins/a/a.conf" && ok "ADDIN_NETWORK: a yes opens it" || bad "bind: $(cat "$T/addins/a/a.conf") $(cat "$T/out")"
 fresh; echo 'ADDIN_NETWORK=1' >> "$T/pkg-a/addin.manifest"; echo 'bind=127.0.0.1' > "$T/pkg-a/a.conf"
 printf 'y\nn\n' | ADDIN_INSTALL_TEST=1 SYSTEMD_ROOT="$T/root" ADDIN_TEST_LOG="$T/log" $SH "$T/pkg-a/install.sh" -t "$T/addins/a" > "$T/out" 2>&1
+grep -q "It has no login" "$T/out" && ok "ADDIN_NETWORK: without ADDIN_LOGIN the question says it has no login" || bad "prompt: $(cat "$T/out")"
 run a install.sh
 grep -qx 'bind=127.0.0.1' "$T/addins/a/a.conf" && ok "ADDIN_NETWORK: a no, and -y, keep it local" || bad "bind: $(cat "$T/addins/a/a.conf")"
+fresh; printf 'ADDIN_NETWORK=1\nADDIN_LOGIN=1\nADDIN_WEB_PORT=6790\nADDIN_WEB_PORT_SETTING=port\nADDIN_WEB_PATH=/a/\n' >> "$T/pkg-a/addin.manifest"; echo 'bind=127.0.0.1' > "$T/pkg-a/a.conf"
+printf 'y\nn\n' | ADDIN_INSTALL_TEST=1 SYSTEMD_ROOT="$T/root" ADDIN_TEST_LOG="$T/log" $SH "$T/pkg-a/install.sh" -t "$T/addins/a" > "$T/out" 2>&1
+grep -q "It asks for a password" "$T/out" && ! grep -q "It has no login" "$T/out" && ok "ADDIN_LOGIN=1: the question says it asks for a password (web keys accepted)" || bad "prompt: $(cat "$T/out")"
 
 # 14. /etc is an overlay that systemd mounts after reading its units (MPC OS 3.x), on a read-only root: the drop-in alone is
 # not seen at boot, so the first install adds a reload unit pulled in by MPC's service, and the last uninstall removes it
@@ -266,5 +272,26 @@ grep -q "not persistent" "$T/out" && ok "remount refused: install.sh warns it ne
 ADDIN_REMOUNT_FAILS=1 run a uninstall.sh
 [ ! -e "$RUNDROP" ] && ok "remount refused: uninstall removes the /run drop-in the same way" || bad "run drop-in left: $(ls "$(dirname "$RUNDROP")" 2>&1)"
 export ADDIN_MOUNTS="$T/mounts-plain"
+
+# 17. MPC OS 3.10 on the Live III (device 2026-11-03): verity root (remount refused) AND /etc an overlay mounted ro with lower
+# layers only. The overlay must not be taken for a writable /etc: the drop-in goes to /run, and no boot-reload unit is written
+printf '/dev/root / ext4 ro,relatime 0 0\noverlay /etc overlay ro,relatime,lowerdir=/usr/lib/az0x/user-access/etc-overlay:/etc 0 0\n' > "$T/mounts-310"
+export ADDIN_MOUNTS="$T/mounts-310"
+fresh; unit 'Environment=LD_PRELOAD=/usr/lib/x.so'; ro a-w
+RUNDROP="$T/root/run/systemd/system/acvs.service.d/90-mpc-addins.conf"
+ADDIN_REMOUNT_FAILS=1 run a install.sh
+grep -qx "Environment=LD_PRELOAD=/usr/lib/x.so:$A" "$RUNDROP" && [ ! -e "$DROP" ] && ok "3.10 (ro /etc overlay): the drop-in goes to /run" || bad "3.10 run fallback: $(cat "$T/out")"
+[ ! -e "$T/root/usr/lib/systemd/system/mpc-addins-reload.service" ] && ok "3.10: no boot-reload unit on a read-only /etc" || bad "3.10: boot unit written"
+ADDIN_REMOUNT_FAILS=1 run a uninstall.sh
+[ ! -e "$RUNDROP" ] && ok "3.10: uninstall removes the /run drop-in" || bad "3.10: run drop-in left"
+export ADDIN_MOUNTS="$T/mounts-plain"
+
+# ADDIN_FILES tools copied without their execute bit (a FAT card or stick drops it): an ELF binary or a #! script is installed 755, data 644
+fresh; unit 'Restart=always'
+sed -i 's/^ADDIN_FILES=.*/ADDIN_FILES="a.dat tool run.sh"/' "$T/pkg-a/addin.manifest"
+elf "$T/pkg-a/tool" '\001\001' '\003\000' '\050\000'; printf '#!/bin/sh\necho hi\n' > "$T/pkg-a/run.sh"; chmod 644 "$T/pkg-a/tool" "$T/pkg-a/run.sh"
+run a install.sh
+[ -x "$T/addins/a/tool" ] && [ -x "$T/addins/a/run.sh" ] && [ ! -x "$T/addins/a/a.dat" ] && ok "tools without the bit installed executable, data not" \
+    || bad "modes: $(ls -l "$T/addins/a" | tr '\n' ' ')"
 
 [ $fails = 0 ] && echo "installer: all passed" || { echo "installer: $fails FAILED"; exit 1; }

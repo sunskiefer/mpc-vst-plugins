@@ -210,6 +210,15 @@ param) makes the plugin report VST programs; MPC lists them in the plugin header
 2026-10-07). Details: docs/PORTING.md.
 The host test checks names, picking and the host redraw. A re-pick of the current program is ignored (JUCE does it at load).
 
+## MPC Sample page
+The MPC Sample's UI shows no plugin skin. vst.json `"sample_page"` gives a wrapper port its own 320x240 page through
+mpc-addin-sample-draw-handler (`wrapper/sample_page.h`): a `"dial"` param, K1-K3 `"banks"` with pickup, `"lines"` readouts,
+and the engine's optional `mpc_engine_sample_draw()` for the rest (no engine lock: read state as a screen thread would).
+Inert on every other device. The page opens at effMainsChanged (not for scan/probe instances) and posts its changes to the
+next audio block. Offline checks: `tools/test_sample_page.sh <vst.json>` (TSan, a stand-in draw handler), and a stand-in
+"MPC Sample" host with the addin preloaded and `MPC_SDRAW_TEST_FB` as the screen (docs/PORTING.md). The desktop VST3
+wrapper ignores it.
+
 ## MIDI control and the engine lock
 CC 20-35 drive the first page's Q-Links, NRPN n sets parameter n (vst.json `"cc"`/`"nrpn": false` to turn off; the
 CCs used never reach the engine). Every engine call is serialised per instance (`eng_set()` etc.): an engine needn't be
@@ -267,7 +276,7 @@ docs/SKIN_VARIANTS.md.
   (Force, 2026-09-24): don't build VST3 ports.
 
 ## Catalog
-Every release must be catalog-conformant: `tools/release.py ... --repo owner/name --license <SPDX> [--id x] [--requires "..."]`
+Every release must be catalog-conformant: `tools/release.py ... --repo owner/name --license <SPDX> [--id x] [--requires "..."] [--depends <id>[>=X.Y.Z]] [--conflicts <id>]`
 (CI inputs `plugin_id`, `license`, `requires`), then `tools/catalog_check.py <zip> --catalog` must say OK. A new port also needs
 one `catalog/plugins/<id>.json` PR and public source + licence (docs/PORTING.md section 5, docs/CATALOG.md, catalog/README.md).
 More than 5 entries by one author from one repo need a collection (`catalog/collections/<id>.json`, `"collection"` on each entry) or
@@ -294,7 +303,7 @@ A change is not done until the docs it touches are updated in the same PR (CLAUD
 |---|---|
 | a verified device fact, measurement or bug | `docs/NOTES.md`: dated section, device, MPC OS version, "offline only" if it is |
 | a vst.json key, `defines` option, `params.json` field or layout.conf widget | `tools/gen_vst.py` / `tools/shadow_skin.py` docstring, `docs/PORTING.md` checklist, this skill |
-| the wrapper or the engine contract (`wrapper/`) | `wrapper/engine.h` comment, `docs/NOTES.md`, README "What's possible" / limitations, PORTING if ports must act; a change to what `vst2_wrap.c` does for ports (a new `defines` option, param field) also asks whether `vst3_wrap.c` needs it (docs/DESKTOP_VST3.md) |
+| the wrapper or the engine contract (`wrapper/`) | `wrapper/engine.h` comment, `docs/NOTES.md`, README "What you can build" / `docs/COMPATIBILITY.md` limitations, PORTING if ports must act; a change to what `vst2_wrap.c` does for ports (a new `defines` option, param field) also asks whether `vst3_wrap.c` needs it (docs/DESKTOP_VST3.md) |
 | a build, toolchain, release or installer step | `docs/RELEASING.md`, `docs/PORTING.md`, `tools/*.sh` header comments, this skill's Pipeline |
 | the catalog, a registry field or a release check | `docs/CATALOG.md`, `docs/CATALOG_SPEC.md`, `catalog/README.md`, `docs/ROADMAP.md` |
 | a feature shipped or a limitation fixed | `docs/ROADMAP.md` (Done), README, and remove the now-false limitation line |

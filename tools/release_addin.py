@@ -27,7 +27,8 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from catalog_check import ADDIN_FILE, ADDIN_SCRIPTS, ID, SEMVER, max_glibc, parse_addin_manifest  # noqa: E402
+from catalog_check import ADDIN_FILE, ADDIN_SCRIPTS, ID, SEMVER, addin_manifest_problems, max_glibc, parse_addin_manifest  # noqa: E402
+import deps  # noqa: E402
 
 
 def elf_machine(path):
@@ -46,6 +47,10 @@ def main():
     ap.add_argument("--license", help="SPDX license id (for the catalog manifest)")
     ap.add_argument("--about", default="", help="one-line description")
     ap.add_argument("--requires", default="", help="extra requirements, one line")
+    ap.add_argument("--depends", action="append", default=None, metavar="DEP",
+                    help="another catalog plugin or addin this one needs, with optional version rules: commander>=1.1.0 (repeat for more)")
+    ap.add_argument("--conflicts", action="append", default=None, metavar="ID",
+                    help="a catalog plugin or addin that must not be installed beside this one (repeat for more)")
     ap.add_argument("-o", "--out", default="dist")
     a = ap.parse_args()
 
@@ -57,9 +62,13 @@ def main():
         am = parse_addin_manifest(text)
     except ValueError as e:
         raise SystemExit(str(e))
+    for problem in addin_manifest_problems(am):
+        raise SystemExit("addin.manifest: " + problem)
     aid, so = am.get("ADDIN_ID", ""), am.get("ADDIN_SO", "")
     if not ID.fullmatch(aid):
         raise SystemExit("ADDIN_ID %r: the catalog needs lowercase letters, digits and hyphens" % aid)
+    for problem in deps.check_lists(a.depends, a.conflicts, aid):
+        raise SystemExit("--depends/--conflicts: " + problem)
     conf, files = am.get("ADDIN_CONF", ""), am.get("ADDIN_FILES", "").split()
     for f in [so] + ([conf] if conf else []) + files:
         if not ADDIN_FILE.fullmatch(f) or f in ADDIN_SCRIPTS + ("addin.manifest",):
@@ -82,8 +91,9 @@ def main():
         shutil.copy2(os.path.join(HERE, "release", "addin", f), os.path.join(root, f))
         os.chmod(os.path.join(root, f), 0o755)
     for f in [so] + ([conf] if conf else []) + files:
-        shutil.copy2(os.path.join(a.dir, f), os.path.join(root, f))
-        os.chmod(os.path.join(root, f), 0o644)
+        src = os.path.join(a.dir, f)
+        shutil.copy2(src, os.path.join(root, f))
+        os.chmod(os.path.join(root, f), 0o755 if os.access(src, os.X_OK) else 0o644)
 
     done = am.get("ADDIN_DONE", "")
     install_md = """# {name} {ver}
@@ -131,6 +141,7 @@ See `SHA256SUMS`. Made with [mpc-vst-plugins](https://github.com/open-mpc/mpc-vs
         "so": so, "conf": conf or None, "files": files, "user_data": [conf] if conf else [],
         "arch": arch, "max_glibc": max_glibc(os.path.join(root, so)),
         "param_compat": int(a.version.split(".")[0]), "about": a.about, "requires": a.requires,
+        **({"depends": a.depends} if a.depends is not None else {}), **({"conflicts": a.conflicts} if a.conflicts is not None else {}),
         "source_repo": a.repo, "license": a.license, "cpu": None,
     }
     open(os.path.join(root, "mpc-plugin.json"), "w").write(json.dumps(manifest, indent=2) + "\n")
@@ -146,7 +157,8 @@ See `SHA256SUMS`. Made with [mpc-vst-plugins](https://github.com/open-mpc/mpc-vs
             info = zipfile.ZipInfo(top + "/" + f, date_time=(2026, 1, 1, 0, 0, 0))
             info.create_system = 3
             info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = (stat.S_IFREG | (0o755 if f in ADDIN_SCRIPTS else 0o644)) << 16
+            mode = 0o755 if f in ADDIN_SCRIPTS or os.access(p, os.X_OK) else 0o644
+            info.external_attr = (stat.S_IFREG | mode) << 16
             z.writestr(info, open(p, "rb").read())
     shutil.rmtree(stage)
     print("%s (%d files, %.1f MB)" % (zpath, len(names) + 1, os.path.getsize(zpath) / 1e6))

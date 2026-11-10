@@ -43,6 +43,11 @@ removes the addin later, and `sh /data/mpc-addins/<id>/install.sh -y -n -t /data
 in place, both without the release zip; `mpc-store.sh remove`/the desktop app use the former, and a device with no
 persistent `/etc` (below) needs the latter after every reboot.
 
+Files in `ADDIN_FILES` that are programs (an ELF binary or a `#!` script, by their first bytes, or already executable)
+are installed `755`, the rest `644`, so a command-line tool shipped beside the addin (Scale Mode's `padctl`) runs even
+after a copy through a FAT or exFAT card or stick, which keeps no file modes (2026-11-06, offline: `tools/test_addin.sh`;
+`release_addin.py` keeps the bit in the zip).
+
 Before anything changes, `install.sh` checks the `.so` on the device: it must be an ELF 32-bit little-endian ARM shared
 object, since anything else in `LD_PRELOAD` stops MPC from starting. The folder (`-t`, default
 `/data/mpc-addins/<id>`) must be an absolute path named after the addin (`.../<id>`), with no `.` or `..` segments.
@@ -102,9 +107,25 @@ itself is unaffected (it is on `/data`, which does persist), so the fix is cheap
 and `mpc-plugin.json` for exactly this). The USB stick (`docs/USB_STICK.md`) does this for every installed addin on each
 boot it is inserted for, so reinserting it restores both root/SSH access and every addin in one step.
 
-Tests: case 15 (remount succeeds, so `/etc` is used) and case 16 (remount refused, so `/run` is used) in
-`tools/test_addin.sh`; case 3c there covers the folder's own `install.sh` redoing the `/run` entry after a simulated
+**MPC OS 3.10 (Live III, device 2026-11-03):** `/etc` is still an overlay, but mounted `ro` with lower layers only
+(`lowerdir=/usr/lib/az0x/user-access/etc-overlay:/etc`, no `upperdir`). Installers before this fix took any `/etc` overlay
+for a writable one, tried `/etc/systemd/system/<service>.service.d/` and failed ("Read-only file system"). The overlay now
+counts only when it is mounted `rw` (`etc_overlay_rw()`), so 3.10 gets the `/run` drop-in like the case above, and no
+boot-reload unit. Addin folders installed from older releases carry the older `addin-lib.sh`: re-run the install from a
+current release (or copy a current `addin-lib.sh` next to the folder's `install.sh`).
+
+Tests: case 15 (remount succeeds, so `/etc` is used), case 16 (remount refused, so `/run` is used) and case 17 (3.10's
+read-only `/etc` overlay, so `/run` is used) in `tools/test_addin.sh`; case 3c there covers the folder's own `install.sh` redoing the `/run` entry after a simulated
 reboot, without the original release.
+
+### Two addins that replace the same function
+An addin hooks a call by defining a function of the same name (`snd_pcm_writei`, `snd_rawmidi_read`). When two preloaded libraries define it,
+the first in `LD_PRELOAD` gets MPC's calls, and the other sees them only if the first passes each call on. So a hook must find the next
+definition with `dlsym(RTLD_NEXT, name)`, never by opening `libasound` itself, and should fetch libc's own `dlsym` with `dlvsym` in case
+another addin replaces `dlsym` (NOTES.md, 2026-10-13). Export nothing else: build with `-fvisibility=hidden` and mark only the hooks and
+the start function visible, so a helper's name can't collide by accident. The catalog reads what each addin's library defines and
+imports: two addins that define the same name are shown on both cards, and in both installers, only when one of them imports neither
+`dlsym` nor `dlvsym` or opens libasound itself (`shares_hooks`, docs/CATALOG_SPEC.md; 2026-10-26).
 
 ## When an addin stops MPC from starting
 
@@ -146,11 +167,35 @@ starts). The ones in the catalog, and what anyone who can reach the port can the
 | `remote` | HTTP 6720 | none | see and touch the screen, send any MIDI into MPC, and read text files in the `mcp_files` folders through its MCP endpoint (read-only; `mcp=0` turns MCP off). The MCP endpoint refuses requests from a web page on another site (`Origin` and `Host` checks); the rest of the server has no such check |
 | `commander` | HTTP and WebSocket 6730 | none | change any parameter of the VST plugins MPC has loaded, send MIDI and transport commands into MPC, write to the control-surface injector file, read the most recent project file and the plugins' skins. There is no `Origin` check yet, so a web page open in a browser on the same network can reach it too |
 | `filebrowser` | HTTP 6760 | password: `admin`, default `mpcadmin` (the same on every device until changed: in FileBrowser, or `password=` in the settings) | after logging in as admin: read, upload, change and delete any file in the folders it shows (`sources`, default `/media:/storage`; on Gen1 `/media/az01-internal` is all of `/data`, MPC's settings included). FileBrowser Quantum runs as root, as its own process beside MPC |
+| `gateway` | HTTPS 443, plus port + 10000 for each declared addin without `ADDIN_WEB_PATH` | password: `mpc`, default `mpc` (the same on every device until changed on its Settings page) | after logging in: everything every declared addin's page allows (the rows above), and change the gateway's own settings (its password, `bind`, forwards). Caddy runs as root, as its own process beside MPC |
 
 `install.sh` asks about this itself for an addin with `ADDIN_NETWORK=1`, on a first interactive install (`-y` keeps the safe default), and after restarting MPC it checks that the library is in the new MPC's `LD_PRELOAD`, warning if a launcher dropped it.
 
 An upgrade keeps the user's settings file, so a device that installed an older release with `bind=0.0.0.0` keeps
 listening on the network until `bind` is changed by hand.
+
+### One address with one password: the gateway
+
+The `gateway` addin (jacob-sabella/mpc-addin-gateway) runs Caddy beside MPC as a single HTTPS address (port 443, one login:
+`mpc` / `mpc` until changed on its Settings page, which edits all its settings; certificates from a certificate authority
+the device makes itself) in front of the addins' web pages, so one tunnel, or `bind=0.0.0.0` on the gateway alone, reaches all of them while each addin keeps listening on
+127.0.0.1. Its start page lists the addins that declare a web page (below), each marked running or not from the kernel's
+socket table. It never finds services any other way.
+
+### Declaring a web page
+
+An addin with a web page says so in its `addin.manifest`, and the installer and `tools/catalog_check.py` check the values:
+
+- `ADDIN_WEB_PORT`: the port its server listens on, on 127.0.0.1.
+- `ADDIN_WEB_PORT_SETTING`: the key in its settings file (`ADDIN_CONF`, which it then needs) that moves that port; a reader takes the
+  port from there when the key holds one.
+- `ADDIN_WEB_PATH`: `/name/` (one or more plain path segments, each ending in `/`) when every page and link works under that
+  prefix. The gateway then serves it at `https://<device>/name/`. Without it, the gateway gives it a port of its own, its port
+  plus 10000, since the addin holds its own port.
+- `ADDIN_LOGIN=1`, for an addin whose network service has a password of its own (the gateway, FileBrowser).
+
+The setting and the path need `ADDIN_WEB_PORT`. A reader treats the manifest as text (`sed`), never sources it. A request
+through the gateway arrives with `Host: 127.0.0.1:<port>`, as through a tunnel.
 
 ## addin.manifest
 
@@ -166,6 +211,10 @@ ADDIN_CONF=mpc_remote_addin.conf      # installed only when the folder has none 
 ADDIN_FILES="standalone"              # other files, replaced on every install ("" none)
 ADDIN_DONE="Open http://<device>:6720 in a browser."   # printed at the end ("" none)
 ADDIN_NETWORK=1                       # the settings file has bind=127.0.0.1: a first interactive install asks to open it ("" none)
+ADDIN_LOGIN=1                         # its network service asks for a password: the install prompt says so instead of "no login" ("" none)
+ADDIN_WEB_PORT=6720                   # it serves a web page on 127.0.0.1:<port> (1-65535; "" none): see "Declaring a web page"
+ADDIN_WEB_PORT_SETTING=port           # optional: the key in ADDIN_CONF that changes that port (letters, digits, _ . -)
+ADDIN_WEB_PATH=/files/                # optional: its pages work under this path (all links relative or under it)
 ```
 
 `ADDIN_VERSION` is added by `tools/release_addin.py`. File names are plain names (no `/`, no leading `.`) and may not

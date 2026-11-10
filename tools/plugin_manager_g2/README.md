@@ -43,6 +43,15 @@ the project's development**: the catalog, its release rules and the official way
   as the default for new installs (it is forgotten for a session only if that drive is not there, and returns when it is). The storage readout at the
   top right then names the drive (`CARD · 12.0 GB ▾`); tap it for an **INSTALL TO** menu of the usable places with their free space (0.2.5).
 - Addins (the catalog's `addin` kind) are supported as well as plugins.
+- **Web page (1.0):** while it is on a track, the manager serves `http://<mpc address>:8790/` on the local network (the status
+  line shows the address when nothing is queued). The page is the catalog as cards (screenshot, badges, downloads, details; read
+  by the browser from the catalog site) with Discover / Installed / Updates, type sections, style filter, sort and search, and
+  drives the same queue as the screen: Install, Update, Remove, Move, the INSTALL TO drive, download progress and APPLY. **Your
+  files** uploads ROMs: each file is checked in the browser against the plugin's `user_files` rules and written only into one of
+  that plugin's `user_files` folders (under the rule's `save_as` name). MPC creates the plugin more than once; one instance holds
+  the port, another takes over when it closes. No password: changes need the page's own `X-PM` header and no foreign `Origin`,
+  so another web site open in the same browser cannot drive it, but anyone on the network can open it. Source: `src/web.c`, the
+  page `src/web_page.html` (embedded by `vst/gen_web.py`); tests: `ONLY=web tests/run.sh`.
 
 **Safe by design**
 - Plugins go only to a folder MPC lists in `SynthContentLocations` (MPC draws a plugin's skin only from there). A location must be writable, not
@@ -113,6 +122,8 @@ for new installs; updates always stay where the plugin already is. You can also 
    the catalog loaded. The zip appears as a card marked **local zip**, newest first, named after the file; search for part of the file name if the list is long.
 4. **Tap the card, then INSTALL, then APPLY.** Check the summary (it shows where the plugin will go; **CHANGE** steps through the usable places) and
    confirm. Save your project first: MPC restarts once, exactly as for a catalog plugin.
+5. **To remove it later,** open the manager, find the same zip's card (or the plugin's own card) under **INSTALLED**, tap it, then **Remove** and **APPLY**. A zip
+   of a plugin that is already installed shows as installed (matched by the `id` in its `mpc-plugin.json`); before 0.9.1 it offered INSTALL again and never Remove.
 
 Nothing vouches for a local zip: the card shows the zip's own SHA-256 (the first 16 characters), so compare it with the checksum on the page you downloaded
 it from. The other checks still apply: the zip is inspected (no absolute or `..` paths), its manifest must match your device (architecture, glibc, MPC OS),

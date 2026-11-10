@@ -1,0 +1,18 @@
+{
+  "id": "retrolooper-force",
+  "name": "Retrolooper One (Force)",
+  "kind": "effect",
+  "tier": "experimental",
+  "summary": "Stereo Audio looper for Akai Force with host sync, overdubs, touch/MIDI and WAV export. Native Controls are optional.",
+  "tags": [
+    "looper",
+    "overdub",
+    "utility"
+  ],
+  "author": "Retroloop USA / IAMTHEBAND LLC",
+  "repo": "asearan/Retrolooper-One-MPC-Force",
+  "license": "GPL-3.0-only",
+  "style": "looper",
+  "screenshot": "https://raw.githubusercontent.com/asearan/Retrolooper-One-MPC-Force/force-v0.2.10/docs/images/retrolooper-force-thumbnail.jpg",
+  "asset_pattern": "RetroLooper-One-Force-[0-9]*-mpc-armv7.zip"
+}
