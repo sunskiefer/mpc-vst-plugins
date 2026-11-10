@@ -6,14 +6,14 @@
       "file": "OpenMPC-Plugin-Manager-1.0.0-Gen1.zip",
       "version": "1.0.0",
       "url": "https://github.com/open-mpc/mpc-vst-plugins/releases/download/plugin-manager-g2-v1.0.0/OpenMPC-Plugin-Manager-1.0.0-Gen1.zip",
-      "sha256": "97cf44a0a06f0941579d722e0f06cdb29bbac447b6c95091d651ce11dce71b0d"
+      "sha256": "f5b7524d5501fee4771d5e7677ad2618782f52dc06317a944e01c743efb39e93"
     },
     {
       "id": "pm-gen2",
       "file": "OpenMPC-Plugin-Manager-1.0.0-Gen2.zip",
       "version": "1.0.0",
       "url": "https://github.com/open-mpc/mpc-vst-plugins/releases/download/plugin-manager-g2-v1.0.0/OpenMPC-Plugin-Manager-1.0.0-Gen2.zip",
-      "sha256": "95057cc46140dac7cbcff2748ba798cbd666a317915e3c70e1b314afad550576"
+      "sha256": "eb72b25565b05f6d9ac0bd814ff8ceaab904e667abfbdf0af61506851944c010"
     },
     {
       "id": "pm-stick",
