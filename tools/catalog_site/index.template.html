@@ -818,8 +818,10 @@ put("pads", h);
   /* ---- the Community section of the popup ---- */
   window.signalsDetail = function (p) {
     if (!counts || p.coll || !ID_RE.test(p.id)) return "";
-    return '<section class="sig-detail" data-sig-detail="' + esc(p.id) + '"><h3>Community</h3><div class="sig-comm"><p class="sig-note">Loading reports...</p></div>' +
-      '<h3>Issues on GitHub</h3><div class="sig-gh"><p class="sig-note">Loading issues...</p></div></section>';
+    /* Community folds to a one-line summary; the version history moves under Versions and issues (fill), next to Report an issue */
+    return '<section class="sig-detail" data-sig-detail="' + esc(p.id) + '"><details class="sig-fold"><summary><span class="sig-h">Community</span> <span class="sig-sum">Loading reports...</span></summary>' +
+      '<div class="sig-comm"></div></details>' +
+      '<h3>Versions and issues</h3><div class="sig-gh"><p class="sig-note">Loading issues...</p></div><div class="sig-vers"></div></section>';
   };
   function fetchDetail(id) {
     if (details[id]) return Promise.resolve(details[id]);
@@ -870,24 +872,28 @@ put("pads", h);
   function renderComm(p, d) {
     if (!d) return '<p class="sig-note">Reports are not available right now.</p>';
     var nv = newest(p), mine = myReports(p.id);
-    var h = '<p class="sig-head"><strong>' + d.working + '</strong> ' + (d.working === 1 ? "person" : "people") + ' reported working' + (nv && d.versions[nv] ? ' <span class="sig-v">&middot; ' + d.versions[nv] + ' on v' + esc(nv) + '</span>' : '') + ' <span class="sig-v">&middot; &#9829; ' + d.likes + '</span></p>';
+    var h = '';
     if (!d.working) h += '<p class="sig-note">No reports yet. Be the first to say it works on your device.</p>';
     if (d.devices.length) h += '<table class="sig-table"><caption>Reported on</caption>' + d.devices.map(function (x) { return '<tr><td>' + esc(x.device) + '</td><td>OS ' + esc(x.os) + '</td><td>' + x.n + (x.n === 1 ? " person" : " people") + '</td></tr>'; }).join("") + '</table>';
     if (d.recent.length) h += '<table class="sig-table"><caption>Latest reports</caption>' + d.recent.map(function (x) { return '<tr><td>' + esc(x.date) + '</td><td>v' + esc(x.version) + '</td><td>' + esc(x.device) + ', OS ' + esc(x.os) + '</td></tr>'; }).join("") + '</table>';
     if (mine.length) h += '<p class="sig-note">Your reports:</p><ul class="sig-mine">' + mine.map(function (r, i) { return '<li>v' + esc(r.version) + ', ' + esc(r.device) + ', OS ' + esc(r.os) + ' <button type="button" class="linkbtn" data-sig-wd="' + i + '">Withdraw</button></li>'; }).join("") + '</ul>';
     return h + '<p class="sig-note">Community reports, not hardware verification. The Tested on line above is the author\'s own record. Releases of this plugin: <a href="feed/' + encodeURIComponent(p.id) + '.xml">RSS feed</a>.</p>';
   }
+  function commSummary(p, d) {
+    if (!d) return "not available right now";
+    var nv = newest(p);
+    return '<strong>' + d.working + '</strong> ' + (d.working === 1 ? "person" : "people") + ' reported working' + (nv && d.versions[nv] ? ' &middot; ' + d.versions[nv] + ' on v' + esc(nv) : '') + ' &middot; &#9829; ' + d.likes;
+  }
   function renderGh(p, g) {
     var all = "https://github.com/" + p.repo + "/issues", links = '<p class="sig-links"><a class="btn-l" href="' + esc(issueUrl(p)) + '" target="_blank" rel="noopener">Report an issue</a> <a href="' + esc(all) + '" target="_blank" rel="noopener">All issues</a>' +
       (g && g.has_discussions ? ' <a href="https://github.com/' + esc(p.repo) + '/discussions" target="_blank" rel="noopener">Discussions</a>' : '') + '</p>';
     if (!g) return '<p class="sig-note">Could not load issues from GitHub just now. <a href="' + esc(all) + '" target="_blank" rel="noopener">Open the issues page</a> or <a href="' + esc(issueUrl(p)) + '" target="_blank" rel="noopener">report an issue</a>.</p>';
     if (!g.has_issues) return '<p class="sig-note">The author has turned Issues off for this repository. Ask in the <a href="https://discord.gg/sRRysZSgu3">Open MPC Discord</a> instead.</p>' + (g.has_discussions ? '<p><a href="https://github.com/' + esc(p.repo) + '/discussions" target="_blank" rel="noopener">Discussions on GitHub</a></p>' : '');
-    var groups = byVersion(g), n = g.issues.length, tot = states(g.issues);
+    var n = g.issues.length, tot = states(g.issues);
     if (!n) return '<p class="sig-note">No issues yet.</p>' + links;
     var cap = g.capped ? ' <span class="sig-v">(the latest 50 issues and pull requests)</span>' : '';
     if (!p.versions.length) return '<p>' + stateText(tot) + ' issues.' + cap + '</p><ul class="sig-issues">' + openFirst(g.issues).slice(0, 8).map(issueLi).join("") + '</ul>' + links;   /* no version list to attach them to */
-    var parts = p.versions.map(function (v) { return groups[v.version] ? 'v' + esc(v.version) + ' (' + stateText(states(groups[v.version])) + ')' : ""; }).filter(Boolean).join(", ");
-    return '<p>' + stateText(tot) + ' ' + (n === 1 ? "issue" : "issues") + ' by version: ' + parts + '. <button type="button" class="linkbtn" data-sig-showvers>Show them in the version history</button>' + cap + '</p>' + links;
+    return '<p>' + stateText(tot) + ' ' + (n === 1 ? "issue" : "issues") + ' on GitHub, listed under each version below.' + cap + '</p>' + links;
   }
   /* the version history under the details: each row gets its downloads, working count and issues (open and closed), which expand under the row */
   function enhanceVersions(p, d, g) {
@@ -905,7 +911,12 @@ put("pads", h);
   function fill() {
     var el = $("modal-body").querySelector("[data-sig-detail]:not([data-filled])"); if (!el) return;
     el.setAttribute("data-filled", "1"); var p = BYID[el.getAttribute("data-sig-detail")]; if (!p) return;
-    var dp = fetchDetail(p.id).then(function (d) { var t = el.querySelector(".sig-comm"); if (t) t.innerHTML = renderComm(p, d); return d; });
+    var vers = $("modal-body").querySelector("details.vers"), slot = el.querySelector(".sig-vers");
+    if (vers && slot) { slot.appendChild(vers); vers.querySelector("summary").firstChild.textContent = "Version history (" + p.versions.length + ")"; }
+    var dp = fetchDetail(p.id).then(function (d) {
+      var t = el.querySelector(".sig-comm"), sm = el.querySelector(".sig-sum");
+      if (t) t.innerHTML = renderComm(p, d); if (sm) sm.innerHTML = commSummary(p, d); return d;
+    });
     var gp = fetchGh(p).then(function (g) { var t = el.querySelector(".sig-gh"); if (t) t.innerHTML = renderGh(p, g); return g; });
     Promise.all([dp, gp]).then(function (r) { if (document.body.contains(el)) enhanceVersions(p, r[0], r[1]); });
   }
@@ -1089,9 +1100,8 @@ put("pads", h);
   /* ---- the buttons on cards and in the popup (delegated: both are re-rendered) ---- */
   function onClick(e) {
     var w = e.target.closest("[data-sig-work]"), l = e.target.closest("[data-sig-like]"), d = e.target.closest("[data-sig-wd]");
-    var vi = e.target.closest("[data-sig-vi]"), sv = e.target.closest("[data-sig-showvers]");
+    var vi = e.target.closest("[data-sig-vi]");
     if (vi) { var row = vi.closest("tr").nextElementSibling, on = row.hidden; row.hidden = !on; vi.setAttribute("aria-expanded", String(on)); return; }
-    if (sv) { var dv = $("modal-body").querySelector("details.vers"); if (dv) { dv.open = true; dv.scrollIntoView({ block: "center" }); var first = dv.querySelector("[data-sig-vi]"); if (first) first.focus(); } return; }
     if (d) {
       var id = d.closest("[data-sig-detail]").getAttribute("data-sig-detail"), r = myReports(id)[+d.getAttribute("data-sig-wd")]; if (!r) return;
       call("DELETE", "/api/working", { plugin: r.plugin_id, version: r.version, device: r.device, os: r.os }).then(function (x) {

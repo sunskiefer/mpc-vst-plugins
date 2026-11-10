@@ -317,6 +317,13 @@ footer { margin-top: 36px; color: var(--muted); font-size: 12px; border-top: 1px
 .sig-toast { position: fixed; z-index: 120; top: 66px; right: 16px; max-width: min(360px, calc(100vw - 32px)); padding: 10px 14px; border-radius: 8px; background: #222; color: #fff; font-size: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3); }
 .sig-toast[hidden] { display: none; }
 .sig-detail { margin: 14px 0 4px; padding-top: 4px; border-top: 1px solid var(--line); }
+.sig-detail .sig-fold > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 14px 0 8px; font-size: 14px; }
+.sig-detail .sig-fold > summary::-webkit-details-marker { display: none; }
+.sig-detail .sig-fold > summary::before { content: "\25B8"; display: inline-block; width: 10px; color: var(--muted); transition: transform .15s; }
+.sig-detail .sig-fold[open] > summary::before { transform: rotate(90deg); }
+.sig-detail .sig-h { font: 700 13px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.sig-detail .sig-vers details.fold { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+.sig-detail .sig-vers details.fold > summary { cursor: pointer; padding: 6px 0; }
 .sig-detail h3 { font: 700 13px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 14px 0 8px; }
 .sig-head { margin: 0 0 6px; font-size: 15px; }
 .sig-v { color: var(--muted); font-size: 13px; }

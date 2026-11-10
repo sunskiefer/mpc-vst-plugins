@@ -195,6 +195,13 @@ setting `hidden`; counts exclude hidden rows. State this in the announcement so 
     the popup does not show discussion threads, only GitHub issues and a Discussions link; the Worker is deployed (2026-11-05, Cloudflare free plan,
     `openmpc-signals.open-mpc.workers.dev`); Discord is configured, Google is not yet, and no real sign-in has been tried.
 
+- **Popup tidied (2026-11-10, offline: the signals browser test):** the Community section starts folded, its summary line showing
+  "N people reported working · N on vX · ♥ N"; opening it shows the Reported on table, the latest reports and your own. "Issues on
+  GitHub" became **Versions and issues**: one line ("1 open · 3 closed issues on GitHub, listed under each version below"), Report an
+  issue / All issues / Discussions, then the folded **Version history**, moved there from the card's folds, with each version's downloads,
+  working count and issues. The per-version issue list and its "Show them in the version history" button are gone (the history is
+  right below). Without the community service the history stays in the folds as before.
+
 ## Update notifications ("follow a plugin") - plan, 2026-11-05
 Goal: people can subscribe to hear about a plugin's new releases and revisions.
 - **A, built (offline):** `feed/<id>.xml`, an Atom feed per plugin from the catalog (same ids as `feed.xml`), and a "Follow updates" button in
