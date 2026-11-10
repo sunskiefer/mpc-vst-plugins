@@ -55,7 +55,7 @@ the project's development**: the catalog, its release rules and the official way
   that plugin's `user_files` folders (under the rule's `save_as` name). MPC creates the plugin more than once; one instance holds
   the port, another takes over when it closes. No password: changes need the page's own `X-PM` header and no foreign `Origin`,
   so another web site open in the same browser cannot drive it, but anyone on the network can open it. Source: `src/web.c`, the
-  page `src/web_page.html` (embedded by `vst/gen_web.py`); tests: `ONLY=web tests/run.sh`.
+  page `src/web_page.html` (embedded by `vst/gen_web.py`); tests: `ONLY=web tests/run.sh`. The page also lists Locations (MAKE DEFAULT, REGISTER: queued, written by APPLY) and Patches (CHECK; APPLY/UNDO only ask, and the PATCHES page on the MPC screen asks for one tap to confirm, so nobody on the network can change the MPC itself).
 
 **Safe by design**
 - Plugins go only to a folder MPC lists in `SynthContentLocations` (MPC draws a plugin's skin only from there). A location must be writable, not

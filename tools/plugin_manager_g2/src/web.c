@@ -97,6 +97,26 @@ static void web_state(mgr_t *m, wbuf_t *w) {
         wesc(w, p->latest, 0);
         wput(w, "\",\"files\":%d,\"state\":\"%s\"}", p->ufiles, WEB_ST[pkg_state(m, i)]);
     }
+    wput(w, "],\"regok\":%d,\"locations\":[", m->dev->hasloclist);
+    for (int i = 0; i < m->nlocs; i++) {
+        const locrow_t *r = &m->locs[i];
+        int rq = 0;
+        for (int q = 0; q < m->nregq; q++) rq |= !strcmp(m->regq[q], r->path);
+        wput(w, "%s{\"name\":\"", i ? "," : "");
+        wesc(w, r->name, 0); wput(w, "\",\"info\":\""); wesc(w, r->info, 0); wput(w, "\",\"state\":\""); wesc(w, r->state, 0);
+        wput(w, "\",\"path\":\""); wesc(w, r->path, 0);
+        wput(w, "\",\"usable\":%d,\"default\":%d,\"k\":%d,\"candidate\":%d,\"queued\":%d}", r->usable, r->dflt, r->pick ? loc_target_index(m, r->path) : -1,
+             r->cand && r->usable && m->dev->hasloclist, rq);
+    }
+    wput(w, "],\"patches\":[");
+    for (int i = 0; i < m->npt; i++) {
+        const patch_t *p = &m->pt[i];
+        wput(w, "%s{\"id\":\"", i ? "," : "");
+        wesc(w, p->id, 0); wput(w, "\",\"title\":\""); wesc(w, p->title, 0); wput(w, "\",\"summary\":\""); wesc(w, p->summary, 0);
+        wput(w, "\",\"state\":\""); wesc(w, p->checked ? p->state : "unchecked", 0); wput(w, "\",\"reason\":\""); wesc(w, p->reason, 0);
+        int kind = pt_act_kind(m, p), want = 1 + i * 2 + (kind == 2);
+        wput(w, "\",\"archok\":%d,\"restarts\":%d,\"offer\":%d,\"pending\":%d}", pt_arch_ok(m, p), p->restarts, kind, kind && m->ptweb == want);
+    }
     wput(w, "]}");
     pthread_mutex_unlock(&m->mu);
 }
@@ -151,6 +171,32 @@ static const char *web_post(mgr_t *m, const char *path) {   /* "" done, else why
             m->ready = 0;
             post(m, J_REFRESH);
         }
+    } else if (!strncmp(path, "/api/register?", 14) && web_arg(path + 13, "path", id, sizeof id)) {   /* LOCATIONS: REGISTER, queued like the screen's; APPLY writes it */
+        int ri = 0;
+        while (ri < m->nlocs && strcmp(m->locs[ri].path, id)) ri++;
+        if (!loc_reg_toggle(m, ri)) err = "not possible now";
+    } else if (!strncmp(path, "/api/default?", 13) && web_arg(path + 12, "k", d, sizeof d)) {   /* LOCATIONS: MAKE DEFAULT (the same as the drive menu) */
+        int k = atoi(d);
+        if (k < 0 || k >= ntargets(m)) err = "no such drive";
+        else if (k != m->tsel % ntargets(m)) { m->tsel = k; target_save(m); m->ready = 0; post(m, J_REFRESH); }
+    } else if (!strncmp(path, "/api/patch?", 11) && web_arg(path + 10, "id", id, sizeof id) && web_arg(path + 10, "do", d, sizeof d)) {
+        /* PATCHES: CHECK runs the patch's status (changes nothing). APPLY and UNDO are only requested here: the MPC screen shows the request and
+         * its own tap confirms it, so nobody on the network can change MPC itself. */
+        int i = 0;
+        while (i < m->npt && strcmp(m->pt[i].id, id)) i++;
+        if (i == m->npt) err = "unknown patch";
+        else if (m->job) err = "busy";
+        else if (!strcmp(d, "check") && pt_arch_ok(m, &m->pt[i])) { m->ptidx = i; m->ptconf = m->ptweb = 0; say_locked(m, OK, "Checking \"%s\": running its status (nothing is changed)\xe2\x80\xa6", m->pt[i].title); post(m, J_PATCH); }
+        else if (!strcmp(d, "cancel")) m->ptweb = 0;
+        else if (!strcmp(d, "apply") || !strcmp(d, "undo")) {
+            int kind = pt_act_kind(m, &m->pt[i]);
+            if (kind != (d[0] == 'a' ? 1 : 2)) err = "not possible now";
+            else {
+                m->ptweb = 1 + i * 2 + (kind == 2);
+                m->ptpage = i / 3;   /* the screen's PATCHES page shows its card */
+                say_locked(m, OK, "Web page asks to %s \"%s\": confirm on the PATCHES page.", kind == 2 ? "UNDO" : "APPLY", m->pt[i].title);
+            }
+        } else err = "not possible now";
     } else if (!strncmp(path, "/api/apply", 10)) {   /* the page asked first: the second call is the restart prompt's GO */
         if (m->ready) { m->ready = 0; post(m, J_LAUNCH); }
         else if (count_queued(m) && !m->dev->problem[0]) post(m, J_PREPARE);

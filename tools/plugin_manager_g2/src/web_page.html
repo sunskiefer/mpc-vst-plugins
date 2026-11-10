@@ -51,9 +51,9 @@ button.p { background:var(--a); border-color:var(--a); color:#fff; } button.q { 
   <p id="st">Loading…</p><div id="pg"></div>
   <div class="top"><span id="to"></span></div>
   <div id="mv"></div>
-  <div class="tabs"><button data-t="0" aria-pressed="true">Discover</button><button data-t="1">Installed</button><button data-t="2">Updates</button></div>
+  <div class="tabs"><button data-t="0" aria-pressed="true">Discover</button><button data-t="1">Installed</button><button data-t="2">Updates</button><button data-t="3">Locations</button><button data-t="4">Patches</button></div>
   <div class="tabs" id="kinds"></div>
-  <div class="top"><input type="search" id="q" placeholder="Name, developer, style or tag" style="flex:1 1 220px">
+  <div class="top" id="flt"><input type="search" id="q" placeholder="Name, developer, style or tag" style="flex:1 1 220px">
     <select id="style"></select><select id="sort"><option value="updated">Last updated</option><option value="added">Newest</option>
     <option value="downloads">Most downloaded</option><option value="name">Name</option></select></div>
   <p class="d" id="count"></p>
@@ -155,6 +155,9 @@ function draw() {
   const inTab = S.plugins.filter(p => tab == 0 ? p.state != 'installed' : tab == 1 ? p.installed : p.state == 'update' || p.state == 'q_update');
   $('kinds').innerHTML = Object.keys(KN).map(k => `<button aria-pressed="${k == kind}" onclick="kind='${k}';draw()">${KN[k]}<span class="n">${
     k == 'all' ? inTab.length : inTab.filter(p => kindOf(p) == k).length}</span></button>`).join('');
+  const pan = tab >= 3;
+  $('kinds').hidden = $('flt').hidden = $('count').hidden = pan; $('l').className = pan ? '' : 'grid';
+  if (pan) { $('l').innerHTML = tab == 3 ? locHtml(busy) : patHtml(); barUpdate(busy); return; }
   const sty = $('style').value, so = $('sort').value;
   const hay = p => { const c = CAT[p.id] || {}; return [p.name, p.author, c.style, (c.tags || []).join(' '), c.summary].join(' ').toLowerCase(); };
   const ps = inTab.filter(p => kind == 'all' || kindOf(p) == kind).filter(p => !sty || (CAT[p.id] || {}).style == sty)
@@ -165,6 +168,9 @@ function draw() {
   $('count').textContent = ps.length + ' of ' + inTab.length;
   $('l').innerHTML = ps.map(p => card(p, false)).join('') || '<p class="d">Nothing here.</p>';
   if (draw.modal) { const m = S.plugins.find(x => x.id == draw.modal); if (m) $('mbody').innerHTML = card(m, true); }
+  barUpdate(busy);
+}
+function barUpdate(busy) {
   $('bar').hidden = !S.queued && !S.ready;
   $('bt').textContent = busy ? 'Working…' : S.ready ? 'Ready. MPC will restart to apply.' : S.queued + ' change' + (S.queued == 1 ? '' : 's') + ' queued';
   $('ap').textContent = S.ready ? 'Restart MPC and apply' : 'Apply';
@@ -173,6 +179,25 @@ function draw() {
 
 // ---- the user's files (ROMs): the rules come from the plugin's mpc-plugin.json user_files (the desktop app's checks, userfiles.go)
 const G = {};   // id -> its user_files groups
+// LOCATIONS: the drives MPC lists (and drives it does not list yet, which REGISTER queues; APPLY writes it and restarts MPC, as for a plugin)
+function locHtml(busy) {
+  const rows = S.locations.map(r => `<div class="card"><header><div><h2>${esc(r.name)}</h2><div class="by">${esc(r.info)}</div></div>
+    <span class="tag ${r.usable ? 'inst' : 'v'}">${r.usable ? 'Usable' : r.candidate ? 'Not listed' : 'Not usable'}</span></header><p class="d">${esc(r.state)}</p><div class="acts">${
+    r.default ? '<span class="tag g">Default</span>' : r.k >= 0 ? `<button ${busy ? 'disabled' : ''} onclick="api('/api/default?k=${r.k}')">Make default</button>` : ''}${
+    r.candidate || r.queued ? `<button class="${r.queued ? 'q' : ''}" ${busy ? 'disabled' : ''} onclick="api('/api/register?path=' + encodeURIComponent(${JSON.stringify(r.path).replace(/"/g, '&quot;')}))">${r.queued ? 'Queued: cancel' : 'Register'}</button>` : ''}</div></div>`);
+  return (rows.join('') || '<p class="d">MPC lists no Synths folder.</p>') + (S.regok ? '' : '<p class="d">This MPC has no location list to register in.</p>');
+}
+// PATCHES: CHECK runs the patch's status (changes nothing). APPLY / UNDO only ask: the MPC screen shows the request and its own tap confirms it.
+function patHtml() {
+  return S.patches.map(p => `<div class="card"><header><div><h2>${esc(p.title)}</h2></div><span class="tag ${p.state == 'stock' || p.state == 'patched' ? 'inst' : p.state == 'unchecked' ? '' : 'v'}">${esc(p.archok ? p.state : 'other device')}</span></header>
+    <p>${esc(p.summary)}</p>${p.reason ? `<p class="d">${esc(p.reason)}</p>` : ''}<div class="acts">${
+    p.archok ? `<button onclick="api('/api/patch?id=${encodeURIComponent(p.id)}&do=check')">${p.state == 'unchecked' ? 'Check' : 'Check again'}</button>` : ''}${
+    p.pending ? `<span class="tag x">Waiting for a tap on the MPC screen</span><button class="q" onclick="api('/api/patch?id=${encodeURIComponent(p.id)}&do=cancel')">Cancel</button>`
+    : p.offer ? `<button class="p" onclick="api('/api/patch?id=${encodeURIComponent(p.id)}&do=${p.offer == 2 ? 'undo' : 'apply'}')">${p.offer == 2 ? 'Ask to undo' : 'Ask to apply'}</button>` : ''}${
+    p.restarts ? '<span class="d">Restarts MPC: run it from the desktop installer.</span>' : ''}</div></div>`).join('') || '<p class="d">No patch list yet (needs the network).</p>'
+    + '<p class="d">Apply and Undo are confirmed with a tap on the MPC screen (PATCHES page), so nothing on the network can change the MPC by itself.</p>';
+}
+
 function hasExt(n, ex) { const e = n.slice(n.lastIndexOf('.')).toLowerCase(); return ex.some(x => x.toLowerCase() == e); }
 function findBytes(d, t, from = 0) {
   outer: for (let i = from; i <= d.length - t.length; i++) { for (let j = 0; j < t.length; j++) if (d[i + j] != t[j]) continue outer; return i; }

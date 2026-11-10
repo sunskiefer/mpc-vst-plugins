@@ -179,6 +179,9 @@ grep -qx "beta=1" /media/az01-internal/.openmpcpm-settings && grep -qx "web=0" /
 PM_NO_WEB=1 /tmp/drive_addins about > /tmp/about.out
 v=$(sed -n "s/^#define PM_VERSION .\(.*\)./\1/p" src/manager.c)
 grep -qF "|Plugin Manager G2 $v|" /tmp/about.out && grep -q "|two-targets\|mpc-\|unknown model" /tmp/about.out && grep -q "glibc" /tmp/about.out || { cat /tmp/about.out; exit 1; }
+# A-Z: the menu opens, a letter closes it and the list shows the first plugin with that initial (A is never after Z)
+PM_NO_WEB=1 /tmp/drive_addins az > /tmp/az.out
+grep -qF "open: 1" /tmp/az.out && grep -qF "after Z: open=0" /tmp/az.out && grep -qF "after A: open=0" /tmp/az.out || { cat /tmp/az.out; exit 1; }
 # PATCHES: the list from patches.json, CHECK runs a patch status only after its checksum matches; another CPU gets no button
 rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts /tmp/patch-evil-ran; mkdir -p /media
 sh tests/devices/two-targets.sh
@@ -188,6 +191,13 @@ grep -qF "checked1: pill=2 |Checked on this MPC: stock| canchk=2" /tmp/patches.o
 grep -qF "checked2: pill=6 |Checked on this MPC: error  ·  the script does not match its checksum: not run|" /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
 grep -qF "checked3: pill=5" /tmp/patches.out && grep -qF "foot: 4 device patches." /tmp/patches.out || { cat /tmp/patches.out; exit 1; }
 [ ! -e /tmp/patch-evil-ran ] || { echo "a script with a wrong checksum ran"; exit 1; }
+# PATCHES from the web page: CHECK runs, APPLY only asks (the screen shows it, one tap there runs it), CANCEL withdraws; REGISTER of an unknown path is refused
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts /tmp/fx-patch-marker; mkdir -p /media
+sh tests/devices/two-targets.sh
+/tmp/drive_addins webpatch > /tmp/webpatch.out
+grep -qF "asked: act=3 pill=2 |The web page asks to APPLY \"Fixture stock\"" /tmp/webpatch.out && grep -qF "\"pending\":1" /tmp/webpatch.out || { cat /tmp/webpatch.out; exit 1; }
+grep -qF "cancelled: act=1" /tmp/webpatch.out && grep -qF "applied: pill=3" /tmp/webpatch.out || { cat /tmp/webpatch.out; exit 1; }
+grep -q "^not possible now" /tmp/webpatch.out && grep -q "^unknown patch" /tmp/webpatch.out && grep -qF "\"locations\":[" /tmp/webpatch.out || { cat /tmp/webpatch.out; exit 1; }
 # PATCHES: APPLY and UNDO (two taps; the script runs install/uninstall --confirmed); a patch that restarts MPC is not offered
 rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts /tmp/fx-patch-marker; mkdir -p /media
 sh tests/devices/two-targets.sh

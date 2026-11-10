@@ -74,7 +74,7 @@ static void http(const char *method, const char *path, const char *hdrs) {
   struct sockaddr_in a = {.sin_family = AF_INET, .sin_port = htons(8790)};
   inet_pton(AF_INET, "127.0.0.1", &a.sin_addr);
   if (connect(s, (struct sockaddr *)&a, sizeof a)) { printf("GET %s: no answer\n", path); close(s); return; }
-  static char b[262144]; int n = snprintf(b, sizeof b, "%s %s HTTP/1.0\r\nHost: 127.0.0.1:8790\r\n%s\r\n", method, path, hdrs), k, t = 0;
+  static char b[1048576]; int n = snprintf(b, sizeof b, "%s %s HTTP/1.0\r\nHost: 127.0.0.1:8790\r\n%s\r\n", method, path, hdrs), k, t = 0;
   if (write(s, b, n) != n) { close(s); return; }
   while (t < (int)sizeof b - 1 && (k = read(s, b + t, sizeof b - 1 - t)) > 0) t += k;
   b[t] = 0; close(s);
@@ -126,6 +126,25 @@ int main(int argc, char **argv) {
     http("POST", "/api/target?k=9", "X-PM: 1\r\n");                                                   /* no such drive: 409 */
     void *m2 = e->create(NULL); sleep(1);
     e->destroy(m); m = m2; sleep(3);
+    http_get("/api/state");
+    e->destroy(m); return 0;
+  }
+  if (argc > 1 && !strcmp(argv[1], "webpatch")) {   /* the web page asks for a patch; only a tap on the MPC screen runs it */
+    http("POST", "/api/patch?id=fx-stock&do=apply", "X-PM: 1\r\n");                                   /* not checked yet: 409 */
+    http("POST", "/api/patch?id=nosuch&do=apply", "X-PM: 1\r\n");                                     /* unknown: 409 */
+    http("POST", "/api/patch?id=fx-stock&do=check", "X-PM: 1\r\n");
+    for (int i = 0; i < 60 && strcmp(get("pat1_pill"), "2"); i++) usleep(200000);
+    http("POST", "/api/patch?id=fx-stock&do=apply", "X-PM: 1\r\n");                                   /* asked: nothing runs */
+    sleep(1);
+    printf("asked: act=%s pill=%s |%s|\n", get("pat1_canact"), get("pat1_pill"), get("pat_foot"));
+    http_get("/api/state");
+    http("POST", "/api/patch?id=fx-stock&do=cancel", "X-PM: 1\r\n");
+    printf("cancelled: act=%s\n", get("pat1_canact"));
+    http("POST", "/api/patch?id=fx-stock&do=apply", "X-PM: 1\r\n");
+    press("pat1_act");                                                                               /* one tap on the screen confirms */
+    for (int i = 0; i < 60 && strcmp(get("pat1_pill"), "3"); i++) usleep(200000);
+    printf("applied: pill=%s act=%s\n", get("pat1_pill"), get("pat1_canact"));
+    http("POST", "/api/register?path=%2Fnowhere", "X-PM: 1\r\n");                                     /* not a listed candidate: 409 */
     http_get("/api/state");
     e->destroy(m); return 0;
   }
@@ -202,6 +221,17 @@ int main(int argc, char **argv) {
     printf("again: beta=%s\n", get("set_beta_txt"));
     printf("cache: |%s|\n", get("set_cache_txt")); press("set_cache_btn");
     printf("cache queued: |%s| apply=%s\n", get("set_cache_txt"), get("apply_state"));
+    e->destroy(m); return 0;
+  }
+  if (argc > 1 && !strcmp(argv[1], "az")) {   /* the A-Z jump menu opens, a letter shows the first plugin with that initial and closes it */
+    for (int i = 0; i < 40 && !strcmp(get("card1"), ""); i++) usleep(250000);
+    printf("start: |%s|\n", get("card1"));
+    press("az_btn");
+    printf("open: %s\n", get("az_open"));
+    press("az_pick27");   /* Z */
+    printf("after Z: open=%s |%s|\n", get("az_open"), get("card1"));
+    press("az_btn"); press("az_pick2");   /* A */
+    printf("after A: open=%s |%s|\n", get("az_open"), get("card1"));
     e->destroy(m); return 0;
   }
   if (argc > 1 && !strcmp(argv[1], "about")) {   /* ABOUT: the running version, the installed copy, this MPC */

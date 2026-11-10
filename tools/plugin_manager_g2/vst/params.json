@@ -4170,6 +4170,182 @@
    "name": "About: catalog",
    "type": "readout",
    "display": "string"
+  },
+  {
+   "key": "az_open",
+   "name": "A-Z menu open",
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "az_btn",
+   "name": "A-Z menu",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick1",
+   "name": "A-Z letter 1",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick2",
+   "name": "A-Z letter 2",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick3",
+   "name": "A-Z letter 3",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick4",
+   "name": "A-Z letter 4",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick5",
+   "name": "A-Z letter 5",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick6",
+   "name": "A-Z letter 6",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick7",
+   "name": "A-Z letter 7",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick8",
+   "name": "A-Z letter 8",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick9",
+   "name": "A-Z letter 9",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick10",
+   "name": "A-Z letter 10",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick11",
+   "name": "A-Z letter 11",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick12",
+   "name": "A-Z letter 12",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick13",
+   "name": "A-Z letter 13",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick14",
+   "name": "A-Z letter 14",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick15",
+   "name": "A-Z letter 15",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick16",
+   "name": "A-Z letter 16",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick17",
+   "name": "A-Z letter 17",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick18",
+   "name": "A-Z letter 18",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick19",
+   "name": "A-Z letter 19",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick20",
+   "name": "A-Z letter 20",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick21",
+   "name": "A-Z letter 21",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick22",
+   "name": "A-Z letter 22",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick23",
+   "name": "A-Z letter 23",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick24",
+   "name": "A-Z letter 24",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick25",
+   "name": "A-Z letter 25",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick26",
+   "name": "A-Z letter 26",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_pick27",
+   "name": "A-Z letter 27",
+   "type": "trigger",
+   "momentary": true
   }
  ]
 }

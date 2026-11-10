@@ -140,7 +140,7 @@ typedef struct {
     char own[300];                /* this plugin's own folder (its skins live there) */
     int tsel, reprompt;           /* which usable location new installs go to; CHANGE re-prepares and reopens the prompt */
     int sort;                     /* 0 last updated, 1 newest (first release), 2 most downloaded, 3 name */
-    int menu_open;                /* the header's dropdown that is open: 0 none, 1 filter, 2 sort */
+    int menu_open;                /* the header's dropdown that is open: 0 none, 1 filter, 2 sort, 3 drive, 4 A-Z */
     int kb;                       /* the search keyboard is open */
     char q[28];                   /* the search (typed on the drawn keyboard), "" none */
     int tab, kindf;               /* 0 discover, 1 installed, 2 updates; 0 all, 1 instruments, 2 effects, 3 addins */
@@ -157,7 +157,7 @@ typedef struct {
     int migrate, migrate_seen;   /* MPC OS 3.10.1: "move to VST2 Plugins" is queued; it was offered once this session (cleared, it stays off) */
     pthread_t web;   /* the local web page (web.c) */
     int web_on;
-    patch_t pt[8]; int npt, ptpage, ptidx, ptact, ptconf; long long ptconf_t;   /* PATCHES; ptact: 1 apply, 2 undo (the job); ptconf: 1 + index*2 + undo of the row waiting for its second tap */
+    patch_t pt[8]; int npt, ptpage, ptidx, ptact, ptconf, ptweb; long long ptconf_t;   /* PATCHES; ptact: 1 apply, 2 undo (the job); ptconf: 1 + index*2 + undo of the row waiting for its second tap; ptweb: the same code for a patch the web page asked for, kept until the screen's tap (or CANCEL on the page) */
        /* PATCHES: the list (loaded on each refresh), the page shown (3 per page), the one being checked */
     int show_beta, web_pref;        /* SETTINGS (saved in <base>/.openmpcpm-settings): list beta plugins in Discover, serve the web page */
     char regq[4][200]; int nregq;   /* LOCATIONS: drives queued for REGISTER (a Synths folder to add to MPC.settings at APPLY) */
@@ -1103,6 +1103,20 @@ static int pt_arch_ok(const mgr_t *m, const patch_t *p) {
 }
 
 static long long mono_ms(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec * 1000LL + ts.tv_nsec / 1000000; }
+/* LOCATIONS: REGISTER / cancel for row ri, from the screen or the web page (mu held). 1 when the row can take it. */
+static int loc_reg_toggle(mgr_t *m, int ri) {
+    if (ri < 0 || ri >= m->nlocs || !m->locs[ri].cand || !m->locs[ri].usable || !m->dev->hasloclist) return 0;
+    int at = -1;
+    for (int q = 0; q < m->nregq; q++) if (!strcmp(m->regq[q], m->locs[ri].path)) at = q;
+    if (at >= 0) {
+        for (int q = at; q + 1 < m->nregq; q++) snprintf(m->regq[q], sizeof m->regq[q], "%s", m->regq[q + 1]);
+        m->nregq--;
+    } else if (m->nregq < 4) snprintf(m->regq[m->nregq++], sizeof m->regq[0], "%s", m->locs[ri].path);
+    else return 0;
+    m->ready = 0;   /* a prepared apply.sh does not have it */
+    return 1;
+}
+
 /* what the page offers for a checked patch: 1 APPLY (the script says stock and supported), 2 UNDO (it says patched), 0 nothing. A patch that
  * restarts MPC is not run from this screen: the script stops MPC, and the manager lives inside it. */
 static int pt_act_kind(const mgr_t *m, const patch_t *p) {
@@ -2937,6 +2951,17 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
         }
     } else if (v < 0.5) {
         /* the other params are triggers: act on press only */
+    } else if (!strcmp(key, "az_btn") && detail_of(m) < 0) m->menu_open = 4;   /* the A-Z jump menu */
+    else if (!strncmp(key, "az_pick", 7) && atoi(key + 7) >= 1 && atoi(key + 7) <= 27 && m->menu_open == 4) {
+        int k = atoi(key + 7) - 1, idx[MAXPKG], nv = visible(m, idx);   /* 0 is "#", then A to Z: the page of the first plugin with that initial */
+        for (int v = 0; v < nv; v++) {
+            const char *nm = m->pkg[idx[v]].name;
+            while (*nm && !isalnum((unsigned char)*nm)) nm++;
+            int c = *nm ? toupper((unsigned char)*nm) : 0, hit = k == 0 ? !isalpha(c) : c == 'A' + k - 1;
+            if (hit) { m->page = v / ROWS; break; }
+        }
+        m->menu_open = 0;
+        m->menu = -1;
     } else if (!strcmp(key, "menu_close")) m->menu_open = 0;   /* a tap outside an open dropdown */
     else if (!strcmp(key, "kind_btn") || !strcmp(key, "sort_btn")) {   /* opens only: a quick second tap (or a bounce)
                                                                          * before the menu is drawn must not close it */
@@ -2968,16 +2993,7 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
             post(m, J_REFRESH);
         }
     } else if (!strncmp(key, "loc", 3) && key[3] >= '1' && key[3] <= '4' && !strcmp(key + 4, "_reg") && !busy) {   /* LOCATIONS: REGISTER / cancel */
-        int ri = m->locpage * 4 + key[3] - '1';
-        if (ri < m->nlocs && m->locs[ri].cand && m->locs[ri].usable && m->dev->hasloclist) {
-            int at = -1;
-            for (int q = 0; q < m->nregq; q++) if (!strcmp(m->regq[q], m->locs[ri].path)) at = q;
-            if (at >= 0) {
-                for (int q = at; q + 1 < m->nregq; q++) snprintf(m->regq[q], sizeof m->regq[q], "%s", m->regq[q + 1]);
-                m->nregq--;
-            } else if (m->nregq < 4) snprintf(m->regq[m->nregq++], sizeof m->regq[0], "%s", m->locs[ri].path);
-            m->ready = 0;   /* a prepared apply.sh does not have it */
-        }
+        loc_reg_toggle(m, m->locpage * 4 + key[3] - '1');
     } else if (!strcmp(key, "set_beta_btn")) {   /* SETTINGS: beta plugins in Discover */
         m->show_beta = !m->show_beta;
         cfg_save(m);
@@ -2992,7 +3008,7 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
         int pi = m->ptpage * 3 + key[3] - '1';
         if (pi < m->npt && pt_arch_ok(m, &m->pt[pi])) {
             m->ptidx = pi;
-            m->ptconf = 0;
+            m->ptconf = m->ptweb = 0;
             say_locked(m, OK, "Checking \"%s\": running its status (nothing is changed)\xe2\x80\xa6", m->pt[pi].title);
             post(m, J_PATCH);
         }
@@ -3002,8 +3018,8 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
         if (kind) {
             long long now = mono_ms();
             int want = 1 + pi * 2 + (kind == 2);
-            if (m->ptconf == want && now - m->ptconf_t < 6000) {   /* the second tap, within 6 s */
-                m->ptconf = 0;
+            if (m->ptweb == want || (m->ptconf == want && now - m->ptconf_t < 6000)) {   /* the second tap, within 6 s; or the one tap that confirms what the web page asked for */
+                m->ptconf = m->ptweb = 0;
                 m->ptidx = pi;
                 m->ptact = kind;
                 say_locked(m, OK, "%s \"%s\"\xe2\x80\xa6", kind == 2 ? "Removing" : "Applying", m->pt[pi].title);
@@ -3060,6 +3076,7 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
     else if (!strcmp(key, "tab")) snprintf(b, n, "%d", m->tab);
     else if (!strcmp(key, "kind")) snprintf(b, n, "%d", m->kindf);
     else if (!strcmp(key, "sort")) snprintf(b, n, "%d", m->sort);
+    else if (!strcmp(key, "az_open")) snprintf(b, n, "%d", m->menu_open == 4);
     else if (!strcmp(key, "kind_open")) snprintf(b, n, "%d", m->menu_open == 1);
     else if (!strcmp(key, "sort_open")) snprintf(b, n, "%d", m->menu_open == 2);
     else if (!strcmp(key, "kind_hl")) snprintf(b, n, "%d", m->menu_open == 1 ? 1 + (m->kindf & 3) : 0);   /* the open menu's current row */
@@ -3131,13 +3148,16 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
         else if (!strcmp(f, "canact")) {   /* off, apply, undo, confirm apply, confirm undo */
             int kind = pt_act_kind(m, p);
             int want = 1 + pi * 2 + (kind == 2);
-            snprintf(b, n, "%d", !kind ? 0 : m->ptconf == want && mono_ms() - m->ptconf_t < 6000 ? 2 + kind : kind);
+            snprintf(b, n, "%d", !kind ? 0 : m->ptweb == want || (m->ptconf == want && mono_ms() - m->ptconf_t < 6000) ? 2 + kind : kind);
         }
         else if (!strcmp(f, "canchk")) snprintf(b, n, "%d", p && pt_arch_ok(m, p) ? 1 + p->checked : 0);   /* off, check, check again */
         else ok = 0;
     }
     else if (!strcmp(key, "pat_pages")) snprintf(b, n, "%d", m->npt > 3);
     else if (!strcmp(key, "pat_page")) snprintf(b, n, "%d / %d", m->ptpage + 1, m->npt ? (m->npt + 2) / 3 : 1);
+    else if (!strcmp(key, "pat_foot") && m->ptweb > 0 && (m->ptweb - 1) / 2 < m->npt)
+        snprintf(b, n, "The web page asks to %s \"%s\": find its card and tap %s once to confirm.", (m->ptweb - 1) % 2 ? "UNDO" : "APPLY",
+                 m->pt[(m->ptweb - 1) / 2].title, (m->ptweb - 1) % 2 ? "UNDO" : "APPLY");
     else if (!strcmp(key, "pat_foot")) snprintf(b, n, m->npt ? "%d device patches. CHECK runs a patch's status on this MPC and changes nothing." : "No patch list yet (needs the network).", m->npt);
     else if (!strcmp(key, "about_ver")) snprintf(b, n, "Plugin Manager G2 %s", PM_VERSION);
     else if (!strcmp(key, "about_inst")) {   /* the manifest of the copy on disk, which can differ from the running build */
@@ -3310,6 +3330,7 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
                !strcmp(key, "update_all") || !strcmp(key, "apply") || !strcmp(key, "noop") || !strcmp(key, "d_back") ||
                !strcmp(key, "d_act") || !strcmp(key, "d_more") || !strcmp(key, "d_reinstall") || !strcmp(key, "d_remove") ||
                !strcmp(key, "tag_clear") || !strcmp(key, "confirm_cancel") || !strcmp(key, "confirm_go") || !strcmp(key, "target_next") || !strcmp(key, "theme_btn") ||
+               !strcmp(key, "az_btn") || !strncmp(key, "az_pick", 7) ||
                !strcmp(key, "menu_close") || !strcmp(key, "kind_btn") || !strcmp(key, "sort_btn") ||
                !strcmp(key, "search_btn") || !strcmp(key, "q_clear") || !strncmp(key, "k_", 2) ||
                ((!strncmp(key, "kind_pick", 9) || !strncmp(key, "sort_pick", 9)) && key[9])) snprintf(b, n, "0");
