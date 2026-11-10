@@ -75,7 +75,7 @@ The catalog, its site and the installer app are live (see Done). Still open, in 
       Still prose: conflicts with things outside the catalog ("disable the legacy Force Link Audio addon first"). Next: try it on a device
       once a registry dependency is published (Percolator Out bringing Percolator along).
 - [ ] **Unsupported plugins** (plan 2026-11-09, `docs/CATALOG_QUALITY.md` step 5: act on breakage, never on age): [x] 5a maintenance
-      row and bar items from each repo's issues (2026-11-09, offline); [ ] 5b losing Verified on a confirmed "does not work" issue;
+      row and bar items from each repo's issues (2026-11-09, offline); [~] 5b losing Verified on confirmed breakage only (author label, maintainer list, or 3 people on one device and OS with 30 days of silence; dry run built 2026-11-09, offline; next: read Works for me, then go live);
       [ ] 5c Experimental after confirmed breakage, notice and 30 days; yanking stays manual; delisting only for a gone repo that is broken.
 - [ ] **Announce to the community** and collect what people ask for before building more.
 - [ ] **Collections in the installers.** The site groups collections (live 2026-11-02, docs/CATALOG.md "Collections"); the desktop

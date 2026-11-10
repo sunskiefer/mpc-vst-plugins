@@ -55,7 +55,7 @@ MAX_SUMMARY = 350   # characters; longer detail belongs in the repo README (docs
 MAX_TAGS = 8
 MAX_UNCOLLECTED = 5   # entries one repo may list per author without a collection (docs/CATALOG.md, "Collections")
 COLLECTION_FIELDS = ("id", "title", "author", "repo", "summary")
-CATALOG_FILES = {"added.json", "apps.json", "downloads.json", "patches.json", "yanked.json"}   # the only JSON directly in catalog/; plugin entries live in plugins/
+CATALOG_FILES = {"added.json", "apps.json", "confirmed.json", "downloads.json", "patches.json", "yanked.json"}   # the only JSON directly in catalog/; plugin entries live in plugins/
 OPEN_LICENSES = {"MIT", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Apache-2.0", "GPL-2.0-only", "GPL-2.0-or-later",
                  "GPL-3.0-only", "GPL-3.0-or-later", "LGPL-2.1-only", "LGPL-2.1-or-later", "LGPL-3.0-only",
                  "LGPL-3.0-or-later", "AGPL-3.0-only", "AGPL-3.0-or-later", "MPL-2.0", "Unlicense", "CC0-1.0", "Zlib"}
@@ -178,6 +178,66 @@ def maintenance_of(raw, now):
     if late:
         out["oldest_unanswered"] = late[0]
     return out
+
+
+TEAM = ("OWNER", "MEMBER", "COLLABORATOR")   # GitHub author_association values that speak for the repo
+CONFIRMED_LABELS = ("confirmed", "confirmed-bug", "bug-confirmed")   # set by the repo's own people (labels need triage access)
+CLEARED_LABELS = ("user-error", "invalid", "wontfix", "not-planned", "works-for-me", "duplicate")
+BROKEN_TICK = re.compile(r"^\s*[-*]\s*\[[xX]\]\s*It does not work", re.M)   # the prefilled Report an issue form's tick box
+BREAKAGE_REPORTERS = 3    # route 3: this many different people ...
+BREAKAGE_SILENCE_DAYS = 30   # ... on the same device class and MPC OS, with no reply from the repo's people for this long
+REPORT_GEN2 = re.compile(r"gen ?2|\bg2\b|live ?(iii|3)\b|\bxl\b", re.I)
+
+
+def report_class(device):
+    """A free-text device from an issue: "sample", "gen2" (Gen2 models by name, or naming Gen2) or "gen1"."""
+    return "sample" if SAMPLE_DEVICE.search(device) else "gen2" if REPORT_GEN2.search(device) else "gen1"
+
+
+def report_fields(body):
+    """{version, device, os, broken} from the prefilled Report an issue text (Plugin: <name> <version> / Device: / MPC OS:)."""
+    def line(k):
+        m = re.search(r"^\s*%s:[ \t]*(.*)$" % k, body, re.M | re.I)
+        return m.group(1).strip() if m else ""
+    v = re.search(r"(\d+\.\d+\.\d+)\s*$", line("Plugin"))
+    osv = re.search(r"\d+(\.\d+)?", line("MPC OS"))
+    return {"version": v.group(1) if v else "", "device": line("Device"), "os": osv.group(0) if osv else "",
+            "broken": bool(BROKEN_TICK.search(body))}
+
+
+def breakage_of(entry, latest, raw, confirmed, now, team_replied=None):
+    """5b dry run (docs/CATALOG_QUALITY.md): would the newest stable version lose Verified? -> {version, route, issues, ...} or None.
+    A user's "does not work" alone never counts. Routes: "author" (an open issue on this version labelled confirmed by the repo's
+    people), "maintainer" (catalog/confirmed.json names "<id>@<version>"), "reports" (BREAKAGE_REPORTERS different people ticked
+    "does not work" on this version, same device class and MPC OS, the oldest BREAKAGE_SILENCE_DAYS old, no reply from the repo's
+    people). An issue labelled as user error, invalid and the like never counts. Works for me reports are not read yet."""
+    if not latest:
+        return None
+    key = "%s@%s" % (entry["id"], latest)
+    if key in confirmed:
+        return {"version": latest, "route": "maintainer", "issues": [], "note": confirmed[key]}
+    issues = []
+    for i in (raw or {}).get("issues", []):
+        f = report_fields(i["body"])
+        if f["version"] == latest and not set(i["labels"]) & set(CLEARED_LABELS):
+            issues.append(dict(i, **f))
+    mine = [i for i in issues if set(i["labels"]) & set(CONFIRMED_LABELS)]
+    if mine:
+        return {"version": latest, "route": "author", "issues": sorted(i["number"] for i in mine)}
+    cutoff = (now - datetime.timedelta(days=BREAKAGE_SILENCE_DAYS)).strftime("%Y-%m-%d")
+    groups = {}
+    for i in issues:
+        if i["broken"] and not i["team"] and i["device"]:
+            groups.setdefault((report_class(i["device"]), i["os"]), []).append(i)
+    for (dev, osv), g in sorted(groups.items()):
+        people = {i["user"] for i in g}
+        if len(people) < BREAKAGE_REPORTERS or min(i["created"] for i in g) > cutoff:
+            continue
+        if team_replied and any(i["comments"] and team_replied(i["number"]) for i in g):
+            continue
+        return {"version": latest, "route": "reports", "device": dev, "os": osv, "people": len(people),
+                "issues": sorted(i["number"] for i in g)}
+    return None
 
 
 BAR = {   # id -> what the author sees. Informational: it never hides or demotes a plugin (docs/CATALOG_QUALITY.md, step 1).
@@ -517,10 +577,20 @@ class GitHub:
                     if len(chunk) < 100:
                         break
             owner = ((r.get("owner") or {}).get("login") or "").lower()
+            def team(i):   # opened by the repo's own people (an org's members count as the owner)
+                return i.get("author_association") in TEAM or ((i.get("user") or {}).get("login") or "").lower() == owner
             cache[repo.lower()] = {"archived": bool(r.get("archived")), "open_issues": len(issues),
-                                   "unanswered": [(i.get("created_at") or "")[:10] for i in issues
-                                                  if not i.get("comments") and ((i.get("user") or {}).get("login") or "").lower() != owner]}
+                                   "unanswered": [(i.get("created_at") or "")[:10] for i in issues if not i.get("comments") and not team(i)],
+                                   "issues": [{"number": i.get("number"), "created": (i.get("created_at") or "")[:10],
+                                               "user": ((i.get("user") or {}).get("login") or "").lower(), "team": team(i),
+                                               "labels": [(l.get("name") or "").lower() for l in i.get("labels") or []],
+                                               "comments": i.get("comments") or 0, "body": i.get("body") or ""} for i in issues]}
         return cache[repo.lower()]
+
+    def team_replied(self, repo, number):
+        """Whether the repo's owner, a member or a collaborator has commented on the issue."""
+        return any(c.get("author_association") in TEAM
+                   for c in self._get("https://api.github.com/repos/%s/issues/%d/comments?per_page=100" % (repo, number)))
 
     def download(self, asset, dest):
         req = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "mpc-vst-catalog"})
@@ -586,7 +656,10 @@ def tag_versions(e, src, yanked, tested, keep, problems):
     return versions
 
 
-def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), added=None, collections=None):
+catalog_breakage = []   # the last build()'s 5b dry-run list (kept out of catalog.json while it is a dry run)
+
+
+def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), added=None, collections=None, confirmed=None):
     """-> (catalog dict, problems list [{id, tag, error, unreadable?, superseded?}]). "unreadable" marks a repo or
     release list that could not be read at all, as opposed to one that was read and found invalid.
     A plugin whose newest stable release is of the old layout (no "layout" field) gets a problem, so the catalog repo opens an
@@ -737,13 +810,16 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
                     item[k] = json.loads(json.dumps(e[k]))   # a copy: the registry entry stays untouched
             item["build"].setdefault("needs", [])
         item["versions"] = versions
+        raw = None
         if hasattr(src, "maintenance"):
             try:
-                m = maintenance_of(src.maintenance(e["repo"]), now or datetime.datetime.now(datetime.timezone.utc))
+                raw = src.maintenance(e["repo"])
+                m = maintenance_of(raw, now or datetime.datetime.now(datetime.timezone.utc))
             except Exception:   # informational: a failed read only leaves the row out
-                m = None
+                m = raw = None
             if m:
                 item["maintenance"] = m
+        item["_issues"] = raw
         derive(item, e, added)
         item["downloads"] = all_time
         plugins.append(item)
@@ -760,9 +836,24 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
                                       "and Synths-folder scanners will not list it; re-release with the current tools/release.py"})
         for v in p["versions"]:
             v.pop("_tag", None)
+    breakage = []   # 5b dry run: listed in breakage.json and the log, the tier is not changed
+    when = now or datetime.datetime.now(datetime.timezone.utc)
+    by_id = {e["id"]: e for e in entries}
+    for p in plugins:
+        raw = p.pop("_issues", None)
+        if p["tier"] != "verified":
+            continue
+        tr = (lambda n, repo=p["repo"]: src.team_replied(repo, n)) if hasattr(src, "team_replied") else None
+        try:
+            b = breakage_of(by_id[p["id"]], p.get("latest"), raw, confirmed or {}, when, tr)
+        except Exception as ex:
+            b = {"version": p.get("latest"), "route": "error", "issues": [], "note": str(ex)}
+        if b and b["route"] != "error":
+            breakage.append(dict(b, id=p["id"]))
     hook_overlaps_of(plugins)
     catalog = {"schema": 1, "generated": (now or datetime.datetime.now(datetime.timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                "bar": BAR, "plugins": plugins}
+    catalog_breakage[:] = breakage
     if collections:
         catalog["collections"] = collections_of(plugins, collections)
         listed = {m for c in catalog["collections"] for m in c["members"]}
@@ -934,6 +1025,7 @@ def main():
     ap.add_argument("--cache", default="catalog/.cache")
     ap.add_argument("--yanked", default="catalog/yanked.json")
     ap.add_argument("--added", default="catalog/added.json")
+    ap.add_argument("--confirmed", default="catalog/confirmed.json", help="{\"<id>@<version>\": \"why\"}: breakage a catalog maintainer reproduced")
     ap.add_argument("--collections", default=None, help="collection files (default: collections/ next to --registry)")
     ap.add_argument("--keep", type=int, default=10)
     ap.add_argument("--check-registry", action="store_true")
@@ -971,7 +1063,9 @@ def main():
         print("%d entries checked for the portable layout (%d more built for their dependencies), %d problems"
               % (len(a.require_portable), len(sel) - len(a.require_portable), len(bad)))
         sys.exit(1 if bad or reg_problems else 0)
-    catalog, problems = build(entries, GitHub(os.environ.get("GITHUB_TOKEN")), a.cache, yanked, a.keep, added=added, collections=collections)
+    confirmed = json.load(open(a.confirmed)) if os.path.exists(a.confirmed) else {}
+    catalog, problems = build(entries, GitHub(os.environ.get("GITHUB_TOKEN")), a.cache, yanked, a.keep, added=added, collections=collections,
+                              confirmed=confirmed)
     os.makedirs(a.out, exist_ok=True)
     json.dump(catalog, open(os.path.join(a.out, "catalog.json"), "w"), indent=1)
     json.dump(problems, open(os.path.join(a.out, "problems.json"), "w"), indent=1)
@@ -979,6 +1073,11 @@ def main():
     json.dump(flagged, open(os.path.join(a.out, "flags.json"), "w"), indent=1)
     overlaps = hook_overlaps_of(catalog["plugins"])
     json.dump(overlaps, open(os.path.join(a.out, "overlaps.json"), "w"), indent=1)
+    json.dump(catalog_breakage, open(os.path.join(a.out, "breakage.json"), "w"), indent=1)
+    for b in catalog_breakage:
+        print("dry run, would drop to Listed: %s %s (%s%s; issues %s)" % (b["id"], b["version"], b["route"],
+              ", %d people on %s MPC OS %s" % (b["people"], b["device"], b["os"]) if b["route"] == "reports" else "",
+              ", ".join("#%d" % n for n in b["issues"]) or b.get("note", "")))
     for o in overlaps:
         print("addins hook the same calls, %s may not pass them on: %s %s and %s %s: %s" % (" and ".join(o["unchained"]), o["ids"][0], o["versions"][0],
               o["ids"][1], o["versions"][1], ", ".join(o["symbols"])))

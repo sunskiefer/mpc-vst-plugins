@@ -784,7 +784,7 @@ put("pads", h);
   function sig(p) { return p.coll ? collAgg(p.coll) : (counts && counts[p.id]) || blank(); }
   function newest(p) { var v = p.versions.filter(function (x) { return !x.yanked && x.channel === "stable"; })[0]; return v ? v.version : ""; }
   function issueUrl(p) {
-    var v = newest(p), body = "Plugin: " + p.name + (v ? " " + v : "") + "\nDevice:\nMPC OS:\n\nWhat happened:\n";
+    var v = newest(p), body = "Plugin: " + p.name + (v ? " " + v : "") + "\nDevice:\nMPC OS:\n\n- [ ] It does not work (it does not load, crashes or makes no sound): tick only if so\n\nWhat happened:\n";
     return "https://github.com/" + p.repo + "/issues/new?title=" + encodeURIComponent(p.name + ": ") + "&body=" + encodeURIComponent(body);
   }
   function myReports(id) { return me ? me.reports.filter(function (r) { return r.plugin_id === id; }) : []; }

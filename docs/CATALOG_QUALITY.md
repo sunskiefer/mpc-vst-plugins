@@ -118,10 +118,26 @@ evidence. The rule: **act on breakage, not on age.** A finished plugin that stil
   Maintenance row ("4 open issues · 1 waiting over 60 days for a reply (oldest 2026-08-01) · source repo archived"), and two bar
   items join "To improve this listing": `issues-unanswered` and `archived`. Informational only: the tier, the sort and the
   download are unchanged. A failed read leaves the field out. Not yet run against the live catalog (the nightly build will be the first).
-- **5b. Losing Verified, partly automated (next).** The "Losing Verified" rule below, with the evidence read by the build: an open
-  issue on the newest stable version marked "does not work" (a label such as `doesnt-work`, or a box in the prefilled Report an issue
-  text), and no Works for me report on that version since the issue opened, drops the plugin to Listed. A maintainer confirms the first
-  cases by hand before it runs unattended. A fix release, a new `tested.json` entry or a closed issue restores it.
+- **5b. Losing Verified, from confirmed breakage only (decided 2026-11-09, maintainer; dry run built, offline).** A user's "does not
+  work" is a claim, not evidence: it can be user error, so on its own it changes nothing. The newest stable version of a Verified
+  plugin loses Verified only by one of three routes (`breakage_of` in `tools/catalog_build.py`):
+  1. **author:** an open issue on that version carries a `confirmed` label (`confirmed-bug`, `bug-confirmed` also count). Adding
+     a label needs triage access to the repo, so a reporter can't do it.
+  2. **maintainer:** `catalog/confirmed.json` (`{"<id>@<version>": "why"}`) names it, after a catalog maintainer or a step-4 verifier
+     reproduced it on their own device.
+  3. **reports:** at least `BREAKAGE_REPORTERS` (3) different people ticked "It does not work" on that version, on the same device
+     class (Gen1, Gen2 or MPC Sample, read from the issue's free-text Device line) and MPC OS (major.minor), the oldest of those issues
+     is at least `BREAKAGE_SILENCE_DAYS` (30) old, and nobody from the repo (owner, member or collaborator) has commented on them.
+  What clears a report: the repo's people label it `user-error`, `invalid`, `wontfix`, `not-planned`, `works-for-me` or `duplicate`,
+  or close it; a new release (the rules only look at the newest stable version). **Not yet read:** a Works for me report on the same
+  device and OS after the issue opened should clear route 3 too; the build does not read the community service yet (needed before 5b
+  goes live). Opened by the repo's own people, an issue never counts for route 3.
+  **Report form:** the site's prefilled Report an issue text has the tick box `- [ ] It does not work (it does not load, crashes or
+  makes no sound): tick only if so`, and the Plugin / Device / MPC OS lines the build parses (`report_fields`).
+  **Dry run (2026-11-09):** the nightly build writes `breakage.json` (`[{id, version, route, issues, device?, os?, people?, note?}]`)
+  and logs "dry run, would drop to Listed: …". Nothing changes on the site. Plan: watch it for a few weeks, check every case by hand,
+  tune the numbers, add the Works for me check, then let it change the tier (restored by a fixed release, a new `tested.json` entry, or
+  the issue being cleared).
 - **5c. Experimental on confirmed breakage (later).** The newest stable version has confirmed "does not work" reports on the current
   MPC OS, no Works for me on that OS, and the author has not answered for 60 days: the catalog opens an issue on the plugin's repo
   saying it will move to Experimental (hidden by default) in 30 days, then moves it. A fixed release, or a Works for me report on the
