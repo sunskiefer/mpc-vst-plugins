@@ -38,6 +38,11 @@ with zipfile.ZipFile(lz, "w") as z:
     for name, body in (("install.sh", "#!/bin/sh\nexit 0\n"), ("uninstall.sh", "#!/bin/sh\nexit 0\n"),
                        ("MODES", "x\tinstall.sh\nl\tlib/a.so\tb.so\n"), ("mpc-plugin.json", '{"folder": "portable/acme - VST - Linky"}\n')):
         z.writestr("Linky-1.0.0/" + name, body)
+# a zip of the plugin the fake MPC One already has (mpc-plaits), put in local-plugins: its card must be INSTALLED (#782)
+with zipfile.ZipFile(os.path.join(out, "Plaits-local.zip"), "w") as z:
+    for name, body in (("install.sh", "#!/bin/sh\nexit 0\n"), ("uninstall.sh", "#!/bin/sh\nexit 0\n"),
+                       ("mpc-plugin.json", '{"schema": 1, "id": "mpc-plaits", "version": "1.0.0"}\n')):
+        z.writestr("Plaits-1.0.0/" + name, body)
 data = open(lz, "rb").read()
 plugins.append({"id": "linky", "name": "Linky", "author": "acme", "repo": "acme/mpc-vst-linky", "kind": "instrument",
                 "license": "MIT", "summary": "A stand-in plugin whose package needs a symbolic link.", "style": "utility", "tags": ["test"],

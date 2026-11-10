@@ -2464,3 +2464,11 @@ tested on a Key 37 (Gen1, 3.9.1.2) and an MPC Sample (1.3.0.12):
   `/run/systemd/system/ac50.service.d/` (`/etc` isn't persistent; the service is `ac50`, the Key 37's `acvs`).
 - **Both devices' BusyBox (1.36.1) lacks `head -c` and `head -<N>`;** `head -n N` and `dd bs=1 count=N` work. A script made
   on a desktop that uses either fails on the device.
+
+## 2026-11-10: Plugin Manager G2: a local zip of an installed plugin showed INSTALL forever (#782), offline only
+
+`scan_installed()` in `tools/plugin_manager_g2/src/manager.c` matches an installed plugin to a card by the `id` in its `mpc-plugin.json`. A zip put in
+`local-plugins/` is a card with id `local-<id>`, so it never matched: the card stayed "not installed" (INSTALL, no Remove), and the reporter had to rename
+`uninstall.sh` to `install.sh` inside the zip to remove a plugin. The match now strips the `local-` prefix. Offline test (`tests/run.sh` safety section, `drive localcard`
+on the fake MPC One): before the fix the local card was state=1 inst=0; after it is state=3 inst=1, Remove queues and APPLY reaches ready with the zip's `uninstall.sh`
+in apply.sh. Not yet checked on a device. A local zip whose `mpc-plugin.json` has no `id` is still matched by name only (the card is named after the file).
