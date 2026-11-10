@@ -178,6 +178,7 @@ with sync_playwright() as p:
     n = len(gh.calls); pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
     pg.locator('a[data-open="test-synth"]').first.click(); pg.wait_for_timeout(500)
     check("reopening the popup does not ask GitHub again", len(gh.calls) == n, (n, len(gh.calls)))
+    pg.locator("#modal-body details.sig-fold > summary").click(); pg.wait_for_timeout(100)
     pg.locator("[data-sig-wd]").click(); pg.wait_for_timeout(500)
     check("withdrawing in the popup sends DELETE and lowers the count", any(c[0] == "DELETE" and c[1] == "/api/working" for c in svc.calls) and pg.locator("#modal-body [data-sig-wd]").count() == 0 and "7" in pg.locator('#modal-body .sig-n').inner_text())
     pg.keyboard.press("Escape")
@@ -272,7 +273,7 @@ with sync_playwright() as p:
     # 8. GitHub failing or Issues turned off
     for mode, want in (("down", "Could not load issues"), ("no-issues", "turned Issues off")):
         svc = Service(); ctx, pg, errs, gh = page(b, svc, gh=GitHub(mode)); pg.locator('a[data-open="test-synth"]').first.click(); pg.wait_for_timeout(700)
-        check("github %s: says so, the rest of the popup works" % mode, want in pg.locator("#modal-body .sig-gh").inner_text() and "Reported on" in pg.locator("#modal-body .sig-comm").inner_text() and "working" in pg.locator("#modal-body details.vers").text_content(), pg.locator("#modal-body .sig-gh").inner_text())
+        check("github %s: says so, the rest of the popup works" % mode, want in pg.locator("#modal-body .sig-gh").inner_text() and "Reported on" in pg.locator("#modal-body .sig-comm").text_content() and "working" in pg.locator("#modal-body details.vers").text_content(), pg.locator("#modal-body .sig-gh").inner_text())
         ctx.close()
     # 9. a dead service leaves the page working
     svc = Service(up=False); ctx, pg, errs, gh = page(b, svc)
@@ -285,7 +286,7 @@ with sync_playwright() as p:
     svc = Service(); svc.me = {"user": {"id": "u1", "name": "<img src=x onerror=window.__x=1>"}, "likes": [], "reports": [{"plugin_id": "test-synth", "version": "1.1.0", "device": "<b>d</b>", "os": "<i>o</i>"}]}
     svc.detail["devices"][0]["device"] = "<u>dev</u>"
     ctx, pg, errs, gh = page(b, svc, signed_in=True); pg.locator('a[data-open="test-synth"]').first.click(); pg.wait_for_timeout(700)
-    check("names and report fields are escaped", pg.evaluate("window.__x") is None and pg.locator(".bar img").count() == 0 and pg.locator("#modal-body .sig-detail u, #modal-body .sig-detail b, #modal-body .sig-detail i").count() == 0 and "<u>dev</u>" in pg.locator("#modal-body .sig-comm").inner_text())
+    check("names and report fields are escaped", pg.evaluate("window.__x") is None and pg.locator(".bar img").count() == 0 and pg.locator("#modal-body .sig-detail u, #modal-body .sig-detail b, #modal-body .sig-detail i").count() == 0 and "<u>dev</u>" in pg.locator("#modal-body .sig-comm").text_content())
     ctx.close()
     # 11. phone: header button reachable, no sideways scroll, strip fits
     svc = Service(); ctx, pg, errs, gh = page(b, svc, size=(375, 800))
