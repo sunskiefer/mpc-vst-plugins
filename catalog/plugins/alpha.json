@@ -1,0 +1,5 @@
+{ "id": "alpha", "name": "ALPHA", "author": "L'Cronx", "repo": "sunskiefer/ALPHA",
+  "kind": "effect", "style": "granular", "tags": ["vocal", "granular", "pitch-shifter", "formant", "harmonizer", "autotune", "modulation", "sound-design"],
+  "license": "PolyForm-Noncommercial-1.0.0", "source_available": true, "asset_pattern": "*-mpc-armv7.zip",
+  "screenshot": "https://raw.githubusercontent.com/sunskiefer/ALPHA/v1.2.0/docs/screens/ALPHA_page_01_Pitch.png",
+  "summary": "A granular vocal transformer: pitch and formant move separately, with harmonic shifter, alternator, smear, detune, scale/key TUNE, four modulation slots and 492 factory presets. Put it on an input or an insert and sing or play a voice through it, with or without MIDI. MPC OS 3.x." }
