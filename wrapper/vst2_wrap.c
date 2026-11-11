@@ -148,6 +148,9 @@ typedef struct {
     int has_pend0;            /* (see setParameter) */
     char last_rev[16];       /* HAS_DISPLAY_REV: the "display_rev" last seen */
     float last_norm[NPARAMS];   /* HAS_DISPLAY_REV: value last reported per param (-1 = never) */
+#ifdef DISPLAY_REV_THREAD
+    pthread_t rev_th; volatile int rev_stop; int rev_th_on;   /* the display_rev reporter thread (see rev_scan) */
+#endif
     float open[NPARAMS];     /* popup "open" flags (popup.h): kept here, never sent to the DSP or saved */
     char chunk[8192];
     pthread_mutex_t lock;    /* one engine call at a time: see eng_set() */
@@ -509,6 +512,37 @@ static void render_events(wrap_t *w, float **out, int32_t n, int accumulate) {
 }
 #endif
 
+/* HAS_DISPLAY_REV: when the engine's "display_rev" moved, report every param whose value changed, so the host moves controls
+ * and re-evaluates IndexedEnabling (when= panels), not only text. Each report is an audioMasterAutomate, which MPC handles
+ * synchronously and which can wait on its UI thread: a plugin whose display_rev moves all the time (meters) stalled MPC's
+ * audio workers ~20 ms every few seconds from the audio thread (measured on a Live III). DISPLAY_REV_THREAD
+ * runs this on a normal-priority thread of the wrapper's own instead (rev_thread), every 100 ms. */
+static void rev_scan(wrap_t *w) {
+    char rev[16];
+    if (eng_get(w, "display_rev", rev, sizeof rev) > 0 && strcmp(rev, w->last_rev)) {
+        snprintf(w->last_rev, sizeof w->last_rev, "%s", rev);
+        if (!DISPLAY_REV_NO_UPDATE) w->need_update_display = 1;
+        for (int i = 0; i < NPARAMS; i++) {
+            if (PARAMS[i].momentary || popup_is(i) || PARAMS[i].string_display) continue;
+            float v = get_norm(w, i);
+            if (fabsf(v - w->last_norm[i]) > 1e-4f) { w->last_norm[i] = v; w->master(&w->fx, audioMasterAutomate, i, 0, 0, v); }
+        }
+    }
+}
+#ifdef DISPLAY_REV_THREAD
+#include <time.h>
+static void *rev_thread(void *arg) {
+    wrap_t *w = arg;
+    pthread_setname_np(pthread_self(), "vst-rev");
+    while (!w->rev_stop) {
+        struct timespec ts = {0, 100000000};
+        nanosleep(&ts, NULL);
+        if (!w->rev_stop) rev_scan(w);
+    }
+    return NULL;
+}
+#endif
+
 static void housekeeping(AEffect *e, int32_t n) {
     wrap_t *w = e->object;
     if (HAS_LFO_BPM || HAS_TRANSPORT || HAS_SONG_POS) update_tempo(w, n);
@@ -574,20 +608,11 @@ static void housekeeping(AEffect *e, int32_t n) {
             }
         }
     }
-    if (HAS_DISPLAY_REV && poll_rev) {
-        char rev[16];
-        if (eng_get(w, "display_rev", rev, sizeof rev) > 0 && strcmp(rev, w->last_rev)) {
-            snprintf(w->last_rev, sizeof w->last_rev, "%s", rev);
-            if (!DISPLAY_REV_NO_UPDATE) w->need_update_display = 1;
-            /* report what the engine changed by itself, so the host moves controls and re-evaluates
-             * IndexedEnabling (when= panels), not only text */
-            for (int i = 0; i < NPARAMS; i++) {
-                if (PARAMS[i].momentary || popup_is(i) || PARAMS[i].string_display) continue;
-                float v = get_norm(w, i);
-                if (fabsf(v - w->last_norm[i]) > 1e-4f) { w->last_norm[i] = v; w->master(&w->fx, audioMasterAutomate, i, 0, 0, v); }
-            }
-        }
-    }
+#ifndef DISPLAY_REV_THREAD
+    if (HAS_DISPLAY_REV && poll_rev) rev_scan(w);
+#else
+    (void)poll_rev;
+#endif
     /* parameters the engine changed by itself (engine.h mpc_engine_changed): reported as a CC's are, just below */
     if (mpc_engine_changed) {
         char key[64];
@@ -830,6 +855,9 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
 #ifdef SAMPLE_PAGE
         sample_page_close(w->spage);   /* first: its thread reads the engine */
 #endif
+#ifdef DISPLAY_REV_THREAD
+        if (w->rev_th_on) { w->rev_stop = 1; pthread_join(w->rev_th, NULL); }
+#endif
         g_api->destroy(w->dsp);
         pthread_mutex_destroy(&w->lock);
         free(w);
@@ -943,6 +971,17 @@ __attribute__((visibility("default"))) AEffect *VSTPluginMain(audioMasterCallbac
     w->pos = DSP_BLOCK;
     for (int i = 0; i < NPARAMS; i++) w->last_pos[i] = w->last_norm[i] = -1;
     w->nrpn = -1;
+#ifdef DISPLAY_REV_THREAD
+    {   /* a normal-priority thread whatever the creating thread is (explicit, not inherited) */
+        pthread_attr_t ta; struct sched_param sp = {0};
+        pthread_attr_init(&ta);
+        pthread_attr_setinheritsched(&ta, PTHREAD_EXPLICIT_SCHED);
+        pthread_attr_setschedpolicy(&ta, SCHED_OTHER);
+        pthread_attr_setschedparam(&ta, &sp);
+        w->rev_th_on = pthread_create(&w->rev_th, &ta, rev_thread, w) == 0;
+        pthread_attr_destroy(&ta);
+    }
+#endif
     AEffect *e = &w->fx;
     e->magic = 0x56737450; /* 'VstP' */
     e->dispatcher = dispatcher;
