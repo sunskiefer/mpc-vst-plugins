@@ -23,7 +23,7 @@ MPC lists every plugin folder in a **`VST2 Plugins`** folder at the root of any 
 - **Already have plugins installed** (with the installer, the Plugin Manager or a stick)? On 3.10.1 the plugin browser only lists
   plugins in `VST2 Plugins`. Your plugins and saved projects are fine; move them with one tap in the Plugin Manager 1.0, or with
   the installer app's **Move** button. Details in [Getting started](docs/GETTING_STARTED.md#already-have-plugins).
-- **Making plugins?** Start with [Akai's MPC Plugin SDK](AKAI-SDK-URL) for a new plugin. This repo adds what it does not cover:
+- **Making plugins?** Start with [Akai's MPC Plugin SDK](https://github.com/inmusic-software/mpc-plugin-builder-sdk) for a new plugin. This repo adds what it does not cover:
   porting existing engines ([docs/PORTING.md](docs/PORTING.md)), the **Skin Studio** for screen skins
   ([docs/SKIN_STUDIO.md](docs/SKIN_STUDIO.md)), host tests and CPU benchmarks, and the catalog, which lists SDK-built plugins too.
 - **Force:** no 3.10.1 for the Force yet; everything below (the installer app, the Plugin Manager, sticks) keeps working on it.
