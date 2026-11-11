@@ -1,0 +1,6 @@
+{ "id": "welle", "name": "Welle", "author": "sd88me", "repo": "sd88me/mpc-vst-welle",
+  "kind": "instrument", "style": "synth", "tags": ["wavetable", "waldorf", "emulation"], "license": "GPL-3.0-only",
+  "summary": "Waldorf Wave emulation running the Wave OS, with a native MPC screen skin and Q-Links. Needs your own Wave OS 1.700 files, uploaded from the Plugin Manager.",
+  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-welle/v0.2.0/docs/screenshots/main.png",
+  "asset_pattern": "Welle-*-mpc-aarch64.zip",
+  "flags_reviewed": ["network", "runs programs", "loads code at runtime"] }
