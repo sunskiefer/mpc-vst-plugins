@@ -1,6 +1,6 @@
 {
   "id": "piclidean-mpc",
-  "name": "πClideaN MPC",
+  "name": "πClideaN",
   "author": "Timo",
   "repo": "timomacquis/piClideaN16-MPC",
   "kind": "instrument",
@@ -14,6 +14,6 @@
     "euclidean",
     "generative"
   ],
-  "screenshot": "https://raw.githubusercontent.com/timomacquis/piClideaN16-MPC/48c2560cb46bcec86b8f473844d38b3b37a21709/Cover.png",
+  "screenshot": "https://raw.githubusercontent.com/timomacquis/piClideaN-MPC/657e7ca8ac8139eeb1678f8639afa2b40ac7faa0/Cover.png",
   "asset_pattern": "ClideaN-MPC-*-mpc-armv7.zip"
 }
