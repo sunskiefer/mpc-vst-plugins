@@ -84,7 +84,14 @@ static void http_get(const char *path) { http("GET", path, ""); }
 
 int main(int argc, char **argv) {
   e = mpc_engine(); m = e->create(NULL);
-  for (int i = 0; i < 60 && !strstr(get("summary"), "available") ; i++) sleep(1);
+  /* wait for the first catalog load. "available" alone is no sign of it: the summary reads "0 plugins available" before the load, so a
+     catalog that took over a second left the whole scenario running on an empty list (seen 2026-11-11: "the install never reached ready").
+     Loaded = the status is past "Loading" and either plugins are listed or the status is a warning or an error (offline, a device problem). */
+  for (int i = 0; i < 60; i++) {
+    const char *st = get("status"), *su = get("summary");
+    if (st[0] && !strstr(st, "Loading") && (strncmp(su, "0 plugins", 9) || strcmp(get("status_kind"), "0"))) break;
+    sleep(1);
+  }
   sleep(1);
   printf("net=%s problem=%s (%s) empty=%s disk=%s %s upd_badge=%s count=%s\n", get("net"), get("problem"), get("problem_txt"), get("empty"),
          get("disk"), get("disk_txt"), get("upd_badge"), get("upd_count"));
