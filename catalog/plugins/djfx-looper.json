@@ -1,0 +1,17 @@
+{
+  "id": "djfx-looper",
+  "name": "DJFX Looper Native",
+  "author": "Rare Data",
+  "repo": "macdigi/djfx-looper",
+  "kind": "effect",
+  "license": "Apache-2.0",
+  "summary": "Three Q-Link knobs for short loops, speed bends and reverse playback, with FX bypass and an on-device quick guide.",
+  "style": "glitch",
+  "tags": [
+    "looper",
+    "reverse",
+    "performance"
+  ],
+  "homepage": "https://getquota.app/djfx-looper#source",
+  "asset_pattern": "*-mpc-armv7.zip"
+}
