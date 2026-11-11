@@ -5,19 +5,29 @@ Design: `docs/CATALOG.md`. Formats: `docs/CATALOG_SPEC.md`.
 
 ## Add your plugin
 1. Make a release zip with `tools/release.py` (or the `vst-release.yml` workflow) with `--repo owner/name --license <SPDX>`,
-   and check it: `tools/catalog_check.py <zip> --catalog`. Publish it as a GitHub release on your repo.
+   and check it: `tools/catalog_check.py <zip> --catalog`. Publish it as a GitHub release on your repo. If it needs something
+   else (your own ROMs, a network connection, another plugin in the same project), say so in one line with `--requires`: the
+   site shows it as "Needs" and the installers print it before installing. If it needs another catalog plugin (an Out that plays
+   its host plugin's outputs), declare it with `--depends percolator>=2.0.0` (or `--depends tr-mpc=same` for the same version; repeat
+   the flag for more), and a plugin it must not be installed with with `--conflicts <id>` (workflow inputs `depends`, `conflicts`,
+   space separated). The installers then add the dependency for the user and refuse the conflict; the catalog hides a version whose
+   dependency it can't offer. An entry can also carry `"depends": [...]` / `"conflicts": [...]` itself, used when the zip has none
+   (docs/CATALOG_SPEC.md, "Dependencies").
 2. Open a PR adding `catalog/plugins/<id>.json` (the `<id>` in your manifest; a file directly in `catalog/` is never read, and
    `--check-registry` fails on it):
    ```json
    { "id": "my-synth", "name": "My Synth", "author": "Your name", "repo": "you/my-synth-vst",
      "kind": "instrument", "license": "MIT", "summary": "One line.",
-     "style": "sampler", "tags": ["rompler"], "screenshot": "optional https URL", "asset_pattern": "*-mpc-armv7.zip" }
+     "style": "sampler", "tags": ["rompler"], "screenshot": "optional https URL", "youtube": "optional https://youtu.be/... link", "asset_pattern": "*-mpc-armv7.zip" }
    ```
    `style` and `tags` (lowercase slugs) feed the site's Style filter and search; pick a short, common word such as
    `synth`, `sampler`, `drum-machine`, `reverb`, `delay`, `utility`. If your license is not on the open-source list but
    the source is public, add `"source_available": true`: the plugin is listed with a "Restricted use" badge and
    its own license text shown. `screenshot` is an `https://` link to an image (a raw GitHub link to a PNG/JPG in your
    repo, pinned to a tag or commit); the card shows it in a 2:1 frame, cropping other shapes. Anything but `https://` is ignored.
+   `youtube` is an optional `https://youtube.com/...` or `https://youtu.be/...` link (a demo video or playlist); the plugin's popup on the catalog
+   page shows a Video button next to "Copy link". Any other address fails the registry check. `tags` are clickable on the cards and drive the Tag
+   filter (the dropdown lists tags used by two or more plugins), so reuse common ones before inventing new ones.
    A plugin that exists for Gen2 (aarch64) only, because its engine can't run on 32-bit ARM, sets `"asset_pattern": "*-mpc-aarch64.zip"` and
    ships just that zip (docs/GEN2.md); it is listed as "Gen2 only".
 3. CI checks the entry and your latest release. Once merged, new releases appear automatically (nightly, or
@@ -37,7 +47,7 @@ credited to different authors are counted separately, so a repo that hosts a few
 
 The card shows the collection's screenshot (or a collage of the members'), how many instruments and effects it holds, and the first few
 members; View all opens a list grouped by kind where people tick members (or Pick all) for the install list. The collection appears under
-each tab its members cover, sorted by its best member tier and total downloads. A release that updates several members on one day is one
+each tab its members cover, sorted by its best member tier and its most downloaded member. A release that updates several members on one day is one
 feed entry. (Live since 2026-11-02.)
 
 Open-source licenses (list in `tools/catalog_build.py`) or public source with `source_available` set. No versions or
@@ -51,7 +61,8 @@ skin and screenshot are clean, re-add the entry with a new PR (the same one-file
 
 ## Addins
 An addin (a library MPC loads when it starts, through `LD_PRELOAD`) is listed the same way, with `"kind": "addin"` in its
-entry. Package it with `tools/release_addin.py` instead of `release.py`: see `docs/ADDINS.md`.
+entry. Package it with `tools/release_addin.py` instead of `release.py`: see `docs/ADDINS.md`. If your library replaces a function
+another addin also replaces and either of you doesn't pass the call on (no `dlsym`/`dlvsym` lookup), both cards say so: docs/ADDINS.md.
 
 ## Companion apps
 A desktop tool that works with a standalone MPC but is not a plugin (for example MPC Link) is listed on the site's **Companion apps**
@@ -106,7 +117,7 @@ the card: a plugin with no badge is simply in the catalog (the Listed tier), and
 - **Experimental**: no stable release yet (a beta alone counts), or a maintainer capped the entry with `"tier": "experimental"`
   (for example a bulk port nobody has run). Hidden from the default catalog view, shown by the Tier filter.
 
-The default sort ("Recommended") lists featured plugins, then Verified, then Listed. Within a tier, ties go to Verified on both generations, then the newest hardware-test date, then downloads, then name. `"featured": true` in the
+The default sort ("Recommended") lists featured plugins, then Verified, then Listed. Plugins are ordered by evidence points: a Verified plugin with every build tested earns 3 (a Gen1-only plugin tested on Gen1 counts as fully tested, as does a dual Gen1 and Gen2 plugin tested on both), a dual build tested on one generation 1.5, and a Listed plugin 0. Where the catalog shows community reports, each person who reported the newest release working adds 1 (an older release 0.25, a like 0.1), so a handful of independent confirmations can outrank one recorded test. Experimental plugins are always last. Ties go to the newest hardware-test date, then downloads, then name. `"featured": true` in the
 registry entry is a maintainer's pick and is ignored for Experimental plugins. A listing can be capped, never raised, by the
 registry: `"tier"` accepts only `"experimental"`.
 

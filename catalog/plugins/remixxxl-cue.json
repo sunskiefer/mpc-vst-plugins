@@ -1,0 +1,20 @@
+{
+  "id": "remixxxl-cue",
+  "name": "reMixXXL CUE",
+  "author": "L'Cronx",
+  "repo": "sunskiefer/reMixXXL",
+  "kind": "effect",
+  "style": "utility",
+  "tags": [
+    "dj",
+    "routing",
+    "cue",
+    "headphones"
+  ],
+  "license": "GPL-3.0-or-later",
+  "depends": [
+    "remixxxl>=0.1.25"
+  ],
+  "asset_pattern": "reMixXXL-CUE-*-mpc-armv7.zip",
+  "summary": "Companion to reMixXXL: plays reMixXXL's PFL cue (decks 1/3 left, 2/4 right) on its own audio track routed to outputs 3/4, so you can beat match in the headphones while the main mix stays on 1/2. Needs reMixXXL 0.1.25 or later in the same project."
+}

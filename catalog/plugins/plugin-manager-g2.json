@@ -1,4 +1,4 @@
-{ "id": "plugin-manager-g2", "name": "Open MPC Plugin Manager G2", "author": "sd88me", "repo": "sd88me/mpc-vst-plugins",
+{ "id": "plugin-manager-g2", "name": "Open MPC Plugin Manager G2", "author": "sd88me", "repo": "open-mpc/mpc-vst-plugins",
   "kind": "instrument",
   "style": "utility",
   "tags": ["installer", "catalog", "manager", "gen1", "gen2", "utility"],

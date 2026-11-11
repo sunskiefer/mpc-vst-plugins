@@ -1,0 +1,6 @@
+{ "id": "ctrl-mixbus", "name": "CTRL MixBus", "author": "tonyalonsotech", "repo": "tonyalonsotech/CTRL-MixBus",
+  "kind": "effect", "style": "utility", "tags": ["mixing", "dj-eq", "isolator", "filter", "stereo-width", "gate", "maximizer", "metering"],
+  "license": "AGPL-3.0-only",
+  "summary": "CTRL Mixbus is a professional stereo mixing and processing effect designed to streamline your workflow across three focused pages. Take control of input gain, stereo width, equalization, precision filtering, dynamic gating, and loudness maximization.",
+  "asset_pattern": "CTRL-MixBus-[0-9]*-mpc-armv7.zip",
+  "screenshot": "https://raw.githubusercontent.com/tonyalonsotech/CTRL-MixBus/main/docs/preview.png" }
