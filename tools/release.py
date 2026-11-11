@@ -42,6 +42,9 @@ ap.add_argument("--extra", action="append", default=[], help="SRC:DEST extra dat
 ap.add_argument("--bench", help="JSON line from `tools/bench.sh ... -j` on a Gen1 device")
 ap.add_argument("--about", default="", help="one-line description for INSTALL.md")
 ap.add_argument("--folder-name", help="name part of the plugin folder when it differs from the plugin-list name (default: the list name); the folder name is kept so upgrades keep the user's data")
+ap.add_argument("--retire", action="append", default=[], metavar="FOLDER",
+                help="'<vendor> - VST - <name>': an OLD plugin folder this package replaces under another name (a renamed plugin, same uid). The installer removes it, "
+                     "but only if its mpc-plugin.json carries this package's id, and moves its --user-data files into the new folder")
 ap.add_argument("--id", help="catalog id: lowercase letters, digits, hyphens (default: from the plugin name)")
 ap.add_argument("--repo", help="source repo, owner/name (for the catalog manifest)")
 ap.add_argument("--license", help="SPDX license id of the plugin (for the catalog manifest)")
@@ -107,10 +110,17 @@ if a.user_files:
     problems = user_files_problems(user_files, a.user_data)
     if problems:
         raise SystemExit("--user-files: " + "; ".join(problems))
+for r in a.retire:
+    if not re.fullmatch(r"[^/:\\\"'$`&|;<>*?#@,^]+ - VST - [^/:\\\"'$`&|;<>*?#@,^]+", r) or r == skin_name:
+        raise SystemExit("--retire must be an old plugin folder '<vendor> - VST - <name>' other than this one, without / : \\ \" ' $ ` & | ; < > * ? # @ , ^: %r" % r)
+plugin_id = a.id or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", plugin_id):
+    raise SystemExit("--id must be lowercase letters, digits and hyphens")
 legacy_so = "/sdcard/vst/" + so_name   # where the previous layout installed the .so (and its data, next to it)
 sub = {"@NAME@": name, "@SO_NAME@": so_name, "@SKIN@": skin_name,
        "@EXTRAS@": " ".join("'%s'" % e for e in extras), "@VERSION@": a.version,
-       "@UID@": attr["uid"], "@LEGACY_SO@": legacy_so, "@USER_DATA@": " ".join(a.user_data)}
+       "@UID@": attr["uid"], "@LEGACY_SO@": legacy_so, "@USER_DATA@": " ".join(a.user_data),
+       "@RETIRE@": ":".join(a.retire), "@ID@": plugin_id}
 for script in ("install.sh", "uninstall.sh"):
     text = open(os.path.join(HERE, "release", script)).read()
     for k, v in sub.items():
@@ -232,9 +242,6 @@ if elf_machine(a.so) == "aarch64":
     os_compat, os_why = ["3.x"], ["Gen2 runs MPC OS 3.x only"]
 print("MPC OS compatibility: %s%s" % (" and ".join(os_compat), "" if "2.x" in os_compat else " only (not 2.x: %s)" % "; ".join(os_why[:2])))
 
-plugin_id = a.id or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", plugin_id):
-    raise SystemExit("--id must be lowercase letters, digits and hyphens")
 for problem in deps.check_lists(a.depends, a.conflicts, plugin_id):
     raise SystemExit("--depends/--conflicts: " + problem)
 manifest = {
@@ -251,6 +258,7 @@ manifest = {
     "folder": folder,
     "extras": extras,
     "user_data": a.user_data,
+    "retire": a.retire,
     "user_files": user_files,
     "arch": elf_machine(a.so),
     "max_glibc": max_glibc(a.so),
