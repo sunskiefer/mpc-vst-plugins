@@ -1,4 +1,4 @@
 { "id": "profit-08", "name": "Profit-08", "author": "sd88me", "repo": "sd88me/mpc-vst-profit8",
-  "kind": "instrument", "style": "synth", "tags": ["analog", "poly", "layers", "sequencer"], "license": "MIT",
-  "summary": "Eight-voice, two-layer analog-style synthesizer: stack and split layers, a gated sequencer and arpeggiator, a resonant 2/4-pole filter and a banks browser for your own program and bank SysEx dumps.",
+  "kind": "instrument", "style": "synth", "tags": ["analog", "poly", "layers", "sequencer", "favourites", "q-links"], "license": "MIT",
+  "summary": "Eight-voice, two-layer analog-style synthesizer: stack and split layers, a gated sequencer and arpeggiator, a resonant 2/4-pole filter, and a banks browser with favourites for your own program and bank SysEx dumps. 2.0 adds a native MPC screen with large knobs and Q-Link control of every page.",
   "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-profit8/main/docs/img/screenshot-program.png" }
