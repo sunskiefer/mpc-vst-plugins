@@ -223,15 +223,17 @@ int main(int argc, char **argv) {
     printf("cache queued: |%s| apply=%s\n", get("set_cache_txt"), get("apply_state"));
     e->destroy(m); return 0;
   }
-  if (argc > 1 && !strcmp(argv[1], "az")) {   /* the A-Z jump menu opens, a letter shows the first plugin with that initial and closes it */
+  if (argc > 1 && !strcmp(argv[1], "az")) {   /* the A-Z filter: a letter keeps only plugins starting with it, ALL clears it */
     for (int i = 0; i < 40 && !strcmp(get("card1"), ""); i++) usleep(250000);
-    printf("start: |%s|\n", get("card1"));
+    printf("start: f=%s |%s| |%s|\n", get("az_f"), get("az_txt"), get("card1"));
     press("az_btn");
     printf("open: %s\n", get("az_open"));
     press("az_pick27");   /* Z */
-    printf("after Z: open=%s |%s|\n", get("az_open"), get("card1"));
-    press("az_btn"); press("az_pick2");   /* A */
-    printf("after A: open=%s |%s|\n", get("az_open"), get("card1"));
+    printf("after Z: open=%s f=%s |%s| card1=|%s|\n", get("az_open"), get("az_f"), get("az_txt"), get("card1"));
+    usleep((tapms() + 30) * 1000); press("az_btn"); press("az_pick2");   /* A: a real second tap comes after the double-tap window */
+    printf("after A: open=%s f=%s |%s| card1=|%s|\n", get("az_open"), get("az_f"), get("az_txt"), get("card1"));
+    usleep((tapms() + 30) * 1000); press("az_btn"); press("az_pick28");   /* ALL */
+    printf("after ALL: f=%s |%s| card1=|%s|\n", get("az_f"), get("az_txt"), get("card1"));
     e->destroy(m); return 0;
   }
   if (argc > 1 && !strcmp(argv[1], "about")) {   /* ABOUT: the running version, the installed copy, this MPC */

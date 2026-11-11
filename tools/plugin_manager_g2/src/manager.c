@@ -140,6 +140,7 @@ typedef struct {
     char own[300];                /* this plugin's own folder (its skins live there) */
     int tsel, reprompt;           /* which usable location new installs go to; CHANGE re-prepares and reopens the prompt */
     int sort;                     /* 0 last updated, 1 newest (first release), 2 most downloaded, 3 name */
+    char azf;                     /* the A-Z filter: 0 none, '#' or 'A'..'Z' (the first letter or digit of the name) */
     int menu_open;                /* the header's dropdown that is open: 0 none, 1 filter, 2 sort, 3 drive, 4 A-Z */
     int kb;                       /* the search keyboard is open */
     char q[28];                   /* the search (typed on the drawn keyboard), "" none */
@@ -2557,6 +2558,13 @@ static int hidden_here(const mgr_t *m, const pkg_t *p) {
     return !m->show_beta && !strcmp(p->channel, "beta");
 }
 
+static char name_initial(const pkg_t *p) {   /* the A-Z filter's letter: the name's first letter or digit, '#' for a digit or symbol */
+    const char *nm = p->name;
+    while (*nm && !isalnum((unsigned char)*nm)) nm++;
+    int c = *nm ? toupper((unsigned char)*nm) : 0;
+    return c >= 'A' && c <= 'Z' ? c : '#';
+}
+
 static int visible_now(const mgr_t *m, int *idx) {
     int n = 0;
     for (int i = 0; i < m->npkg; i++) {
@@ -2566,6 +2574,7 @@ static int visible_now(const mgr_t *m, int *idx) {
         if (m->kindf == 2 && strcmp(p->kind, "effect")) continue;
         if (m->kindf == 3 && !is_addin(p)) continue;
         if (hidden_here(m, p)) continue;   /* made for other MPCs, or a beta with beta hidden */
+        if (m->azf && name_initial(p) != m->azf) continue;
         if (m->tab == 0 && installed(p)) continue;   /* DISCOVER: what isn't on this MPC yet */
         if (m->tag[0] && !has_tag(p, m->tag)) continue;
         if (m->q[0] && !matches(p, m->q)) continue;
@@ -2909,6 +2918,7 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
         }
     } else if (v >= 0.5 && !strcmp(key, "search_btn")) {   /* the header's search button or search chip: type */
         m->kb = 1;
+        m->azf = 0;
         m->menu_open = 0;
         m->detail[0] = 0;
         m->tag[0] = 0;
@@ -2952,16 +2962,12 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
     } else if (v < 0.5) {
         /* the other params are triggers: act on press only */
     } else if (!strcmp(key, "az_btn") && detail_of(m) < 0) m->menu_open = 4;   /* the A-Z jump menu */
-    else if (!strncmp(key, "az_pick", 7) && atoi(key + 7) >= 1 && atoi(key + 7) <= 27 && m->menu_open == 4) {
-        int k = atoi(key + 7) - 1, idx[MAXPKG], nv = visible(m, idx);   /* 0 is "#", then A to Z: the page of the first plugin with that initial */
-        for (int v = 0; v < nv; v++) {
-            const char *nm = m->pkg[idx[v]].name;
-            while (*nm && !isalnum((unsigned char)*nm)) nm++;
-            int c = *nm ? toupper((unsigned char)*nm) : 0, hit = k == 0 ? !isalpha(c) : c == 'A' + k - 1;
-            if (hit) { m->page = v / ROWS; break; }
-        }
+    else if (!strncmp(key, "az_pick", 7) && atoi(key + 7) >= 1 && atoi(key + 7) <= 28 && m->menu_open == 4) {   /* '#', A to Z, then ALL */
+        int k = atoi(key + 7) - 1;
+        m->azf = k == 27 ? 0 : k == 0 ? '#' : 'A' + k - 1;
         m->menu_open = 0;
         m->menu = -1;
+        m->page = 0;
     } else if (!strcmp(key, "menu_close")) m->menu_open = 0;   /* a tap outside an open dropdown */
     else if (!strcmp(key, "kind_btn") || !strcmp(key, "sort_btn")) {   /* opens only: a quick second tap (or a bounce)
                                                                          * before the menu is drawn must not close it */
@@ -3035,7 +3041,7 @@ static void mgr_set_param(void *inst, const char *key, const char *val) {
     else if (!strcmp(key, "tag_clear")) { m->tag[0] = 0; m->page = 0; }
     else if (!strncmp(key, "d_tag", 5) && key[5] >= '1' && key[5] <= '8') {   /* a tag button: list the plugins with that tag (in the current tab) */
         int i = detail_of(m);
-        if (i >= 0 && nth_tag(&m->pkg[i], key[5] - '1', m->tag, sizeof m->tag)) { m->detail[0] = 0; m->menu = -1; m->page = 0; m->q[0] = 0; }
+        if (i >= 0 && nth_tag(&m->pkg[i], key[5] - '1', m->tag, sizeof m->tag)) { m->detail[0] = 0; m->menu = -1; m->page = 0; m->q[0] = 0; m->azf = 0; }
     } else if (key[0] == 'd' && key[1] == '_') {   /* d_act, d_more, d_reinstall, d_remove */
         int i = detail_of(m);
         if (i >= 0 && !busy) act(m, i, key + 2);
@@ -3077,6 +3083,8 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
     else if (!strcmp(key, "kind")) snprintf(b, n, "%d", m->kindf);
     else if (!strcmp(key, "sort")) snprintf(b, n, "%d", m->sort);
     else if (!strcmp(key, "az_open")) snprintf(b, n, "%d", m->menu_open == 4);
+    else if (!strcmp(key, "az_f")) snprintf(b, n, "%d", m->azf != 0);
+    else if (!strcmp(key, "az_txt")) snprintf(b, n, "%s", m->azf ? (char[]){m->azf, 0} : "A\xe2\x80\x93Z");
     else if (!strcmp(key, "kind_open")) snprintf(b, n, "%d", m->menu_open == 1);
     else if (!strcmp(key, "sort_open")) snprintf(b, n, "%d", m->menu_open == 2);
     else if (!strcmp(key, "kind_hl")) snprintf(b, n, "%d", m->menu_open == 1 ? 1 + (m->kindf & 3) : 0);   /* the open menu's current row */

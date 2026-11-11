@@ -4346,6 +4346,26 @@
    "name": "A-Z letter 27",
    "type": "trigger",
    "momentary": true
+  },
+  {
+   "key": "az_pick28",
+   "name": "A-Z letter 28 (ALL)",
+   "type": "trigger",
+   "momentary": true
+  },
+  {
+   "key": "az_f",
+   "name": "A-Z filter on",
+   "options": [
+    "off",
+    "on"
+   ]
+  },
+  {
+   "key": "az_txt",
+   "name": "A-Z pill text",
+   "type": "readout",
+   "display": "string"
   }
  ]
 }

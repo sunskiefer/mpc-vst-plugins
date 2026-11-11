@@ -227,12 +227,14 @@ def main():
     menu("menu_sort.svg", 298, "SORT BY", ("Last updated", "Newest", "Most downloaded", "Name (A\u2013Z)"))
     menu("menu_drive.svg", 298, "INSTALL TO", ("", "", "", ""))   # the drive menu: the names and free space are live text
     svg("disk_hit.svg", 216, 40, '<rect width="216" height="40" fill="#000" fill-opacity="0"/>')   # the storage readout opens the drive menu
-    letters = ["#"] + [chr(65 + i) for i in range(26)]   # the A-Z jump menu: all 27 letters drawn into one panel, 9 columns x 3 rows, invisible hit buttons over them
-    svg("menu_az.svg", 600, 228, '<rect x="1" y="1" width="598" height="226" rx="10" fill="#1d1e21" stroke="#3a3c41" stroke-width="2"/>'
-        + text(22, 28, "JUMP TO", 12, "#7c8086", 700, spacing=1.2)
-        + "".join(text(44 + 64 * (k % 9), 90 + 52 * (k // 9), t, 24, INK, 700, anchor="middle") for k, t in enumerate(letters)))
+    letters = ["#"] + [chr(65 + i) for i in range(26)] + ["ALL"]   # the A-Z filter menu: 28 cells drawn into one panel (10 columns x 3 rows), invisible hit buttons over them
+    svg("menu_az.svg", 664, 228, '<rect x="1" y="1" width="662" height="226" rx="10" fill="#1d1e21" stroke="#3a3c41" stroke-width="2"/>'
+        + text(22, 28, "FILTER BY FIRST LETTER", 12, "#7c8086", 700, spacing=1.2)
+        + "".join(text(44 + 64 * (k % 10), 90 + 52 * (k // 10), t, 24 if len(t) == 1 else 18, INK if len(t) == 1 else "#ff9a93", 700, anchor="middle") for k, t in enumerate(letters)))
     svg("az_hit.svg", 62, 48, '<rect width="62" height="48" fill="#000" fill-opacity="0"/>')
-    svg("az_btn.svg", 56, 44, '<rect x="0.5" y="0.5" width="55" height="43" rx="22" fill="none" stroke="#3a3c41"/>' + text(28, 29, "A\u2013Z", 16, INK, 700, anchor="middle", spacing=0.5))
+    svg("az_hit56.svg", 56, 44, '<rect width="56" height="44" fill="#000" fill-opacity="0"/>')   # the pill's tap area (the letter on it is a readout)
+    svg("az_pill.svg", 56, 44, '<rect x="0.5" y="0.5" width="55" height="43" rx="22" fill="none" stroke="#3a3c41"/>')
+    svg("az_pill_on.svg", 56, 44, '<rect x="1" y="1" width="54" height="42" rx="21" fill="#ffffff" fill-opacity="0.06" stroke="%s" stroke-width="2"/>' % RED)
     svg("menu_bd.svg", 1280, 628, '<rect width="1280" height="628" fill="#000" fill-opacity="0"/>')
     # banners and empty states
     svg("banner.svg", 636, 36, '<rect x="0.5" y="0.5" width="635" height="35" rx="8" fill="#2a1514" stroke="#6b2a26"/>'
