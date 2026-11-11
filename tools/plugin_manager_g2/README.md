@@ -43,10 +43,10 @@ the project's development**: the catalog, its release rules and the official way
   as the default for new installs (it is forgotten for a session only if that drive is not there, and returns when it is). The storage readout at the
   top right then names the drive (`CARD · 12.0 GB ▾`); tap it for an **INSTALL TO** menu of the usable places with their free space (0.2.5).
 - Addins (the catalog's `addin` kind) are supported as well as plugins.
-- **MPC OS 3.10.1 and later (1.0):** with VST2 Support on, installs and updates go to `<drive>/VST2 Plugins/` with a `plugin.json`
+- **MPC OS 3.10.1 and later (1.0):** with External Plugin Support on, installs and updates go to `<drive>/VST2 Plugins/` with a `plugin.json`
   (the only folder 3.10.1 lists), the drive menu offers every writable drive (internal, SD card, USB), and plugins installed before
   are offered as one **Move N plugins to VST2 Plugins** item on APPLY (their folders and your files are copied; nothing is deleted).
-  With VST2 Support off it tells you to turn it on. On older firmware nothing changes.
+  With External Plugin Support off it tells you to turn it on. On older firmware nothing changes.
 - **Web page (1.0):** while it is on a track, the manager serves `http://<mpc address>:8790/` on the local network (the status
   line shows the address when nothing is queued). The page is the catalog as cards (screenshot, badges, downloads, details; read
   by the browser from the catalog site) with Discover / Installed / Updates, type sections, style filter, sort and search, and

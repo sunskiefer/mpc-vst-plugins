@@ -2566,3 +2566,6 @@ tested on a Key 37 (Gen1, 3.9.1.2) and an MPC Sample (1.3.0.12):
 `uninstall.sh` to `install.sh` inside the zip to remove a plugin. The match now strips the `local-` prefix. Offline test (`tests/run.sh` safety section, `drive localcard`
 on the fake MPC One): before the fix the local card was state=1 inst=0; after it is state=3 inst=1, Remove queues and APPLY reaches ready with the zip's `uninstall.sh`
 in apply.sh. Not yet checked on a device. A local zip whose `mpc-plugin.json` has no `id` is still matched by name only (the card is named after the file).
+
+### 2026-11-11: the switch is called "External Plugin Support" in the released MPC OS 3.10.1 (offline, read from the 3.10.1.12 firmware and Akai's plugin SDK docs)
+- The MPC binary of 3.10.1.12 (Gen2 and Force images) has the label "External Plugin Support" (and "Enable Enhancements"); the string "VST2 Support" is not in it. The setting key is still `Enhancements.VST2Support` in `MPC.settings`. The "VST2 Support" wording in the entries above is what the 3.10.1.6 beta showed. User-facing text now says External Plugin Support; the Plugin Manager's on-screen hint (`manager.c`) still says VST2 Support until its next rebuild.

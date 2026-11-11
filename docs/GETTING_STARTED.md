@@ -7,7 +7,7 @@ plugin in the [Open MPC catalog](https://sd88me.github.io/mpc-vst-plugins/) come
 ## 1. Switch it on
 
 1. Update your MPC to **MPC OS 3.10.1** or later (Preferences, Info shows the version).
-2. **Preferences, Enhancements**: turn on **Enable Enhancements**, then **VST2 Support**, and read the warning.
+2. **Preferences, Enhancements**: turn on **Enable Enhancements**, then **External Plugin Support**, and read the warning.
 3. Wait a few seconds before restarting, so the setting is saved.
 
 Works on Gen1 MPCs (Live, Live II, One, X, Key) and Gen2 (Live III, One G2, Key G2, XL). There is no 3.10.1 for the Force yet.
@@ -43,7 +43,7 @@ If you installed plugins on an earlier MPC OS (with the installer app, the Plugi
 `MPC.settings`, which 3.10.1 no longer lists in the plugin browser. Nothing is lost: the plugin folders and your ROMs are still on
 the drive, and saved projects still load those plugins. To see them in the browser again, copy them into `VST2 Plugins`:
 
-- **Plugin Manager 1.0:** open it on 3.10.1 with VST2 Support on. It offers **Move N plugins to VST2 Plugins** (on its screen
+- **Plugin Manager 1.0:** open it on 3.10.1 with External Plugin Support on. It offers **Move N plugins to VST2 Plugins** (on its screen
   and on its web page); press **APPLY** (MPC restarts once).
 - **Installer app:** connect over SSH (Developer mode starts it), then **MPC OS 3.10.1: move your plugins to VST2 Plugins**,
   **Check**, then **Move**.

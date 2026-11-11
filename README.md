@@ -13,7 +13,7 @@ own **native MPC touchscreen page**. No bridge, no background app, no `LD_PRELOA
 
 ## MPC OS 3.10.1 and later: plugins the official way
 
-MPC OS **3.10.1** adds official support for third-party VST2 plugins: turn on **Preferences, Enhancements, VST2 Support** and
+MPC OS **3.10.1** adds official support for third-party VST2 plugins: turn on **Preferences, Enhancements, External Plugin Support** and
 MPC lists every plugin folder in a **`VST2 Plugins`** folder at the root of any drive (internal, SD card, USB) under
 **External VST Plugins**. No SSH, no root, no settings edits. Every plugin in the catalog works this way.
 
