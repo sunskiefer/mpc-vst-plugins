@@ -209,7 +209,7 @@ details.way[open] summary { margin-bottom: 6px; }
 
 <section id="mig" class="off" hidden>
   <h2>MPC OS 3.10.1: move your plugins to VST2 Plugins</h2>
-  <p class="sub">On MPC OS 3.10.1 and later the plugin browser lists only plugins in a <code>VST2 Plugins</code> folder (Preferences, Enhancements: turn on <b>VST2 Support</b> first). Plugins installed before are still there, and saved projects still load them, but you can't pick them from the browser. <b>Check</b> shows what would be copied; <b>Move</b> copies every installed plugin folder, your ROMs and files included, into <code>VST2 Plugins</code> on the same drive and restarts MPC. Nothing is deleted and <code>MPC.settings</code> is not edited. On older MPC OS this does nothing.</p>
+  <p class="sub">On MPC OS 3.10.1 and later the plugin browser lists only plugins in a <code>VST2 Plugins</code> folder (Preferences, Enhancements: turn on <b>External Plugin Support</b> first). Plugins installed before are still there, and saved projects still load them, but you can't pick them from the browser. <b>Check</b> shows what would be copied; <b>Move</b> copies every installed plugin folder, your ROMs and files included, into <code>VST2 Plugins</code> on the same drive and restarts MPC. Nothing is deleted and <code>MPC.settings</code> is not edited. On older MPC OS this does nothing.</p>
   <div class="row"><button id="mig-check" type="button">Check</button><button class="primary" id="mig-move" type="button">Move…</button></div>
   <p class="msg" id="mig-msg" role="status" aria-live="polite"></p>
   <pre class="log" id="mig-log" hidden></pre>
@@ -333,8 +333,8 @@ details.way[open] summary { margin-bottom: 6px; }
     <h3 id="v2-ready" hidden>Stick ready</h3>
     <p class="lead"><b>Then, on your MPC.</b> <i>Save your project first.</i></p>
     <ol>
-      <li>Preferences, <b>Enhancements</b>: turn on <b>Enable Enhancements</b> and <b>VST2 Support</b> (read the warning). Wait a few seconds, so the setting is saved.
-        <img class="shot" src="/img/enhancements.png" alt="Preferences, Enhancements on an MPC: Enable Enhancements and VST2 Support ticked" width="640" height="400" loading="lazy"></li>
+      <li>Preferences, <b>Enhancements</b>: turn on <b>Enable Enhancements</b> and <b>External Plugin Support</b> (read the warning). Wait a few seconds, so the setting is saved.
+        <img class="shot" src="/img/enhancements.png" alt="Preferences, Enhancements on an MPC: Enable Enhancements and External Plugin Support ticked" width="640" height="400" loading="lazy"></li>
       <li><b>Plug in</b> the stick. No restart needed: MPC finds it within a few seconds.</li>
       <li>Add a track: <b>External VST Plugins &gt; Plugin Manager</b>. Its status line shows an address like <code>http://192.168.1.40:8790</code>: open it on a phone or computer on the same Wi-Fi to install plugins, move old ones and add ROMs. Save your project with the Plugin Manager on a track and the page comes back after each restart.
         <img class="shot" src="/img/address-line.png" alt="The Plugin Manager status line with its web address" width="1279" height="75" loading="lazy"></li>
@@ -498,10 +498,10 @@ function setConnected(c, info, problems) {
     if (S.problems.length) msg($("connmsg"), m + " Cannot install here: " + S.problems.join("; ") + ".", "err"); else msg($("connmsg"), m, "ok");
     S.vst2 = info.vst2 || "";
     var dl = [info.model || (info.arch === "aarch64" ? "Gen2 MPC" : "MPC or Force"), info.mpcOS ? "MPC OS " + info.mpcOS : "",
-      S.vst2 === "on" ? "VST2 Support on" : S.vst2 === "off" ? "VST2 Support OFF" : "", info.legacyCount ? info.legacyCount + " plugin" + (info.legacyCount === 1 ? "" : "s") + " to move" : "",
+      S.vst2 === "on" ? "External Plugin Support on" : S.vst2 === "off" ? "External Plugin Support OFF" : "", info.legacyCount ? info.legacyCount + " plugin" + (info.legacyCount === 1 ? "" : "s") + " to move" : "",
       info.manager ? "Plugin Manager " + info.manager : "no Plugin Manager"].filter(Boolean).join("  \u00b7  ");
     text($("devline"), dl); $("devline").hidden = false;
-    if (S.vst2 === "off") msg($("connmsg"), "VST2 Support is off: on the MPC open Preferences > Enhancements, turn it on, wait a few seconds, restart MPC, then connect again.", "err");
+    if (S.vst2 === "off") msg($("connmsg"), "External Plugin Support is off: on the MPC open Preferences > Enhancements, turn it on, wait a few seconds, restart MPC, then connect again.", "err");
     drawWhere(); loadCatalog(); loadDevice(); loadUnreg(); loadBackups();
   }
   refresh();
@@ -1073,10 +1073,8 @@ function wzPlan() {
     steps: [["Connect with the MPC's IP address", HERE], ["Pick plugins marked MPC OS 2.x and 3.x", HERE, "The app warns you before installing a plugin made only for 3.x."], ["Install", HERE, "Your settings are backed up first, then MPC restarts once with the new plugins."]],
     go: "Connect", fn: goSSH,
     alts: [["I don't have SSH yet", "A stick that turns SSH on, built from your own firmware file (not yet tested on MPC OS 2.x)", goSSHStick]] };
-  else if (WZ.os === "new" && force) P = { t: "No MPC OS 3.10.1 for the Force yet", s: "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier (Menu > Preferences > Info shows it). Continue with that.",
-    steps: [], go: "Continue with 3.9.1 or earlier", fn: function () { WZ.os = "old"; wzSave(); wzShow("wz-ssh"); }, alts: [] };
   else if (WZ.os === "new") P = { t: "Put the Plugin Manager on your MPC", s: "Once it is on a track, you install everything else from its screen, or from your phone or computer.",
-    steps: [["Menu > Preferences > Enhancements: tick Enable Enhancements and VST2 Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
+    steps: [["Menu > Preferences > Enhancements: tick Enable Enhancements and External Plugin Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
             ["Put the Plugin Manager in a VST2 Plugins folder on the MPC. Pick a way below", HERE, "MPC lists it in its plugin browser. On a stick or card that is as soon as you plug it in."],
             ["Press Menu, add a new Plugin track, tap its plugin slot and browse to External VST Plugins > OpenMPC - Plugin Manager G2", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]], go: "", fn: null,
     ways: [["Over Wi-Fi", "Developer mode on", [["Turn on Developer mode on the MPC and note its IP address", MPC, "This computer can now reach the MPC over Wi-Fi."], ["Connect from this computer and install the Plugin Manager", HERE, "MPC restarts with it. You can turn Developer mode off again afterwards."]], "Install over Wi-Fi", goSSH],
