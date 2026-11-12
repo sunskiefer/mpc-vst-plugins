@@ -8,7 +8,7 @@ summary: Plugins after updating to MPC OS 3.10.1, Gen1 or Gen2, how plugins are 
 Start with [Install the Plugin Manager](install.html). Still stuck? Ask in the community with your MPC model, MPC OS version and what you see.
 
 ::: details I updated to 3.10.1 and my plugins are gone from the browser.
-They're still on the drive and your projects still load them. 3.10.1 only lists plugins in `VST2 Plugins`. Turn on VST2 Support, then open Plugin Manager 1.0 and press Move (on its screen or its web page), then APPLY. MPC restarts once.
+They're still on the drive and your projects still load them. 3.10.1 only lists plugins in `VST2 Plugins`. Turn on External Plugin Support, then open Plugin Manager 1.0 and press Move (on its screen or its web page), then APPLY. MPC restarts once.
 :::
 
 ::: details Do I need to reinstall or re-add my ROMs?
@@ -19,11 +19,11 @@ No. The move copies each plugin folder with everything in it (ROMs, cartridges, 
 Yes. Projects load the plugin from its old place, and from the `VST2 Plugins` copy once the old one is gone (tested on a Live III).
 :::
 
-::: details I turned off VST2 Support and my plugins didn't come back.
-On 3.10.1 the old list isn't shown with VST2 Support off either. Keep it on and move your plugins.
+::: details I turned off External Plugin Support and my plugins didn't come back.
+On 3.10.1 the old list isn't shown with External Plugin Support off either. Keep it on and move your plugins.
 :::
 
-::: details I switched VST2 Support on/off and it didn't stick.
+::: details I switched External Plugin Support on/off and it didn't stick.
 Wait a few seconds after changing it before restarting MPC: the setting is saved a moment later.
 :::
 
@@ -44,7 +44,7 @@ Yes, any drive's `VST2 Plugins` folder works, and a plugged-in stick shows strai
 :::
 
 ::: details What about the Force?
-The Force runs MPC OS 3.9.1 for now. Use the [3.9.1 steps](install.html#mpc-os-3-9-1-or-earlier): the Plugin Manager stick or the installer app.
+On MPC OS 3.10.1 the Force is set up like a Gen1 MPC: pick Akai Force on the [Install page](install.html) and use the Gen1 Plugin Manager zip. On 3.9.1, use the [3.9.1 steps](install.html#mpc-os-3-9-1-or-earlier): the Plugin Manager stick or the installer app.
 :::
 
 ::: details Where is the Plugin Manager's web page?

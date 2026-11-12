@@ -26,7 +26,7 @@ MPC lists every plugin folder in a **`VST2 Plugins`** folder at the root of any 
 - **Making plugins?** Start with [Akai's MPC Plugin SDK](https://github.com/inmusic-software/mpc-plugin-builder-sdk) for a new plugin. This repo adds what it does not cover:
   porting existing engines ([docs/PORTING.md](docs/PORTING.md)), the **Skin Studio** for screen skins
   ([docs/SKIN_STUDIO.md](docs/SKIN_STUDIO.md)), host tests and CPU benchmarks, and the catalog, which lists SDK-built plugins too.
-- **Force:** no 3.10.1 for the Force yet; everything below (the installer app, the Plugin Manager, sticks) keeps working on it.
+- **Force:** MPC OS 3.10.1 is out for the Force too: use the Gen1 steps (the Gen1 Plugin Manager zip). On 3.9.1, the stick and the installer app work as before.
 - **MPC OS 2.x:** the Plugin Manager and its stick need MPC OS 3.x. On 2.x, install plugins marked 2.x-compatible over SSH, with the
   installer app or by hand ([MPC OS 2.x vs 3.x](#mpc-os-2x-vs-3x)).
 

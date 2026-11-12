@@ -10,7 +10,7 @@ plugin in the [Open MPC catalog](https://sd88me.github.io/mpc-vst-plugins/) come
 2. **Preferences, Enhancements**: turn on **Enable Enhancements**, then **External Plugin Support**, and read the warning.
 3. Wait a few seconds before restarting, so the setting is saved.
 
-Works on Gen1 MPCs (Live, Live II, One, X, Key) and Gen2 (Live III, One G2, Key G2, XL). There is no 3.10.1 for the Force yet.
+Works on Gen1 (Live, Live II, One, X, Key, and the Force) and Gen2 (Live III, One G2, Key G2, XL). The Force uses the Gen1 files.
 
 ## 2. Get plugins onto the MPC
 

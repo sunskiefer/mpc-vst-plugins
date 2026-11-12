@@ -121,13 +121,10 @@
       installer(c, "The desktop installer app installs over SSH.");
       var x2 = el("p", "gsub", "Or update the MPC to MPC OS 3.x first, or install by hand: ");
       x2.appendChild(link("MPC OS 2.x", "#mpc-os-2-x")); c.appendChild(x2);
-    } else if (S.os === "new" && S.force) {
-      c = card(3, 3, "No MPC OS 3.10.1 for the Force yet", "Akai hasn't released 3.10.1 for the Force, so yours runs 3.9.1 or earlier.");
-      var f = el("div", "gopts"); f.appendChild(opt("Continue with 3.9.1 or earlier", "", function () { S.os = "old"; })); c.appendChild(f);
     } else if (S.os === "new") {
       var g = S.gen === 2 ? "Gen2" : "Gen1";
       c = card(3, 3, "Put the Plugin Manager on your MPC", "Once it is on a track, you install everything else from its screen, or from your phone or computer.");
-      c.appendChild(plan([["Menu > Preferences > Enhancements: tick Enable Enhancements and VST2 Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
+      c.appendChild(plan([["Menu > Preferences > Enhancements: tick Enable Enhancements and External Plugin Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
         [["Download ", link("OpenMPC-Plugin-Manager-1.0.0-" + g + ".zip", PM + g + ".zip"), " and unzip it", " (or let this page write it for you, below)"], HERE, "You get one folder, OpenMPC - VST - Plugin Manager G2."],
         ["Copy that whole folder into a VST2 Plugins folder on the MPC. Pick a way below", HERE, "MPC lists it in its plugin browser. On a stick or card that is as soon as you plug it in."],
         ["Press Menu, add a new Plugin track, tap its plugin slot and browse to External VST Plugins > OpenMPC - Plugin Manager G2", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]]));

@@ -15,12 +15,12 @@ You install it once. Answer two questions below for your steps, or open the full
 
 ## MPC OS 3.10.1 or later
 
-### 1. Turn on VST2 Support
+### 1. Turn on External Plugin Support
 1. On the MPC: **Menu → Preferences → Enhancements**.
-2. Tick **Enable Enhancements** and **VST2 Support**, and accept the warning.
+2. Tick **Enable Enhancements** and **External Plugin Support**, and accept the warning.
 3. Wait a few seconds, then restart the MPC.
 
-![Preferences, Enhancements on an MPC: Enable Enhancements and VST2 Support ticked](img/310-enhancements.png)
+![Preferences, Enhancements on an MPC: Enable Enhancements and External Plugin Support ticked](img/310-enhancements.png)
 
 ### 2. Download the Plugin Manager
 Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/plugin-manager-g2-v1.0.0) and download the zip for your MPC from **Assets**:
