@@ -26,7 +26,11 @@ mpc_service() {
 }
 
 DROPIN_ROOT=""   # /etc or /run, set once by resolve_dropin_root() before anything calls ours()
-ours() { echo "$SYSTEMD_ROOT$DROPIN_ROOT/systemd/system/$1.service.d/$DROPIN_NAME"; }   # service
+ETC_UPPER=""     # set with it when /etc is a read-only overlay stacked on a writable one: that one's upper layer
+ours_logical() { echo "$SYSTEMD_ROOT$DROPIN_ROOT/systemd/system/$1.service.d/$DROPIN_NAME"; }   # service: as systemd sees it
+ours() {   # service: the file to read and write (in the writable layer under a stacked read-only /etc)
+    if [ -n "$ETC_UPPER" ]; then echo "$SYSTEMD_ROOT$ETC_UPPER/systemd/system/$1.service.d/$DROPIN_NAME"; else ours_logical "$1"; fi
+}
 
 # Where the shared drop-in goes. One already there (from an install earlier in this boot) wins; otherwise /etc if
 # root is writable, or can be made so with a remount; otherwise /run (tmpfs: it does not survive a reboot, so an
@@ -34,10 +38,18 @@ ours() { echo "$SYSTEMD_ROOT$DROPIN_ROOT/systemd/system/$1.service.d/$DROPIN_NAM
 # Gen2's Live III is the first device seen with no writable /etc at all: a verity rootfs, remount refused outright, and on
 # MPC OS 3.10 an /etc overlay mounted ro (no upper layer),
 # unlike a plain ro mount (which boot_reload_add already handles by remounting around its own, separate write).
+# MPC OS 3.10.1 with Akai's user access on (Key 37, device 2026-11-12): /etc is a writable overlay (upper layer on /data)
+# with a read-only one stacked on top (lowerdir=<user-access etc>:/etc). Only the top mount counts for writing /etc, so
+# the drop-in is written in the writable overlay's upper layer instead (etc_stacked_upper), where it persists.
 resolve_dropin_root() {   # service
-    if [ -f "$SYSTEMD_ROOT/etc/systemd/system/$1.service.d/$DROPIN_NAME" ]; then DROPIN_ROOT=/etc; return; fi
+    up=$(etc_stacked_upper) || up=""
+    if [ -f "$SYSTEMD_ROOT/etc/systemd/system/$1.service.d/$DROPIN_NAME" ] \
+        || { [ -n "$up" ] && [ -f "$SYSTEMD_ROOT$up/systemd/system/$1.service.d/$DROPIN_NAME" ]; }; then
+        DROPIN_ROOT=/etc; ETC_UPPER=$up; return
+    fi
     if [ -f "$SYSTEMD_ROOT/run/systemd/system/$1.service.d/$DROPIN_NAME" ]; then DROPIN_ROOT=/run; return; fi
-    if ! root_ro || etc_overlay_rw; then DROPIN_ROOT=/etc
+    if [ -n "$up" ]; then DROPIN_ROOT=/etc; ETC_UPPER=$up
+    elif ! root_ro || etc_overlay_rw; then DROPIN_ROOT=/etc
     elif remount_root rw; then remount_root ro; DROPIN_ROOT=/etc
     else DROPIN_ROOT=/run; fi
 }
@@ -55,7 +67,7 @@ unit_with_preload() {
         if [ -f "$f" ]; then grep -q '^Environment=.*LD_PRELOAD=' "$f" && found="$f"; break; fi
     done
     for f in $(for d in $UNIT_DIRS; do ls "$SYSTEMD_ROOT$d/$1.service.d/"*.conf 2>/dev/null; done | awk -F/ '{print $NF "\t" $0}' | sort | cut -f2); do
-        [ "$f" = "$2" ] && continue
+        [ "$f" = "$2" ] || [ "$f" = "$(ours_logical "$1")" ] && continue   # our drop-in, also as seen through a stacked /etc
         grep -q '^Environment=.*LD_PRELOAD=' "$f" && found="$f"   # drop-ins apply in name order
     done
     echo "$found"
@@ -114,11 +126,12 @@ sync_ours() {   # service add-so remove-so
         [ -n "$e" ] && [ "$e" != "$3" ] && ! in_list "$base" "$e" && ! in_list "$new" "$e" && new="$new${new:+:}$e"
     done
     IFS=$IFS0
-    if [ -z "$new" ]; then rm -f "$f"; rmdir "$(dirname "$f")" 2>/dev/null || true; return 0; fi
+    if [ -z "$new" ]; then rm -f "$f"; rmdir "$(dirname "$f")" 2>/dev/null || true; etc_refresh; return 0; fi
     mkdir -p "$(dirname "$f")"
     printf '[Service]\n# MPC addins (mpc-vst-plugins addin installer). systemd replaces LD_PRELOAD, so this repeats the base list from\n# the unit, then the addins. Edit with install.sh / uninstall.sh, which rebuild it when the base changes.\n# lib: %s\n# base: %s\nEnvironment=LD_PRELOAD=%s\n' \
         "$ADDIN_LIB_VERSION" "$base" "$base${base:+:}$new" > "$f.new"
     mv "$f.new" "$f"
+    etc_refresh
 }
 
 lib_of() { [ ! -f "$1" ] || sed -n 's/^# lib: *\([0-9][0-9]*\).*/\1/p' "$1" | head -n 1; }   # drop-in: its format version
@@ -139,7 +152,7 @@ preload_add() {   # service unit so
         rm -f "$2.prev"
     else
         f=$(ours "$1")
-        was_ro=0; [ "$DROPIN_ROOT" = /etc ] && root_ro && ! etc_overlay_rw && was_ro=1
+        was_ro=0; [ "$DROPIN_ROOT" = /etc ] && [ -z "$ETC_UPPER" ] && root_ro && ! etc_overlay_rw && was_ro=1
         if [ $was_ro = 1 ] && ! remount_root rw; then die "/ is read-only and could not be remounted: can't write $f"; fi
         sync_ours "$1" "$3" ""
         sync
@@ -153,12 +166,12 @@ preload_remove() {   # service so: out of every writable file that lists it, the
     o=$(ours "$1")
     for d in $UNIT_DIRS; do
         for f in "$SYSTEMD_ROOT$d/$1.service" "$SYSTEMD_ROOT$d/$1.service.d/"*.conf; do
-            [ -f "$f" ] && [ "$f" != "$o" ] && grep -qF "$2" "$f" || continue
+            [ -f "$f" ] && [ "$f" != "$o" ] && [ "$f" != "$(ours_logical "$1")" ] && grep -qF "$2" "$f" || continue
             if writable "$f"; then edit_preload "$f" remove "$2"; else echo "warning: $f lists $2 but is read-only" >&2; fi
         done
     done
     if [ -f "$o" ]; then
-        was_ro=0; [ "$DROPIN_ROOT" = /etc ] && root_ro && ! etc_overlay_rw && was_ro=1
+        was_ro=0; [ "$DROPIN_ROOT" = /etc ] && [ -z "$ETC_UPPER" ] && root_ro && ! etc_overlay_rw && was_ro=1
         if [ $was_ro = 1 ] && ! remount_root rw; then die "/ is read-only and could not be remounted: can't update $o"; fi
         sync_ours "$1" "" "$2"
         sync
@@ -175,9 +188,28 @@ BOOT_UNIT=mpc-addins-reload.service
 BOOT_MARK="mpc-vst-plugins addin installer"
 ADDIN_MOUNTS="${ADDIN_MOUNTS:-/proc/mounts}"
 etc_overlay() { awk '$2 == "/etc" && $3 == "overlay" { f = 1 } END { exit !f }' "$ADDIN_MOUNTS" 2>/dev/null; }
-# An /etc overlay can be written only when it is mounted rw (it has an upper layer). MPC OS 3.10 on the Live III mounts it ro
-# with lower layers only (verified 2026-11-03): then the drop-in goes to /run like on any other read-only /etc.
-etc_overlay_rw() { awk '$2 == "/etc" && $3 == "overlay" && $4 ~ /(^|,)rw(,|$)/ { f = 1 } END { exit !f }' "$ADDIN_MOUNTS" 2>/dev/null; }
+# An /etc overlay can be written only when it is mounted rw (it has an upper layer), and only the top /etc mount counts
+# (the last one in the mounts file). MPC OS 3.10 on the Live III mounts it ro with lower layers only (verified 2026-11-03):
+# then the drop-in goes to /run like on any other read-only /etc.
+etc_overlay_rw() { awk '$2 == "/etc" { t = $3; o = $4 } END { exit !(t == "overlay" && o ~ /(^|,)rw(,|$)/) }' "$ADDIN_MOUNTS" 2>/dev/null; }
+# A read-only /etc overlay stacked on a writable /etc overlay (its lowerdir includes /etc): print the writable one's upper
+# layer, the place to write /etc files that persist and show through. Fails when /etc is not stacked like that.
+etc_stacked_upper() {
+    awk '$2 == "/etc" { n++; t[n] = $3; o[n] = $4 }
+        END {
+            if (n < 2 || t[n] != "overlay" || o[n] !~ /(^|,)ro(,|$)/ || o[n] !~ /lowerdir=([^,]*:)?\/etc(:|,|$)/) exit 1
+            for (i = n - 1; i >= 1; i--)
+                if (t[i] == "overlay" && o[i] ~ /(^|,)rw(,|$)/ && match(o[i], /upperdir=[^,]*/)) { print substr(o[i], RSTART + 9, RLENGTH - 9); exit 0 }
+            exit 1
+        }' "$ADDIN_MOUNTS" 2>/dev/null
+}
+# After writing in a stacked /etc's writable layer: the read-only overlay on top keeps its cached view of the old file
+# until the kernel drops its dentries (seen on the Key 37, 2026-11-12), and systemd reads through that view.
+etc_refresh() {
+    [ -n "$ETC_UPPER" ] || return 0
+    if [ -n "$ADDIN_INSTALL_TEST" ]; then echo "drop_caches" >> "${ADDIN_TEST_LOG:-/dev/null}"; return 0; fi
+    sync; echo 2 > /proc/sys/vm/drop_caches 2>/dev/null || true
+}
 root_ro() { awk '$2 == "/" && $4 ~ /(^|,)ro(,|$)/ { f = 1 } END { exit !f }' "$ADDIN_MOUNTS" 2>/dev/null; }
 remount_root() {   # rw | ro (logged under test; ADDIN_REMOUNT_FAILS=1 simulates a verity root that refuses it)
     if [ -n "$ADDIN_INSTALL_TEST" ]; then
@@ -197,7 +229,8 @@ boot_paths() {   # service: sets BU (the unit) and BW (its link in the service's
     BU="$SYSTEMD_ROOT/usr/lib/systemd/system/$BOOT_UNIT"; BW="$SYSTEMD_ROOT/usr/lib/systemd/system/$1.service.wants/$BOOT_UNIT"
 }
 boot_reload_add() {   # service: when the shared drop-in is in use on an /etc overlay
-    [ -f "$(ours "$1")" ] && etc_overlay_rw || return 0
+    [ -f "$(ours "$1")" ] || return 0
+    etc_overlay_rw || [ -n "$ETC_UPPER" ] || return 0
     boot_paths "$1"
     if [ -f "$BU" ] && [ "$(cat "$BU")" = "$(boot_unit_text "$1")" ] && [ -L "$BW" ]; then return 0; fi
     if [ -f "$BU" ] && ! grep -qF "$BOOT_MARK" "$BU"; then echo "warning: $BU exists and was not written by this installer: left alone" >&2; return 0; fi

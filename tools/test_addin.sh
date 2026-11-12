@@ -286,6 +286,27 @@ ADDIN_REMOUNT_FAILS=1 run a uninstall.sh
 [ ! -e "$RUNDROP" ] && ok "3.10: uninstall removes the /run drop-in" || bad "3.10: run drop-in left"
 export ADDIN_MOUNTS="$T/mounts-plain"
 
+# 18. MPC OS 3.10.1 on a Key 37 with Akai's user access on (device 2026-11-12): /etc is a writable overlay (upper layer on
+# /data) with a read-only one stacked on top. Only the top mount counts, so the drop-in is written in the writable overlay's
+# upper layer, the cached view is refreshed, and the boot-reload unit is kept. The firmware update also emptied the unit's
+# LD_PRELOAD, so the existing drop-in's base is rebuilt (its old base libraries are gone), keeping the addins.
+printf '/dev/root / ext4 ro,relatime 0 0\noverlay /etc overlay rw,relatime,lowerdir=/etc,upperdir=/data/system/etc/overlay,workdir=/data/system/etc/.work 0 0\noverlay /etc overlay ro,relatime,lowerdir=/usr/lib/az0x/user-access/etc-overlay:/etc,redirect_dir=on 0 0\n' > "$T/mounts-3101"
+export ADDIN_MOUNTS="$T/mounts-3101"
+fresh; unit 'Restart=always'; ro a-w; chmod u+w "$T/root/usr/lib/systemd/system"
+UP="$T/root/data/system/etc/overlay/systemd/system/acvs.service.d/90-mpc-addins.conf"
+mkdir -p "$(dirname "$UP")"
+printf '[Service]\n# lib: 2\n# base: /usr/lib/old.so\nEnvironment=LD_PRELOAD=/usr/lib/old.so:%s\n' "$B" > "$UP"
+run a install.sh
+grep -qx "Environment=LD_PRELOAD=$B:$A" "$UP" && grep -qx "# base: " "$UP" && [ ! -e "$DROP" ] \
+  && ok "stacked /etc: the drop-in is rewritten in the writable layer, old base dropped, addins kept" || bad "stacked write: $(cat "$UP" 2>&1; cat "$T/out")"
+grep -qx drop_caches "$T/log" && ok "stacked /etc: the cached view is refreshed after writing" || bad "no refresh: $(cat "$T/log")"
+[ -f "$BU" ] && [ -L "$BW" ] && ok "stacked /etc: the boot-reload unit is written" || bad "stacked: no boot unit: $(cat "$T/out")"
+run a uninstall.sh; run b uninstall.sh
+[ ! -e "$UP" ] && [ ! -e "$BU" ] && ok "stacked /etc: the last uninstall removes the drop-in from the writable layer, and the unit" || bad "stacked uninstall: $(ls "$(dirname "$UP")" 2>&1)"
+fresh; unit 'Restart=always'; ro a-w; chmod u+w "$T/root/usr/lib/systemd/system"; run a install.sh   # a first addin on such a device
+[ -f "$UP" ] && grep -qx "Environment=LD_PRELOAD=$A" "$UP" && [ ! -e "$DROP" ] && ok "stacked /etc: a first install also writes the writable layer" || bad "stacked first: $(cat "$T/out")"
+export ADDIN_MOUNTS="$T/mounts-plain"
+
 # ADDIN_FILES tools copied without their execute bit (a FAT card or stick drops it): an ELF binary or a #! script is installed 755, data 644
 fresh; unit 'Restart=always'
 sed -i 's/^ADDIN_FILES=.*/ADDIN_FILES="a.dat tool run.sh"/' "$T/pkg-a/addin.manifest"

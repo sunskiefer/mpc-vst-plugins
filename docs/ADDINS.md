@@ -114,8 +114,18 @@ counts only when it is mounted `rw` (`etc_overlay_rw()`), so 3.10 gets the `/run
 boot-reload unit. Addin folders installed from older releases carry the older `addin-lib.sh`: re-run the install from a
 current release (or copy a current `addin-lib.sh` next to the folder's `install.sh`).
 
-Tests: case 15 (remount succeeds, so `/etc` is used), case 16 (remount refused, so `/run` is used) and case 17 (3.10's
-read-only `/etc` overlay, so `/run` is used) in `tools/test_addin.sh`; case 3c there covers the folder's own `install.sh` redoing the `/run` entry after a simulated
+**MPC OS 3.10.1 with Akai's user access on (Key 37, device 2026-11-12):** `/etc` is two overlays: the writable one from
+3.x (`upperdir=/data/system/etc/overlay`) with Akai's read-only one stacked on top (`lowerdir=<user-access etc>:/etc`).
+Only the top mount counts (`etc_overlay_rw()` reads the last `/etc` line of `/proc/mounts`); the installer writes the
+drop-in in the writable overlay's upper layer instead (`etc_stacked_upper()`), where it persists across reboots, then
+drops the kernel's dentry cache (`etc_refresh()`) because the read-only overlay keeps showing the old file until then,
+and keeps the boot-reload unit. Before this, installs on such a device failed with "Read-only file system". The update
+to 3.10.1 also replaces the root filesystem, which removes the boot-reload unit and any libraries the drop-in's base
+listed from a mod: re-run an addin's installer from a current release afterwards, which rebuilds both.
+
+Tests: case 15 (remount succeeds, so `/etc` is used), case 16 (remount refused, so `/run` is used), case 17 (3.10's
+read-only `/etc` overlay, so `/run` is used) and case 18 (3.10.1's read-only overlay stacked on a writable one, so the
+writable layer is used) in `tools/test_addin.sh`; case 3c there covers the folder's own `install.sh` redoing the `/run` entry after a simulated
 reboot, without the original release.
 
 ### Two addins that replace the same function
