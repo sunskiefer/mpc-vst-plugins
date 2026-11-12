@@ -2579,3 +2579,23 @@ in apply.sh. Not yet checked on a device. A local zip whose `mpc-plugin.json` ha
 
 ### 2026-11-11: the switch is called "External Plugin Support" in the released MPC OS 3.10.1 (offline, read from the 3.10.1.12 firmware and Akai's plugin SDK docs)
 - The MPC binary of 3.10.1.12 (Gen2 and Force images) has the label "External Plugin Support" (and "Enable Enhancements"); the string "VST2 Support" is not in it. The setting key is still `Enhancements.VST2Support` in `MPC.settings`. The "VST2 Support" wording in the entries above is what the 3.10.1.6 beta showed. User-facing text now says External Plugin Support; the Plugin Manager's on-screen hint (`manager.c`) still says VST2 Support until its next rebuild.
+
+### 2026-11-12: MPC OS 3.10.1 on a Gen1 Key 37 (device): user access, a stacked /etc, and addins after the update
+- Updated from 3.9.1.2 (MockbaMod) to 3.10.1.12 (`MPC 3.10.1.12`, AZ01 build 20261106). The stock root replaced MockbaMod; SSH
+  comes from Akai's user access (`/usr/lib/az0x/user-access/enable.sh`: copies `data-skel` to `/data`, then mounts a read-only
+  overlay `lowerdir=/usr/lib/az0x/user-access/etc-overlay:/etc` over `/etc`, then reloads sshd). Stock port 80 is Akai's
+  "AZ0X Web Server"; nothing else listens until addins load.
+- `/etc` is two overlays: the 3.x writable one (`upperdir=/data/system/etc/overlay`) and user access's read-only one on top.
+  The addin drop-in in the writable layer survived the update; writing `/etc` fails. Editing the file in the upper layer works,
+  but the read-only overlay shows the old content until `echo 2 > /proc/sys/vm/drop_caches`; then `systemctl daemon-reload`
+  sees it. The addin installer now does this (docs/ADDINS.md, "After a reboot").
+- The update removed `mpc-addins-reload.service` (root filesystem) and the drop-in's base libraries
+  (`/usr/lib/libforce_cursor.so`, `/usr/lib/mpc_midi_inject.so`); the stock unit sets no `LD_PRELOAD`. With the base emptied
+  and the unit restored, every addin loaded (commander, filebrowser, gateway, remote, usb-audio, tmpclean). The gateway's Caddy
+  serves on 443 beside Akai's port 80, no conflict. usb-audio's gadget, the DRM screen layout (card1, DSI-1, 800x1280, MPC maps
+  it rw-s) and MPC's `snd_rawmidi` imports are unchanged.
+- `Enhancements.VST2Support` is `1` and our plugins are still registered in `pluginList-arm` under `/storage/Synths`
+  (still mounted); they load in the bench, but none is in a `VST2 Plugins` folder, so (per 2026-10-31) the browser doesn't
+  offer them. Confirmed on this Gen1 device: after installing into `/storage/VST2 Plugins/` (release `install.sh -t`, or a copy
+  plus `tools/vst2_migrate.sh --json`) and one MPC restart, the browser listed Chordsmith (instruments) and Keyscope, NAM,
+  Stompbox and Tuner (effects, under the vendor), and each loaded from there (`/proc/<MPC>/maps`) with its skin; Tuner drew live.
