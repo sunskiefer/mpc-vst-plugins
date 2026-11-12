@@ -1963,6 +1963,34 @@ class InstallerTest(Base):
         self.assertEqual(sorted(os.listdir(self.synths)), [self.SKIN])              # no .new/.old leftovers
         self.assertEqual(len(self.entries()), 2)
 
+    def test_a_renamed_plugin_retires_its_old_folder_and_moves_the_user_data(self):
+        """release.py --retire: the old folder of a renamed plugin (same uid) is removed, only if it is this plugin's, and its user data moves."""
+        old, decoy = "Acme - VST - Old Name", "Acme - VST - Decoy"
+        z = self.build(extra=("--user-data", "roms", "--retire", old, "--retire", decoy, "--retire", "Acme - VST - Absent"))
+        pkg = os.path.join(self.tmp, "pkg2")
+        with zipfile.ZipFile(z) as zf:
+            zf.extractall(pkg)
+        self.top = os.path.join(pkg, os.listdir(pkg)[0])
+        for folder, pid in ((old, "test-synth"), (decoy, "someone-else")):
+            d = os.path.join(self.synths, folder)
+            os.makedirs(os.path.join(d, "roms"))
+            open(os.path.join(d, "old.so"), "w").write("old")
+            open(os.path.join(d, "roms", "mine.rom"), "w").write("my rom from " + folder)
+            open(os.path.join(d, "mpc-plugin.json"), "w").write('{"id": "%s", "name": "x"}' % pid)
+        r = self.run_script("install.sh")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(self.synths, old)))                         # the old folder is gone
+        self.assertEqual(open(os.path.join(self.synths, self.SKIN, "roms", "mine.rom")).read(), "my rom from " + old)   # its data moved
+        self.assertTrue(os.path.exists(os.path.join(self.synths, decoy, "old.so")))             # another plugin's folder is left alone
+        self.assertIn("left", r.stdout)
+        self.assertEqual(self.run_script("install.sh").returncode, 0)                           # and a second run is fine
+        self.assertEqual(len(self.entries()), 2)
+
+    def test_retire_refuses_a_bad_folder_name(self):
+        for bad in ("../x", "Acme - VST - A:B", "NoVst", "Acme - VST - $(x)"):
+            with self.assertRaises(Exception):
+                self.build(extra=("--retire", bad))
+
     def test_uninstall_removes_entry_and_folder_but_keeps_user_files(self):
         self.assertEqual(self.run_script("install.sh").returncode, 0)
         rom = os.path.join(self.synths, self.SKIN, "roms", "mine.rom")

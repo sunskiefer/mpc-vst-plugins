@@ -8,7 +8,7 @@
 # into the plugin folder. Files the user added inside the folder are kept across upgrades. Safe to run again.
 set -e
 cd "$(dirname "$0")"
-NAME='@NAME@'; SO='@SO_NAME@'; SKIN='@SKIN@'; UID_HEX='@UID@'; LEGACY_SO='@LEGACY_SO@'; USER_DATA='@USER_DATA@'; EXTRAS='@EXTRAS@'
+NAME='@NAME@'; SO='@SO_NAME@'; SKIN='@SKIN@'; UID_HEX='@UID@'; LEGACY_SO='@LEGACY_SO@'; USER_DATA='@USER_DATA@'; EXTRAS='@EXTRAS@'; RETIRE='@RETIRE@'; PLUGIN_ID='@ID@'
 SYNTHS=/sdcard/Synths; YES=0; DEFER=0
 die() { echo "error: $*" >&2; exit 1; }
 while [ $# -gt 0 ]; do
@@ -155,6 +155,29 @@ if [ $LEGACY = 1 ] && [ "$LEGACY_SO" != "$FILE" ]; then
         case " $USER_DATA " in *" $e "*) continue ;; esac
         if [ -e "$OLDROOT/$e" ]; then rm -rf "$OLDROOT/$e" && echo "removed the old packaged data $(dirname "$LEGACY_SO")/$e"; fi
     done
+fi
+# 4. a renamed plugin (release.py --retire): the old folder goes, but only a folder named as listed whose mpc-plugin.json carries this
+#    plugin's id; its user data (USER_DATA) moves into the new folder first. Its plugin-list entry was replaced by uid above.
+if [ -n "$RETIRE" ]; then
+    OLDIFS=$IFS; IFS=:
+    for r in $RETIRE; do
+        IFS=$OLDIFS
+        o="$SYNTHS/$r"
+        [ "$r" != "$SKIN" ] && [ -d "$o" ] || continue
+        if grep -q "\"id\": *\"$PLUGIN_ID\"" "$o/mpc-plugin.json" 2>/dev/null; then
+            for d in $USER_DATA; do
+                if [ -e "$o/$d" ] && [ ! -e "$NEW/$d" ]; then
+                    mkdir -p "$(dirname "$NEW/$d")" && cp -a "$o/$d" "$NEW/$d" || die "could not move your files from $r/$d; the old folder was kept"
+                    echo "moved your files from $r/$d into $SYNTHS/$SKIN"
+                fi
+            done
+            rm -rf "${o:?}" && echo "removed the old plugin folder $r"
+        else
+            echo "left $o alone (it is not this plugin)"
+        fi
+        IFS=:
+    done
+    IFS=$OLDIFS
 fi
 sync
 
