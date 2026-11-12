@@ -7,11 +7,35 @@ summary: Installing and trying plugins, plugins after updating to MPC OS 3.10.1,
 
 Start with [Install the Plugin Manager](install.html). Still stuck? Ask in the community with your MPC model, MPC OS version and what you see.
 
+## Getting started
+
 ::: details How do I install and try a plugin?
 Put the **Plugin Manager** on your MPC once: the [Install page](install.html) gives your steps (about five minutes; on MPC OS 3.10.1 nothing needs SSH or root). Then, on the MPC's screen or its web page on your phone, pick plugins and press **Apply**. MPC restarts once and they're under **External VST Plugins**, grouped by maker. Don't like one? **Remove** it the same way; your projects and your own files are kept.
 
 Prefer copying by hand? See "Can I just copy plugin folders from GitHub onto the MPC?" below.
 :::
+
+::: details Gen1 or Gen2 build?
+Gen1 (32-bit): Live, Live II, One, X, Key 61/37, and the Force. Gen2 (64-bit): Live III, One G2, Key G2, XL. A stick made for one won't load on the other.
+:::
+
+::: details What about the Force?
+On MPC OS 3.10.1 the Force is set up like a Gen1 MPC: pick Akai Force on the [Install page](install.html) and use the Gen1 Plugin Manager zip. On 3.9.1, use the [3.9.1 steps](install.html#mpc-os-3-9-1-or-earlier): the Plugin Manager stick or the installer app.
+:::
+
+::: details Does it work on MPC OS 2.x?
+The Plugin Manager and its stick don't: they need MPC OS 3.x. On 2.x, install plugins whose catalog card says "MPC OS: 2.x and 3.x" over SSH, with the desktop installer app or by hand: see [MPC OS 2.x](install.html#mpc-os-2-x) on the Install page.
+:::
+
+::: details Is Developer mode needed?
+No. The web page works without it. It's only for the installer app's SSH features. It turns on SSH as root with no password: switch it off afterwards.
+:::
+
+::: details Is it safe to install a plugin?
+Installers run with full access to your MPC, so the catalog is careful, but it can't promise a plugin is bug-free. Each release is scanned for code that uses the network, starts other programs, loads code at runtime or changes the system, and a maintainer looks at every hit. The scan catches careless cases, not someone hiding something on purpose. Every download has a SHA-256 checksum that the Plugin Manager checks before installing, older versions are kept, and a bad release can be pulled. Save your project before installing, and prefer **Verified** plugins if you want the safest choice.
+:::
+
+## Already had plugins before 3.10.1?
 
 ::: details I updated to 3.10.1 and my plugins are gone from the browser.
 They're still on the drive and your projects still load them. 3.10.1 only lists plugins in `VST2 Plugins`. Turn on External Plugin Support, then open Plugin Manager 1.0 and press Move (on its screen or its web page), then APPLY. MPC restarts once.
@@ -35,6 +59,8 @@ On 3.10.1 the old list isn't shown with External Plugin Support off either. Keep
 Wait a few seconds after changing it before restarting MPC: the setting is saved a moment later.
 :::
 
+## Copying plugins yourself
+
 ::: details Can I just copy plugin folders from GitHub onto the MPC?
 Yes, on MPC OS 3.10.1, with three things right:
 - **Into `VST2 Plugins`, not `Synths`.** MPC lists only a folder named exactly `VST2 Plugins` at the root of a drive (internal, SD card or USB), with External Plugin Support on.
@@ -48,21 +74,11 @@ The Plugin Manager 1.0 avoids all three: it installs any plugin in the catalog (
 On a USB stick or SD card it shows as soon as you plug it in. Copied to the MPC's internal drive, it shows after you restart MPC. Also check the folder is named `<Manufacturer> - VST - <Name>` and sits directly in `VST2 Plugins`, not in a subfolder.
 :::
 
-::: details Does it work on MPC OS 2.x?
-The Plugin Manager and its stick don't: they need MPC OS 3.x. On 2.x, install plugins whose catalog card says "MPC OS: 2.x and 3.x" over SSH, with the desktop installer app or by hand: see [MPC OS 2.x](install.html#mpc-os-2-x) on the Install page.
-:::
-
-::: details Gen1 or Gen2 build?
-Gen1 (32-bit): Live, Live II, One, X, Key 61/37. Gen2 (64-bit): Live III, One G2, Key G2, XL. A stick made for one won't load on the other.
-:::
-
 ::: details Can I keep plugins on a USB stick or SD card?
 Yes, any drive's `VST2 Plugins` folder works, and a plugged-in stick shows straight away. Leave it in: if you unplug it while a track uses one of its plugins, that plugin stops and its screen goes black until you plug the stick back in. The Plugin Manager's drive menu (tap the storage readout) chooses where new ones go.
 :::
 
-::: details What about the Force?
-On MPC OS 3.10.1 the Force is set up like a Gen1 MPC: pick Akai Force on the [Install page](install.html) and use the Gen1 Plugin Manager zip. On 3.9.1, use the [3.9.1 steps](install.html#mpc-os-3-9-1-or-earlier): the Plugin Manager stick or the installer app.
-:::
+## Using plugins and the Plugin Manager
 
 ::: details Where is the Plugin Manager's web page?
 Add Plugin Manager to a track: its status line at the bottom shows `On your phone or computer: http://…:8790`. Open that on any device on the same Wi-Fi. It works while the Plugin Manager is on a track; after APPLY restarts MPC it comes back when the project with the Plugin Manager reopens.
@@ -72,20 +88,14 @@ Add Plugin Manager to a track: its status line at the bottom shows `On your phon
 It has no password: anyone on your network can use it while the Plugin Manager is open. Other web sites can't control it. On a network you don't trust, close the Plugin Manager when you're done.
 :::
 
-::: details Is Developer mode needed?
-No. The web page works without it. It's only for the installer app's SSH features. It turns on SSH as root with no password: switch it off afterwards.
-:::
-
 ::: details Do sequencer plugins still drive other tracks?
 Yes, through their own MIDI port: pick it as the other track's MIDI input (enable it in Preferences → MIDI first).
 :::
 
+## The catalog and the community
+
 ::: details How are plugins checked before they are listed?
 Every plugin has public source on GitHub, and a maintainer reviews its first listing. After that, each new release is checked automatically before it appears: the zip's layout, its checksums, that the plugin is built for your MPC's processor and MPC OS version, that its name and ID don't clash with another plugin, and that its `install.sh` and `uninstall.sh` are the catalog's standard copies (any difference goes to a person to review). A release that fails is hidden. Details for authors: [Workflow](workflow.html).
-:::
-
-::: details Is it safe to install a plugin?
-Installers run with full access to your MPC, so the catalog is careful, but it can't promise a plugin is bug-free. Each release is scanned for code that uses the network, starts other programs, loads code at runtime or changes the system, and a maintainer looks at every hit. The scan catches careless cases, not someone hiding something on purpose. Every download has a SHA-256 checksum that the Plugin Manager checks before installing, older versions are kept, and a bad release can be pulled. Save your project before installing, and prefer **Verified** plugins if you want the safest choice.
 :::
 
 ::: details What do Verified, Listed and Experimental mean?
