@@ -127,4 +127,13 @@ It is not shipped in the release zips yet; the device-side store script (docs/CA
 ## Folder-only zips for MPC OS 3.10.1 (2026-11-02)
 `tools/folder_zip.py <release zip> <out zip>` writes a zip whose only entry is the plugin folder from `portable/` (it must contain
 `plugin.json`). Users on 3.10.1 unzip it and copy the folder into `VST2 Plugins`. The Plugin Manager release carries
-`OpenMPC-Plugin-Manager-<ver>-Gen1.zip` / `-Gen2.zip` made this way, next to the normal zips. Tests: `tools/test_folder_zip.py`. The Install page writes these to a stick from the catalog site: after uploading them, set their SHA-256 (and the tag, if it changed) in `catalog/downloads.json` (docs/CATALOG.md).
+`OpenMPC-Plugin-Manager-<ver>-Gen1.zip` / `-Gen2.zip` made this way, next to the normal zips. Tests: `tools/test_folder_zip.py`.
+
+**SDK-format zip (Akai's plugin folder, 2026-11-03, offline; not yet loaded on a device).** The reusable release workflow
+(`vst-release.yml`) also attaches `<Name>-<ver>-mpc-sdk.zip`, made by `tools/sdk_zip.py OUT.zip <armv7 zip> [<aarch64 zip>]`: one
+folder for every MPC, `plugin.json` with both `file32` and `file64`. The binaries are `<slug>-arm32.so` / `<slug>-arm64.so` at the
+folder root, not in the SDK's `VST/` subfolder (allowed: `plugin.json` gives the path), because our plugins take their own folder
+to be the directory of their `.so` (`wrapper/plugin_dir.h`, the Plugin Manager's themes). `plugin-meta.xml` (3.9.1 registration, naming the old `.so` name) is left out, since the SDK zip is for 3.10.1+. `mpc-plugin.json` is kept with
+`"arch": "universal"` and each build's `max_glibc` under `builds`. A plugin whose other files differ between builds gets no SDK zip
+(a notice, not a failure). The catalog, the Plugin Manager and the installers keep using the per-build zips (`*-mpc-armv7.zip`
+does not match the SDK zip's name). Tests: `tools/test_sdk_zip.py`. The Plugin Manager's own workflow does not make one yet. The Install page writes these to a stick from the catalog site: after uploading them, set their SHA-256 (and the tag, if it changed) in `catalog/downloads.json` (docs/CATALOG.md).

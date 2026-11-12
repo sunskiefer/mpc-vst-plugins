@@ -206,6 +206,15 @@ jobs:
           # catalog conformance (docs/CATALOG_SPEC.md): warnings are shown, errors fail the run
           if [ -n "$LICENSE_ID" ]; then flag=--catalog; else flag=""; echo "::warning::no license input: this release can't be listed in the catalog"; fi
           for z in $zips; do python3 "$MPC_VST/tools/catalog_check.py" "$z" $flag; done
+          # Akai SDK format (MPC OS 3.10.1+): one folder for both builds, tools/sdk_zip.py. A plugin with per-build files can't be one
+          # folder: that is a notice, not a failure, and the per-build zips are the release as before.
+          base=$(basename "$zip" | sed 's/-mpc-\(armv7\|aarch64\)\.zip$//')
+          builds=$(ls "$GITHUB_WORKSPACE"/dist/*-mpc-armv7.zip "$GITHUB_WORKSPACE"/dist/*-mpc-aarch64.zip 2>/dev/null | tr '\n' ' ')
+          if python3 "$MPC_VST/tools/sdk_zip.py" "$GITHUB_WORKSPACE/dist/$base-mpc-sdk.zip" $builds; then
+            zips="$zips$GITHUB_WORKSPACE/dist/$base-mpc-sdk.zip "
+          else
+            rm -f "$GITHUB_WORKSPACE/dist/$base-mpc-sdk.zip"; echo "::notice::no SDK-format zip (see the message above); the per-build zips are the release"
+          fi
           echo "zip=$zip" >> "$GITHUB_OUTPUT"
           echo "zips=$zips" >> "$GITHUB_OUTPUT"
           echo "name=$(sed -n 's/.* name="\([^"]*\)".*/\1/p' "$entry")" >> "$GITHUB_OUTPUT"

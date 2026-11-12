@@ -21,6 +21,7 @@
     <div>
       <h1>Community plugins for Akai MPC OS</h1>
       <p>Open VST2 instruments and effects for standalone MPC and Force, plus addins that extend MPC OS. Every listing links to its source and license and ships as a checksummed release.</p>
+      <p style="margin-top:.7em">On MPC OS 3.10.1, the <a href="install.html">Plugin Manager</a> installs every plugin here into VST2 Plugins. Plugins you already have: press <strong>Move</strong> in the Plugin Manager.</p>
     </div>
     <svg class="mpc" viewBox="0 0 560 334" role="img" aria-label="Line drawing of an MPC: screen with four Q-Link encoders and buttons beneath it, a jog wheel below, and sixteen pads on the left">
       <rect class="body" x="4" y="4" width="552" height="326" rx="18"/>
@@ -515,6 +516,7 @@ function card(p, big) {
   return head +
     '<div class="actions">' + (v && !v.gen2_only && !deviceNames(p).length ? '<a class="btn-l primary" href="' + esc(v.url) + '"' + (v.gen2 ? ' title="MPC Live/One/X/Key and Force (32-bit ARM)"' : '') + '>Download' + (v.gen2 ? ' (Gen1)' : '') + '</a>' : '') +
     (v && v.gen2 && v.assets && v.assets.aarch64 ? '<a class="btn-l primary" href="' + esc(v.assets.aarch64.url) + '" title="' + (deviceNames(p).length ? esc("For the " + deviceNames(p).join(" and ") + " (aarch64)") : 'Gen2 MPC devices (aarch64, MPC OS 3.x)') + '">Download (' + (deviceNames(p).length ? esc(deviceNames(p).join(", ")) : 'Gen2') + ')</a>' : '') +
+    (v && v.vst2 && v.assets && v.assets.sdk ? '<a class="btn-l primary" href="' + esc(v.assets.sdk.url) + '" title="' + esc("MPC OS 3.10.1 or later, any MPC: unzip and copy the folder into VST2 Plugins on a drive, then restart MPC. Not needed with the Plugin Manager.") + '">Download (3.10.1 format)</a>' : '') +
     '<a class="btn-l" href="https://github.com/' + esc(p.repo) + '">Source</a>' +
     (v && ID_RE.test(p.id) ? '<label class="pick"><input type="checkbox" data-pick="' + esc(p.id) + '"' + (state.sel.indexOf(p.id) >= 0 ? " checked" : "") + '> Add to install list</label>' : '') +
     '</div><div class="folds">' +
@@ -1064,7 +1066,7 @@ put("pads", h);
     open('<h2>' + esc(p.name) + ': works on my device</h2><p class="sig-note">A community report, not hardware verification. One report per plugin version, device and OS.</p>' +
       '<form id="sig-form"><label>Version<select name="version">' + vers.map(function (x) { return '<option value="' + esc(x.version) + '">v' + esc(x.version) + (x.channel === "beta" ? " (beta)" : "") + '</option>'; }).join("") + '</select></label>' +
       '<label>Device<select name="device">' + DEVICES.map(function (d) { return '<option' + (d === last.device ? " selected" : "") + '>' + esc(d) + '</option>'; }).join("") + '</select></label>' +
-      '<label>MPC OS<input name="os" required maxlength="32" placeholder="e.g. 3.9.1" value="' + esc(last.os || "") + '"></label>' +
+      '<label>MPC OS<input name="os" required maxlength="32" placeholder="e.g. 3.9.1 or 3.10.1" value="' + esc(last.os || "") + '"></label>' +
       '<div class="actions"><button type="submit" class="btn-l primary">Send report</button><button type="button" class="btn-l" data-sig-close>Cancel</button></div></form><p class="sig-err" id="sig-err" role="alert"></p>');
     dlg.dataset.plugin = p.id;
   }
