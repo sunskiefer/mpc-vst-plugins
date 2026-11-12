@@ -745,7 +745,7 @@ struct device {
     int nusable;
     char addins[64];   /* ADDINS_DIR when its parent is a writable folder, else "" (no addin can be installed) */
     int nloc, nent, naddin, systemd_run, cgroup2;
-    entry_t ent[128];
+    entry_t ent[256];
     struct { char folder[300], name[64], uid[16], file[320], entry[1500]; int inst; } orphan[8];   /* folders with a plugin-meta.xml and no entry */
     int norphan;
     addin_t addin[32];
@@ -1501,7 +1501,7 @@ static void probe_device(device_t *d) {
         /* Gen2 (aarch64) keeps its own plugin list, pluginList-arm-64bit, separate from pluginList-arm */
         a = strstr(x, gen2 ? "<VALUE name=\"pluginList-arm-64bit\">" : "<VALUE name=\"pluginList-arm\">");
         b = a ? strstr(a, "</VALUE>") : NULL;
-        for (char *p = a; b && d->nent < 128 && (p = strstr(p, "<PLUGIN ")) && p < b; p++) {
+        for (char *p = a; b && d->nent < (int)(sizeof d->ent / sizeof d->ent[0]) && (p = strstr(p, "<PLUGIN ")) && p < b; p++) {
             char *q = strstr(p, "/>");
             if (!q) break;
             entry_t *en = &d->ent[d->nent++];
@@ -1611,6 +1611,43 @@ static void probe_device(device_t *d) {
             d->nvdrv++;
         }
         if (mf) fclose(mf);
+    }
+    /* 3.10.1 lists plugin folders in VST2 Plugins whether or not MPC.settings has an entry (copied by hand, by the installer app, an SDK
+     * zip): each "<maker> - VST - <name>" folder with a plugin.json naming its binary counts as installed, as an entry built from that
+     * plugin.json (name, uid, file64 on aarch64 / file32 on armv7, else "file"). Without this such plugins were offered again. */
+    for (int v = 0; d->vst2 == 2 && v < d->nvdrv; v++) {
+        DIR *vd = opendir(d->vdrv[v]);
+        struct dirent *ve;
+        while (vd && d->nent < (int)(sizeof d->ent / sizeof d->ent[0]) && (ve = readdir(vd))) {
+            if (ve->d_name[0] == '.' || !strstr(ve->d_name, " - VST - ")) continue;
+            char pj[540], name[64] = "", uid[24] = "", bin[160] = "", file[256];
+            snprintf(pj, sizeof pj, "%s/%s/plugin.json", d->vdrv[v], ve->d_name);
+            char *js = slurp(pj, 64 << 10);
+            if (!js) continue;
+            const char *keys[4] = { "\"name\"", "\"uid\"", !strcmp(d->arch, "aarch64") ? "\"file64\"" : "\"file32\"", "\"file\"" };
+            char *outs[4] = { name, uid, bin, bin };
+            size_t lens[4] = { sizeof name, sizeof uid, sizeof bin, sizeof bin };
+            for (int q = 0; q < 4; q++) {
+                if (q == 3 && bin[0]) break;
+                char *k = strstr(js, keys[q]);
+                if (k && (k = strchr(k + strlen(keys[q]), ':')) && (k = strchr(k, '"'))) {
+                    char *e = strchr(++k, '"');
+                    if (e && (size_t)(e - k) < lens[q]) { memcpy(outs[q], k, e - k); outs[q][e - k] = 0; }
+                }
+            }
+            free(js);
+            if (!bin[0] || strstr(bin, "..") || bin[0] == '/') continue;
+            if (snprintf(file, sizeof file, "%s/%s/%s", d->vdrv[v], ve->d_name, bin) >= (int)sizeof file || !is_file(file)) continue;
+            const char *u = (uid[0] == '0' && (uid[1] == 'x' || uid[1] == 'X')) ? uid + 2 : uid;
+            int dup = 0;
+            for (int k = 0; k < d->nent && !dup; k++) dup = !strcmp(d->ent[k].file, file) || (u[0] && !strcasecmp(d->ent[k].uid, u));
+            if (dup) continue;
+            entry_t *en = &d->ent[d->nent++];
+            snprintf(en->name, sizeof en->name, "%s", name);
+            snprintf(en->uid, sizeof en->uid, "%s", u);
+            snprintf(en->file, sizeof en->file, "%s", file);
+        }
+        if (vd) closedir(vd);
     }
     /* the manager's own record of versions it installed, next to the Settings folder */
     snprintf(d->base, sizeof d->base, "%s", d->settings);
