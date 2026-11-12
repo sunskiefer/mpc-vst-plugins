@@ -786,12 +786,10 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
             rec["tested"] = [{k: t.get(k, "") for k in ("device", "firmware", "date")} for t in tested
                              if str(t["version"]).lstrip("v") == rec["version"]]
             # MPC OS 3.10.1: is every build an Akai plugin folder (plugin.json naming its .so)? Then the per-build zip's portable
-            # folder copies straight into "VST2 Plugins". Tested on 3.10.x: a tested.json entry whose firmware says so.
+            # folder copies straight into "VST2 Plugins" (used for the site's hand-copy download; the Plugin Manager installs every plugin).
             folders = {vst2_folder(zpath)} | ({vst2_folder(z64)} if "aarch64" in rec["assets"] and not gen2_only else set())
             if len(folders) == 1 and None not in folders:
                 rec["vst2"] = {"folder": folders.pop()}
-            if any(re.match(r"\s*v?3\.(1\d|[2-9]\d)", str(t.get("firmware", ""))) for t in rec["tested"]):
-                rec["tested_310"] = True
             # the release's Akai SDK-format zip (tools/sdk_zip.py), when it has one: one folder for every MPC
             sdk = [x for x in rel.get("assets", []) if x["name"].endswith("-mpc-sdk.zip")]
             if len(sdk) == 1 and rec.get("vst2"):

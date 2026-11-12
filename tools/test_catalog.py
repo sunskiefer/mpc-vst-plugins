@@ -769,9 +769,9 @@ class BuildTest(Base):
         return {"tag_name": tag, "prerelease": pre, "draft": False, "published_at": at, "body": "notes",
                 "assets": [{"id": aid, "name": name, "browser_download_url": "https://x/" + name, "download_count": 3}]}
 
-    def test_310_ready_sdk_zip_and_tested_on_310(self):
-        """A release whose builds are Akai plugin folders gets vst2.folder; its -mpc-sdk.zip is listed under assets.sdk after a check;
-        a tested.json entry on MPC OS 3.10.x sets tested_310 (docs/CATALOG.md "MPC OS 3.10.1")."""
+    def test_310_folder_and_sdk_zip(self):
+        """A release whose builds are Akai plugin folders gets vst2.folder; its -mpc-sdk.zip is listed under assets.sdk after a check
+        (docs/CATALOG_SPEC.md "MPC OS 3.10.1"). There is no tested_310 field: tested.json and Works for me reports already say the OS."""
         import sdk_zip
         z7 = self.build("1.0.0")
         z64 = self.build("1.0.0", machine=183, elf_class=2)
@@ -790,7 +790,7 @@ class BuildTest(Base):
         self.assertEqual(v["vst2"], {"folder": "Acme - VST - Test Synth"})
         self.assertEqual(v["assets"]["sdk"]["url"], "https://x/sdk.zip")
         self.assertEqual(len(v["assets"]["sdk"]["sha256"]), 64)
-        self.assertTrue(v["tested_310"])
+        self.assertNotIn("tested_310", v)
         self.assertEqual(set(v["assets"]), {"armv7", "aarch64", "sdk"})
         # an SDK zip that holds the wrong folder is not listed, and says why
         bad = os.path.join(self.tmp, "bad-mpc-sdk.zip")
@@ -799,7 +799,7 @@ class BuildTest(Base):
         cat, _ = catalog_build.build([self.ENTRY], FakeGitHub({"acme/test-synth": [rel]}, {1: z7, 2: z64, 3: bad}),
                                      os.path.join(self.tmp, "cache2"), set())
         v = cat["plugins"][0]["versions"][0]
-        self.assertNotIn("sdk", v["assets"]); self.assertNotIn("tested_310", v)
+        self.assertNotIn("sdk", v["assets"])
         self.assertTrue(any("SDK zip not listed" in w for w in v["warnings"]), v["warnings"])
 
     def test_build_keeps_good_versions_and_reports_bad(self):
