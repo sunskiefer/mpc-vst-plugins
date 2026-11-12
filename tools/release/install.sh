@@ -166,7 +166,10 @@ if [ -n "$RETIRE" ]; then
         [ "$r" != "$SKIN" ] && [ -d "$o" ] || continue
         if grep -q "\"id\": *\"$PLUGIN_ID\"" "$o/mpc-plugin.json" 2>/dev/null; then
             for d in $USER_DATA; do
-                if [ -e "$o/$d" ] && [ ! -e "$NEW/$d" ]; then mkdir -p "$(dirname "$NEW/$d")" && cp -a "$o/$d" "$NEW/$d" && echo "moved your files from $r/$d into $SYNTHS/$SKIN"; fi
+                if [ -e "$o/$d" ] && [ ! -e "$NEW/$d" ]; then
+                    mkdir -p "$(dirname "$NEW/$d")" && cp -a "$o/$d" "$NEW/$d" || die "could not move your files from $r/$d; the old folder was kept"
+                    echo "moved your files from $r/$d into $SYNTHS/$SKIN"
+                fi
             done
             rm -rf "${o:?}" && echo "removed the old plugin folder $r"
         else
