@@ -1,5 +1,5 @@
 { "id": "csxxl", "name": "CSXXL", "author": "L'Cronx", "repo": "sunskiefer/CSXXL",
   "kind": "instrument", "style": "synth", "tags": ["synth", "polysynth", "analog", "cs-80", "layers", "arpeggiator", "ribbon", "presets"],
   "license": "PolyForm-Noncommercial-1.0.0", "source_available": true, "asset_pattern": "*-mpc-armv7.zip",
-  "screenshot": "https://sunskiefer.github.io/img/csxxl.jpg",
+  "screenshot": "https://raw.githubusercontent.com/sunskiefer/CSXXL/v1.0.13/docs/screenshots/hero.jpg",
   "summary": "A two-layer, 8-voice, polyphonic synth in the spirit of the Yamaha CS-80, written from voice notes and self-built schematics. Slider-only panels over 12 pages, per-key aftertouch, touch ribbon, arpeggiator with an 8-step gate per layer, ring mod, chorus and reverb, 768 factory presets in a named list. MPC OS 3.x." }
