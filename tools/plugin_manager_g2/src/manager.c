@@ -74,7 +74,7 @@ typedef struct {
 #endif
 /* The version of this build, shown on the ABOUT page. The release workflow fails when its version input differs from this. */
 #ifndef PM_VERSION
-#define PM_VERSION "1.0.0"
+#define PM_VERSION "1.0.1"
 #endif
 #define WORK "/tmp/openmpc-pm"
 #define MAXPKG 256
