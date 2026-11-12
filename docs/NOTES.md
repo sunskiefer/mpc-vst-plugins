@@ -2596,4 +2596,6 @@ in apply.sh. Not yet checked on a device. A local zip whose `mpc-plugin.json` ha
   it rw-s) and MPC's `snd_rawmidi` imports are unchanged.
 - `Enhancements.VST2Support` is `1` and our plugins are still registered in `pluginList-arm` under `/storage/Synths`
   (still mounted); they load in the bench, but none is in a `VST2 Plugins` folder, so (per 2026-10-31) the browser doesn't
-  offer them. Not yet checked in the browser on this Gen1 device.
+  offer them. Confirmed on this Gen1 device: after installing into `/storage/VST2 Plugins/` (release `install.sh -t`, or a copy
+  plus `tools/vst2_migrate.sh --json`) and one MPC restart, the browser listed Chordsmith (instruments) and Keyscope, NAM,
+  Stompbox and Tuner (effects, under the vendor), and each loaded from there (`/proc/<MPC>/maps`) with its skin; Tuner drew live.
