@@ -4,8 +4,8 @@
   "author": "Timo",
   "repo": "timomacquis/piMorpH-MPC",
   "kind": "instrument",
-  "license": "GPL-3.0-or-later AND CC0-1.0",
-  "summary": "Polyphonic XY wavetable synthesizer with paths, orbit, dual envelopes, HP/LP filters, two LFOs, an eight-slot modulation matrix and 294 Adventure Kid wavetable sounds.",
+  "license": "GPL-3.0-or-later",
+  "summary": "Polyphonic XY wavetable synthesizer with paths, orbit, dual envelopes, HP/LP filters, two LFOs and an eight-slot modulation matrix. Includes 100 presets plus INIT and Custom Wavetable import: mono/stereo PCM16, PCM32 or float32 WAV, 512/1024/2048 samples per waveform.",
   "style": "synth",
   "tags": [
     "synth",
