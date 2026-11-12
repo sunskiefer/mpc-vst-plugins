@@ -1,0 +1,18 @@
+{
+  "id": "pimorph",
+  "name": "πMorpH",
+  "author": "Timo",
+  "repo": "timomacquis/piMorpH-MPC",
+  "kind": "instrument",
+  "license": "GPL-3.0-or-later AND CC0-1.0",
+  "summary": "Polyphonic XY wavetable synthesizer with paths, orbit, dual envelopes, HP/LP filters, two LFOs, an eight-slot modulation matrix and 294 Adventure Kid wavetable sounds.",
+  "style": "synth",
+  "tags": [
+    "synth",
+    "wavetable",
+    "polyphonic",
+    "modulation"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/timomacquis/piMorpH-MPC/v0.1.0/Cover.png",
+  "asset_pattern": "piMorpH-*-mpc-armv7.zip"
+}
