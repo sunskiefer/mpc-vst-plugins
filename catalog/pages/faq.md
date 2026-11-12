@@ -29,6 +29,15 @@ On 3.10.1 the old list isn't shown with External Plugin Support off either. Keep
 Wait a few seconds after changing it before restarting MPC: the setting is saved a moment later.
 :::
 
+::: details Can I just copy plugin folders from GitHub onto the MPC?
+Yes, on MPC OS 3.10.1, with three things right:
+- **Into `VST2 Plugins`, not `Synths`.** MPC lists only a folder named exactly `VST2 Plugins` at the root of a drive (internal, SD card or USB), with External Plugin Support on.
+- **Copy the plugin folder, not the whole download.** In a release zip it is the `<Manufacturer> - VST - <Name>` folder inside `portable/`. A card's **Download (3.10.1 format)** zip is just that folder.
+- **The folder needs a `plugin.json`.** Releases made with the current release workflow have one; many older ones don't, and MPC won't list them when copied by hand.
+
+The Plugin Manager 1.0 avoids all three: it installs any plugin in the catalog (it writes the `plugin.json` itself) and puts ROMs where the plugin looks for them.
+:::
+
 ::: details My new plugin doesn't show after I copied it.
 On a USB stick or SD card it shows as soon as you plug it in. Copied to the MPC's internal drive, it shows after you restart MPC. Also check the folder is named `<Manufacturer> - VST - <Name>` and sits directly in `VST2 Plugins`, not in a subfolder.
 :::
