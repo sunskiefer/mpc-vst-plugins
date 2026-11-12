@@ -194,17 +194,25 @@ etc_overlay() { awk '$2 == "/etc" && $3 == "overlay" { f = 1 } END { exit !f }' 
 etc_overlay_rw() { awk '$2 == "/etc" { t = $3; o = $4 } END { exit !(t == "overlay" && o ~ /(^|,)rw(,|$)/) }' "$ADDIN_MOUNTS" 2>/dev/null; }
 # A read-only /etc overlay stacked on a writable /etc overlay (its lowerdir includes /etc): print the writable one's upper
 # layer, the place to write /etc files that persist and show through. Fails when /etc is not stacked like that.
+# /proc/mounts escapes a space, tab, newline and backslash in a path as \040, \011, \012 and \134: decoded here.
 etc_stacked_upper() {
     awk '$2 == "/etc" { n++; t[n] = $3; o[n] = $4 }
         END {
             if (n < 2 || t[n] != "overlay" || o[n] !~ /(^|,)ro(,|$)/ || o[n] !~ /lowerdir=([^,]*:)?\/etc(:|,|$)/) exit 1
             for (i = n - 1; i >= 1; i--)
-                if (t[i] == "overlay" && o[i] ~ /(^|,)rw(,|$)/ && match(o[i], /upperdir=[^,]*/)) { print substr(o[i], RSTART + 9, RLENGTH - 9); exit 0 }
+                if (t[i] == "overlay" && o[i] ~ /(^|,)rw(,|$)/ && match(o[i], /upperdir=[^,]*/)) {
+                    u = substr(o[i], RSTART + 9, RLENGTH - 9)
+                    gsub(/\\040/, " ", u); gsub(/\\011/, "\t", u); gsub(/\\012/, "\n", u); gsub(/\\134/, "\\", u)
+                    print u; exit 0
+                }
             exit 1
         }' "$ADDIN_MOUNTS" 2>/dev/null
 }
 # After writing in a stacked /etc's writable layer: the read-only overlay on top keeps its cached view of the old file
 # until the kernel drops its dentries (seen on the Key 37, 2026-11-12), and systemd reads through that view.
+# drop_caches=2 frees the whole system's reclaimable dentries and inodes, not just this file's, and it runs while MPC is
+# still up (the drop-in is written before the restart). With the default restart MPC goes down right after anyway; with
+# -n (no restart) a short stall in a playing MPC is possible, so batch callers should run it with MPC stopped.
 etc_refresh() {
     [ -n "$ETC_UPPER" ] || return 0
     if [ -n "$ADDIN_INSTALL_TEST" ]; then echo "drop_caches" >> "${ADDIN_TEST_LOG:-/dev/null}"; return 0; fi

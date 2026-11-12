@@ -121,7 +121,11 @@ drop-in in the writable overlay's upper layer instead (`etc_stacked_upper()`), w
 drops the kernel's dentry cache (`etc_refresh()`) because the read-only overlay keeps showing the old file until then,
 and keeps the boot-reload unit. Before this, installs on such a device failed with "Read-only file system". The update
 to 3.10.1 also replaces the root filesystem, which removes the boot-reload unit and any libraries the drop-in's base
-listed from a mod: re-run an addin's installer from a current release afterwards, which rebuilds both.
+listed from a mod: re-run an addin's installer from a current release afterwards, which rebuilds both. **On a Gen1 MPC
+with 3.10.1 and user access, reinstall your addins from a release built with this installer** (an addin released with
+`addin-release.yml` at or after this change); an older release's `install.sh` fails with "Read-only file system".
+`etc_refresh` drops the system's dentry and inode caches while MPC is still running (just before the installer restarts
+it); a batch caller that installs with `-n` should do it with MPC stopped, to avoid a possible short stall.
 
 Tests: case 15 (remount succeeds, so `/etc` is used), case 16 (remount refused, so `/run` is used), case 17 (3.10's
 read-only `/etc` overlay, so `/run` is used) and case 18 (3.10.1's read-only overlay stacked on a writable one, so the

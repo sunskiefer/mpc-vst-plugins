@@ -305,6 +305,10 @@ run a uninstall.sh; run b uninstall.sh
 [ ! -e "$UP" ] && [ ! -e "$BU" ] && ok "stacked /etc: the last uninstall removes the drop-in from the writable layer, and the unit" || bad "stacked uninstall: $(ls "$(dirname "$UP")" 2>&1)"
 fresh; unit 'Restart=always'; ro a-w; chmod u+w "$T/root/usr/lib/systemd/system"; run a install.sh   # a first addin on such a device
 [ -f "$UP" ] && grep -qx "Environment=LD_PRELOAD=$A" "$UP" && [ ! -e "$DROP" ] && ok "stacked /etc: a first install also writes the writable layer" || bad "stacked first: $(cat "$T/out")"
+printf '/dev/root / ext4 ro,relatime 0 0\noverlay /etc overlay rw,lowerdir=/etc,upperdir=/data/my\\040etc 0 0\noverlay /etc overlay ro,lowerdir=/u:/etc 0 0\n' > "$T/mounts-3101-esc"
+export ADDIN_MOUNTS="$T/mounts-3101-esc"
+fresh; unit 'Restart=always'; ro a-w; chmod u+w "$T/root/usr/lib/systemd/system"; run a install.sh
+[ -f "$T/root/data/my etc/systemd/system/acvs.service.d/90-mpc-addins.conf" ] && ok "stacked /etc: an upper layer path with a space (\\040 in /proc/mounts) is decoded" || bad "escaped upperdir: $(find "$T/root/data" 2>&1 | head -5)"
 export ADDIN_MOUNTS="$T/mounts-plain"
 
 # ADDIN_FILES tools copied without their execute bit (a FAT card or stick drops it): an ELF binary or a #! script is installed 755, data 644
