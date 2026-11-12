@@ -7,7 +7,9 @@ summary: Put the OpenMPC Plugin Manager on your MPC once, then browse the catalo
 
 The **OpenMPC Plugin Manager** is a plugin that runs on your MPC. Once it is on a track you can browse the catalog and install, update and remove plugins, on the MPC's screen or from a web page on your phone or computer.
 
-You install it once. Answer two questions below for your steps, or open the full instructions under them. It needs MPC OS 3.x: on MPC OS 2.x, see [MPC OS 2.x](#mpc-os-2-x).
+**To try plugins:** put the Plugin Manager on your MPC once (about five minutes), then install, try and remove any plugin in the catalog from it. Removing a plugin keeps your projects and your own files.
+
+Answer two questions below for your steps, or open the full instructions under them. It needs MPC OS 3.x: on MPC OS 2.x, see [MPC OS 2.x](#mpc-os-2-x).
 
 ::: guide
 
@@ -27,7 +29,7 @@ Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/re
 
 | Your MPC | Download |
 |---|---|
-| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37 | `OpenMPC-Plugin-Manager-1.0.0-Gen1.zip` |
+| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, and the Force | `OpenMPC-Plugin-Manager-1.0.0-Gen1.zip` |
 | **Second generation**: MPC Live III, One G2, Key G2, XL | `OpenMPC-Plugin-Manager-1.0.0-Gen2.zip` |
 
 Unzip it. You get one folder, **`OpenMPC - VST - Plugin Manager G2`**.
@@ -66,12 +68,14 @@ Or let the [desktop installer app](#the-desktop-installer-app) write the stick: 
 :::
 
 ### 4. Open the Plugin Manager
-1. Add a track and choose **External VST Plugins → OpenMPC - Plugin Manager G2**.
+1. Add a Plugin track and choose **External VST Plugins → OpenMPC → Plugin Manager G2**.
 2. Browse and install on the MPC's screen, or open the address on its status line on your phone or computer (same Wi-Fi).
 
 ![The Plugin Manager's status line on the MPC, with the web address under the plugin count](img/310-manager-address-line.png)
 
-3. Pick plugins, press **Apply**. The MPC restarts once.
+3. Pick plugins, press **Apply**. The MPC restarts once. The new plugins are under **External VST Plugins**, grouped by maker.
+4. **Plugins that need your own ROM** (marked *Needs your own ROM* in the catalog): upload the ROM on the Plugin Manager's web page, under the plugin.
+5. **Don't like one?** Select it in **Installed**, press **Remove**, then **Apply**.
 
 ![The Plugin Manager's web page on a phone: Discover, Installed and Updates tabs over the catalog cards](img/310-web-page-phone.webp)
 
@@ -102,7 +106,7 @@ A small app for Windows, Mac and Linux. It can:
 - install the Plugin Manager and other plugins straight onto the MPC over Wi-Fi (3.10.1: with Developer mode; 3.9.1 or earlier: with root SSH);
 - on 3.9.1 or earlier: remove plugins, register plugin folders, clean up settings backups and apply device patches.
 
-**Download:** open [the installer release](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/desktop-v1.1.2) and get the file for your computer from **Assets**:
+**Download:** open [the installer release](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/desktop-v2.0.0) and get the file for your computer from **Assets**:
 
 | Your computer | File ending in |
 |---|---|

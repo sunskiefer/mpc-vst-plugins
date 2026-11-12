@@ -2,10 +2,16 @@
 title: Questions and answers
 nav: FAQ
 order: 15
-summary: Plugins after updating to MPC OS 3.10.1, Gen1 or Gen2, how plugins are checked, Works for me and reporting issues, the Plugin Manager's web page and more.
+summary: Installing and trying plugins, plugins after updating to MPC OS 3.10.1, Gen1 or Gen2, how plugins are checked, Works for me and reporting issues, the Plugin Manager's web page and more.
 ---
 
 Start with [Install the Plugin Manager](install.html). Still stuck? Ask in the community with your MPC model, MPC OS version and what you see.
+
+::: details How do I install and try a plugin?
+Put the **Plugin Manager** on your MPC once: the [Install page](install.html) gives your steps (about five minutes; on MPC OS 3.10.1 nothing needs SSH or root). Then, on the MPC's screen or its web page on your phone, pick plugins and press **Apply**. MPC restarts once and they're under **External VST Plugins**, grouped by maker. Don't like one? **Remove** it the same way; your projects and your own files are kept.
+
+Prefer copying by hand? See "Can I just copy plugin folders from GitHub onto the MPC?" below.
+:::
 
 ::: details I updated to 3.10.1 and my plugins are gone from the browser.
 They're still on the drive and your projects still load them. 3.10.1 only lists plugins in `VST2 Plugins`. Turn on External Plugin Support, then open Plugin Manager 1.0 and press Move (on its screen or its web page), then APPLY. MPC restarts once.
