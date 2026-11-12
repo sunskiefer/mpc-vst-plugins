@@ -3,4 +3,4 @@
   "summary": "A random 16-pad drum-kit builder and inspiration machine: dips into your sample library, fills the pads at random, plays the kit and exports it as an MPC drum program.",
   "style": "sampler", "tags": ["sampler", "utility", "kit-builder", "random", "drum-kit"],
   "asset_pattern": "*-mpc-armv7.zip",
-  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-luckydip/main/docs/img/lucky-dip.png" }
+  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-luckydip/5d9704104fcad1b1cfa829796ce249d1ace035ac/docs/img/pads.png" }

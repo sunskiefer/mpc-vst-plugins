@@ -1,5 +1,5 @@
 { "id": "crate-digger", "name": "Crate Digger", "author": "sd88me", "repo": "sd88me/mpc-vst-cratedigger",
   "kind": "instrument", "style": "sample-browser", "tags": ["discogs", "streaming"], "license": "MIT",
   "summary": "Dig for records by genre, style, decade, region and country on Discogs, then stream and play them into an MPC track, with its own screen skin and Q-Links.",
-  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-cratedigger/main/docs/img/crate-digger.png",
+  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-cratedigger/c638d19f51220df69ab30a3831b13d5aac896d7e/docs/screenshots/play.png",
   "flags_reviewed": ["network", "runs programs", "changes the system"] }
