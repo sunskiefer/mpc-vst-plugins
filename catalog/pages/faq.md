@@ -9,6 +9,8 @@ Start with [Install the Plugin Manager](install.html). Still stuck? Ask in the c
 
 ::: details I updated to 3.10.1 and my plugins are gone from the browser.
 They're still on the drive and your projects still load them. 3.10.1 only lists plugins in `VST2 Plugins`. Turn on External Plugin Support, then open Plugin Manager 1.0 and press Move (on its screen or its web page), then APPLY. MPC restarts once.
+
+That includes an older Plugin Manager: it won't show either, and versions before 1.0 can't move plugins. Put Plugin Manager 1.0 on first from the [Install page](install.html) (pick your MPC and 3.10.1; it can write it to a USB stick for you), then press Move.
 :::
 
 ::: details Do I need to reinstall or re-add my ROMs?
