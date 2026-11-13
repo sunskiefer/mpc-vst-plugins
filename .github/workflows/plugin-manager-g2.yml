@@ -48,6 +48,7 @@ jobs:
       build: tools/plugin_manager_g2/vst/build_themes.sh all
       about: Browse the OpenMPC catalog and install, update and remove plugins on the MPC itself, with rollback; for Gen1 and Gen2.
       plugin_id: plugin-manager-g2
+      asset_name: Plugin-Manager-G2   # kept after the rename: the catalog's asset_pattern, the stick builder and installer 2.0.0 match it
       retire: OpenMPC - VST - Plugin Manager G2   # renamed "Plugin Manager" in 1.1.0: an update removes the old folder
       license: MIT
       dry_run: ${{ inputs.dry_run }}

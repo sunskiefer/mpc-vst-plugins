@@ -2095,6 +2095,18 @@ class InstallerTest(Base):
         self.assertEqual(self.run_script("install.sh").returncode, 0)                           # and a second run is fine
         self.assertEqual(len(self.entries()), 2)
 
+    def test_asset_name_keeps_the_zip_names_after_a_rename(self):
+        """release.py --asset-name: the zips keep their old file-name stem (the folder and plugin name are the new ones)."""
+        self.build(extra=("--asset-name", "Old-Name"))   # build() returns the default name; the zip is under the given stem
+        z = os.path.join(self.tmp, "dist", "Old-Name-1.2.0-mpc-armv7.zip")
+        self.assertTrue(os.path.isfile(z), os.listdir(os.path.join(self.tmp, "dist")))
+        names = zipfile.ZipFile(z).namelist()
+        self.assertTrue(all(n.startswith("Old-Name-1.2.0/") for n in names), names[:3])
+        self.assertIn("Old-Name-1.2.0/portable/Acme - VST - Test Synth/mpc-plugin.json", names)
+        for bad in ("Old Name", "-x", "a--b", "a/b"):
+            with self.assertRaises(Exception):
+                self.build(extra=("--asset-name", bad))
+
     def test_retire_refuses_a_bad_folder_name(self):
         for bad in ("../x", "Acme - VST - A:B", "NoVst", "Acme - VST - $(x)"):
             with self.assertRaises(Exception):
