@@ -380,8 +380,10 @@ int main(int argc, char **argv) {
   set("tab", "2"); printf("UPDATES\n"); cards();
   set("tab", "1"); printf("INSTALLED\n"); cards();
   set("tab", "0"); set("kind", "2"); printf("EFFECTS\n"); cards(); set("kind", "0");
-  printf("INSTALLED: menu on card 1 (if any), then DISCOVER: queue card 2 and UPDATE ALL\n");
-  set("tab", "1"); press("r1_more"); cards(); set("tab", "0"); press("r1_remove"); press("r2_act"); press("update_all"); cards();
+  printf("INSTALLED: menu on card 1 (if any), then DISCOVER (instruments): queue card 2 and UPDATE ALL\n");
+  /* INSTRUMENTS only: on the live catalog card 2 of ALL can be an addin, which a device with no addin folder refuses (2026-11-13: a
+     fresh addin release sorted first and every device run stopped at "has no install location") */
+  set("tab", "1"); press("r1_more"); cards(); set("tab", "0"); press("r1_remove"); set("kind", "1"); press("r2_act"); set("kind", "0"); press("update_all"); cards();
   press("apply"); wait_for("apply_state", "3"); cards();
   printf("APPLY again: the restart prompt; CANCEL keeps it ready, a tab tap is ignored while it shows\n");
   press("apply"); prompt(); set("tab", "1"); printf("  tab=%s\n", get("tab")); press("confirm_cancel"); prompt();
