@@ -47,6 +47,34 @@ the CPU result is Gen1's, so that zip has none. Offline only until run on a Gen2
 A port with only a Gen2 build (no 32-bit `.so`) passes `gen2_only: true`: the workflow then packages only `build/aarch64/<so>` as the `-mpc-aarch64.zip`
 (the default, false, is unchanged for every other port).
 
+**An Akai SDK project** passes `sdk_project: <folder with plugin.json and src/>` instead of `vst_dir` and `build` (2026-11-13, offline:
+the step run locally on SimpleSynth). The workflow builds it for both CPUs with the SDK pinned in this repo
+(`vendor/mpc-plugin-builder-sdk`, `tools/build.py`, zig downloads itself), packages it with `tools/sdk_release.py` (same per-build zips,
+3.9.1 registration included) and adds the SDK zip. A CPU result goes in `<sdk_project>/bench.txt`; the other inputs (`plugin_id`,
+`license`, `about`, `user_data` ...) work as for any port. Skin previews are skipped for SDK skins (our previewer reads our format). A
+whole caller:
+
+```yaml
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      version: { required: true }
+      dry_run: { type: boolean, default: true }
+jobs:
+  release:
+    uses: open-mpc/mpc-vst-plugins/.github/workflows/vst-release.yml@<sha>
+    permissions: { contents: write }
+    with:
+      tools_ref: <sha>
+      tag: my-synth-v${{ inputs.version }}
+      version: ${{ inputs.version }}
+      sdk_project: plugins/MySynth
+      plugin_id: my-synth
+      license: MIT
+      dry_run: ${{ inputs.dry_run }}
+```
+
 The Plugin Manager lives in its own repo since 2026-11 ([open-mpc/plugin-manager](https://github.com/open-mpc/plugin-manager)) and calls this workflow like any port (`asset_name: Plugin-Manager-G2`, `retire: OpenMPC - VST - Plugin Manager G2`). Its registry entry lists `previous_repos: [open-mpc/mpc-vst-plugins]`, where its releases up to 1.1.0 stay.
 
 A port calls it from its own repo with a `workflow_dispatch` workflow that takes the version. Pin this repo to one
@@ -143,8 +171,7 @@ the SDK's path (`VST/<slug>-arm32.so`). The SDK finds its folder by walking up f
 3.9.1 too. The 3.9.1 plugin-list entry comes from plugin.json (a four-character uid such as "MxSy" becomes 4d785379). It runs
 `release.py --so-path`, so every check and the install scripts are the usual ones; `tools/sdk_zip.py` then joins the zips back into
 the SDK zip with the same paths. A plugin without `Plugin Skins/TUI.json` and `version.xml` is refused. Extra options (`--bench`,
-`--user-data` ...) go on to release.py. Tests: `tools/test_sdk_release.py`. Not yet: a `vst-release.yml` input that builds with
-`vendor/mpc-plugin-builder-sdk` and runs this, and the catalog converting SDK-only releases (docs/ROADMAP.md).
+`--user-data` ...) go on to release.py. Tests: `tools/test_sdk_release.py`. In CI: `vst-release.yml` with `sdk_project` ("Releasing from CI"). Not yet: the catalog converting SDK-only releases (docs/ROADMAP.md).
 
 ## Renaming a plugin (2026-11-13)
 On MPC OS 3.10.1 a plugin's folder must be `<maker> - VST - <name>`, so a new name is a new folder. Release it with the reusable

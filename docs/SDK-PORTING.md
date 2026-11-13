@@ -32,7 +32,7 @@ New plugins start from Akai's SDK; this repo adds what the SDK doesn't do. The w
 - Extras: INSTRUMENTS browser tiles (`xpl.py`), switchable skin themes (`make_skinset.py`), the desktop VST3 build (`build_vst3.sh`, `desktop_skin.py`).
 - Renames: `release.py --retire` / `--asset-name`.
 
-To release an SDK-built plugin through the catalog: `tools/sdk_release.py <built folder> --version X --id ID --repo owner/name` turns the folder `<sdk>/tools/build.py` made into the catalog's per-build zips (MPC OS 3.9.1 registration included, SDK layout kept; docs/RELEASING.md). Before it existed, the Dexed 2 and JV-880 2 ports did this by hand (the "catalog route" notes below)
+To release an SDK-built plugin through the catalog: `tools/sdk_release.py <built folder> --version X --id ID --repo owner/name` turns the folder `<sdk>/tools/build.py` made into the catalog's per-build zips; in CI, `vst-release.yml` with `sdk_project:` builds and does it for you (MPC OS 3.9.1 registration included, SDK layout kept; docs/RELEASING.md). Before it existed, the Dexed 2 and JV-880 2 ports did this by hand (the "catalog route" notes below)
 and use `vst-release.yml`, or attach per-CPU zips made with `release.py`.
 
 ## 1. Project layout

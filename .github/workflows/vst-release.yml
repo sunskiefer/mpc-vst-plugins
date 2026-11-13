@@ -23,13 +23,21 @@ on:
         type: string
         required: true
       vst_dir:
-        description: The port's vst folder, relative to the caller's repo root; the build writes <vst_dir>/build
+        description: The port's vst folder, relative to the caller's repo root; the build writes <vst_dir>/build (not with sdk_project)
         type: string
-        required: true
+        default: ''
       build:
-        description: Command, run from the caller's repo root, that fills <vst_dir>/build (so, skin/, pluginlist-entry.xml); MPC_VST is set
+        description: Command, run from the caller's repo root, that fills <vst_dir>/build (so, skin/, pluginlist-entry.xml); MPC_VST is set (not with sdk_project)
         type: string
-        required: true
+        default: ''
+      sdk_project:
+        description: >-
+          An Akai SDK plugin project (folder with plugin.json and src/), relative to the caller's repo root, instead of vst_dir + build.
+          It is built for both CPUs with the SDK pinned in this repo (vendor/mpc-plugin-builder-sdk, tools/build.py) and packaged with
+          tools/sdk_release.py: the same per-build zips (MPC OS 3.9.1 registration included) plus the SDK zip. A CPU result goes in
+          <sdk_project>/bench.txt.
+        type: string
+        default: ''
       host_test:
         description: Optional host test command (e.g. "$MPC_VST/tools/test_port.sh" path/vst.json)
         type: string
@@ -127,6 +135,22 @@ jobs:
           ref: ${{ inputs.tools_ref }}
           path: mpc-vst-plugins
 
+      - name: Check the inputs
+        env:
+          SDK_PROJECT: ${{ inputs.sdk_project }}
+          BUILD: ${{ inputs.build }}
+        run: |
+          if [ -n "$SDK_PROJECT" ]; then
+            [ -z "$VST_DIR$BUILD" ] || { echo "::error::sdk_project replaces vst_dir and build: give one or the other"; exit 1; }
+            [ -f "port/$SDK_PROJECT/plugin.json" ] || { echo "::error::no plugin.json in $SDK_PROJECT"; exit 1; }
+          else
+            [ -n "$VST_DIR" ] && [ -n "$BUILD" ] || { echo "::error::give vst_dir and build (or sdk_project for an Akai SDK project)"; exit 1; }
+          fi
+
+      - name: Fetch the pinned Akai SDK
+        if: ${{ inputs.sdk_project != '' }}
+        run: git -C mpc-vst-plugins submodule update --init --depth 1 vendor/mpc-plugin-builder-sdk
+
       - name: Set up QEMU (plugins are built for armhf, and for aarch64 when the port asks, under emulation)
         uses: docker/setup-qemu-action@v3
         with:
@@ -142,20 +166,74 @@ jobs:
         run: python3 -m pip install --quiet pillow
 
       - name: Build
+        if: ${{ inputs.sdk_project == '' }}
         working-directory: port
         env:
           BUILD: ${{ inputs.build }}
         run: bash -euo pipefail -c "$BUILD"
 
       - name: Host test
-        if: ${{ inputs.host_test != '' }}
+        if: ${{ inputs.host_test != '' && inputs.sdk_project == '' }}
         working-directory: port
         env:
           HOST_TEST: ${{ inputs.host_test }}
         run: bash -euo pipefail -c "$HOST_TEST"
 
+      - name: Build and package an Akai SDK project
+        id: pkg_sdk
+        if: ${{ inputs.sdk_project != '' }}
+        working-directory: port
+        env:
+          SDK_PROJECT: ${{ inputs.sdk_project }}
+          ABOUT: ${{ inputs.about }}
+          PLUGIN_ID: ${{ inputs.plugin_id }}
+          LICENSE_ID: ${{ inputs.license }}
+          REQUIRES: ${{ inputs.requires }}
+          DEPENDS: ${{ inputs.depends }}
+          CONFLICTS: ${{ inputs.conflicts }}
+          USER_DATA: ${{ inputs.user_data }}
+          RETIRE: ${{ inputs.retire }}
+          ASSET_NAME: ${{ inputs.asset_name }}
+        run: |
+          SDK="$MPC_VST/vendor/mpc-plugin-builder-sdk"
+          python3 "$SDK/tools/build.py" "$SDK_PROJECT" --target all   # zig (downloads itself), both CPUs, validate, native host build
+          folders=("$SDK_PROJECT"/build/*" - VST - "*/)
+          [ ${#folders[@]} = 1 ] && [ -d "${folders[0]}" ] || { echo "::error::expected one '<maker> - VST - <name>' folder in $SDK_PROJECT/build"; exit 1; }
+          folder="${folders[0]%/}"
+          args=("$folder" --version "$VERSION" --repo "$GITHUB_REPOSITORY" -o "$GITHUB_WORKSPACE/dist")
+          [ -z "$ABOUT" ] || args+=(--about "$ABOUT")
+          [ -z "$PLUGIN_ID" ] || args+=(--id "$PLUGIN_ID")
+          [ -z "$LICENSE_ID" ] || args+=(--license "$LICENSE_ID")
+          [ -z "$REQUIRES" ] || args+=(--requires "$REQUIRES")
+          for d in $DEPENDS; do args+=(--depends "$d"); done
+          for c in $CONFLICTS; do args+=(--conflicts "$c"); done
+          for u in $USER_DATA; do args+=(--user-data "$u"); done
+          [ -z "$ASSET_NAME" ] || args+=(--asset-name "$ASSET_NAME")
+          IFS='|' read -r -a retired <<< "$RETIRE"; for r in "${retired[@]}"; do [ -z "$r" ] || args+=(--retire "$r"); done
+          if [ -f "$SDK_PROJECT/bench.txt" ]; then
+            args+=(--bench "$SDK_PROJECT/bench.txt"); bench="from committed $SDK_PROJECT/bench.txt"
+          else
+            bench="**not measured** - no $SDK_PROJECT/bench.txt, so INSTALL.md has no CPU section"
+          fi
+          python3 "$MPC_VST/tools/sdk_release.py" "${args[@]}"
+          mkdir -p "$GITHUB_WORKSPACE/previews"
+          python3 "$MPC_VST/tools/studio.py" preview "$folder/Plugin Skins" -o "$GITHUB_WORKSPACE/previews/page_%d.png" || echo "::notice::no skin preview (the SDK skin format may differ)"
+          zip=$(ls "$GITHUB_WORKSPACE"/dist/*-mpc-armv7.zip 2>/dev/null || ls "$GITHUB_WORKSPACE"/dist/*-mpc-aarch64.zip)
+          zips=$(ls "$GITHUB_WORKSPACE"/dist/*.zip | tr '\n' ' ')
+          if [ -n "$LICENSE_ID" ]; then flag=--catalog; else flag=""; echo "::warning::no license input: this release can't be listed in the catalog"; fi
+          for z in $zips; do python3 "$MPC_VST/tools/catalog_check.py" "$z" $flag; done
+          base=$(basename "$zip" | sed 's/-mpc-\(armv7\|aarch64\)\.zip$//')
+          builds=$(ls "$GITHUB_WORKSPACE"/dist/*-mpc-armv7.zip "$GITHUB_WORKSPACE"/dist/*-mpc-aarch64.zip 2>/dev/null | tr '\n' ' ')
+          python3 "$MPC_VST/tools/sdk_zip.py" "$GITHUB_WORKSPACE/dist/$base-mpc-sdk.zip" $builds
+          zips="$zips$GITHUB_WORKSPACE/dist/$base-mpc-sdk.zip "
+          echo "zip=$zip" >> "$GITHUB_OUTPUT"
+          echo "zips=$zips" >> "$GITHUB_OUTPUT"
+          echo "name=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["name"])' "$folder/plugin.json")" >> "$GITHUB_OUTPUT"
+          echo "bench=$bench" >> "$GITHUB_OUTPUT"
+
       - name: Package with release.py
         id: pkg
+        if: ${{ inputs.sdk_project == '' }}
         working-directory: port
         env:
           EXTRA: ${{ inputs.extra }}
@@ -245,9 +323,9 @@ jobs:
         if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
-          ZIP: ${{ steps.pkg.outputs.zip }}
-          ZIPS: ${{ steps.pkg.outputs.zips }}
-          NAME: ${{ steps.pkg.outputs.name }}
+          ZIP: ${{ steps.pkg.outputs.zip || steps.pkg_sdk.outputs.zip }}
+          ZIPS: ${{ steps.pkg.outputs.zips || steps.pkg_sdk.outputs.zips }}
+          NAME: ${{ steps.pkg.outputs.name || steps.pkg_sdk.outputs.name }}
           ABOUT: ${{ inputs.about }}
           TOOLS_REF: ${{ inputs.tools_ref }}
         run: |
@@ -272,8 +350,8 @@ jobs:
 
       - name: Summary
         env:
-          ZIPS: ${{ steps.pkg.outputs.zips }}
-          BENCH: ${{ steps.pkg.outputs.bench }}
+          ZIPS: ${{ steps.pkg.outputs.zips || steps.pkg_sdk.outputs.zips }}
+          BENCH: ${{ steps.pkg.outputs.bench || steps.pkg_sdk.outputs.bench }}
           DRY: ${{ inputs.dry_run }}
         run: |
           {

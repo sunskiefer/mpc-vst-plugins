@@ -1,0 +1,65 @@
+# Self-test of the Akai SDK route in vst-release.yml (input sdk_project): runs that workflow's own "Build and package an Akai SDK
+# project" step on the SDK's SimpleSynth example from vendor/, then checks the zips. No release is made.
+name: SDK route self-test
+
+on:
+  pull_request:
+    paths: ['.github/workflows/vst-release.yml', '.github/workflows/sdk-route.yml', 'tools/sdk_release.py', 'tools/sdk_zip.py',
+            'tools/release.py', 'tools/release/**', 'tools/catalog_check.py', 'vendor/**']
+  push:
+    branches: [main]
+    paths: ['.github/workflows/vst-release.yml', '.github/workflows/sdk-route.yml', 'tools/sdk_release.py', 'tools/sdk_zip.py',
+            'tools/release.py', 'tools/release/**', 'tools/catalog_check.py', 'vendor/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simple-synth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: true
+          path: mpc-vst-plugins
+      - name: Install Pillow and PyYAML
+        run: python3 -m pip install --quiet pillow pyyaml
+      - name: Run vst-release.yml's SDK step on SimpleSynth
+        env:
+          VERSION: 1.0.0
+          SDK_PROJECT: SimpleSynth
+          PLUGIN_ID: simple-synth
+          LICENSE_ID: MIT
+          ABOUT: ''
+          REQUIRES: ''
+          DEPENDS: ''
+          CONFLICTS: ''
+          USER_DATA: ''
+          RETIRE: ''
+          ASSET_NAME: ''
+          MPC_VST: ${{ github.workspace }}/mpc-vst-plugins
+        run: |
+          mkdir -p port && cp -r mpc-vst-plugins/vendor/mpc-plugin-builder-sdk/examples/SimpleSynth port/
+          python3 - <<'PY' > step.sh
+          import yaml
+          w = yaml.safe_load(open("mpc-vst-plugins/.github/workflows/vst-release.yml"))
+          print(next(s for s in w["jobs"]["release"]["steps"] if s.get("id") == "pkg_sdk")["run"])
+          PY
+          cd port && bash -euo pipefail ../step.sh
+      - name: Check the result
+        run: |
+          ls dist
+          for a in armv7 aarch64 sdk; do test -f dist/Simple-Synth-1.0.0-mpc-$a.zip; done
+          python3 - <<'PY'
+          import json, zipfile
+          z = zipfile.ZipFile("dist/Simple-Synth-1.0.0-mpc-armv7.zip")
+          base = "Simple-Synth-1.0.0/portable/MPC SDK Examples - VST - Simple Synth/"
+          assert base + "VST/simple-synth-arm32.so" in z.namelist()
+          assert 'VST/simple-synth-arm32.so"' in z.read(base + "plugin-meta.xml").decode()
+          s = zipfile.ZipFile("dist/Simple-Synth-1.0.0-mpc-sdk.zip")
+          pj = json.loads(s.read("MPC SDK Examples - VST - Simple Synth/plugin.json"))
+          assert (pj["file32"], pj["file64"]) == ("VST/simple-synth-arm32.so", "VST/simple-synth-arm64.so"), pj
+          print("SDK route OK")
+          PY
