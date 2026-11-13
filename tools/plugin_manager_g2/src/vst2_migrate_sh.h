@@ -78,7 +78,7 @@ static const char VST2_MIGRATE_SH[] =
     "    cat=$(unxml \"$(attr category \"$el\")\"); ver=$(attr version \"$el\")\n"
     "    {\n"
     "        printf '{\\n  \"name\": \"%s\",\\n  \"manufacturer\": \"%s\",\\n' \"$(jstr \"$name\")\" \"$(jstr \"$mfr\")\"\n"
-    "        printf '  \"uid\": \"0x%s\",\\n  \"kind\": \"%s\",\\n' \"$uid\" \"$kind\"\n"
+    "        printf '  \"uid\": \"0x%s\",\\n  \"format\": \"vst2\",\\n  \"kind\": \"%s\",\\n' \"$uid\" \"$kind\"\n"
     "        [ -n \"$ver\" ] && printf '  \"version\": \"%s\",\\n' \"$(jstr \"$ver\")\"\n"
     "        [ -n \"$cat\" ] && printf '  \"category\": \"%s\",\\n' \"$(jstr \"$cat\")\"\n"
     "        printf '  \"numInputs\": %s,\\n  \"numOutputs\": %s,\\n' \"${ins:-0}\" \"${outs:-2}\"\n"

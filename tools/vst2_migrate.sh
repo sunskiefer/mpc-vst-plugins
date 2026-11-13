@@ -76,7 +76,7 @@ write_json() {   # write_json OUT ELEMENT
     cat=$(unxml "$(attr category "$el")"); ver=$(attr version "$el")
     {
         printf '{\n  "name": "%s",\n  "manufacturer": "%s",\n' "$(jstr "$name")" "$(jstr "$mfr")"
-        printf '  "uid": "0x%s",\n  "kind": "%s",\n' "$uid" "$kind"
+        printf '  "uid": "0x%s",\n  "format": "vst2",\n  "kind": "%s",\n' "$uid" "$kind"
         [ -n "$ver" ] && printf '  "version": "%s",\n' "$(jstr "$ver")"
         [ -n "$cat" ] && printf '  "category": "%s",\n' "$(jstr "$cat")"
         printf '  "numInputs": %s,\n  "numOutputs": %s,\n' "${ins:-0}" "${outs:-2}"

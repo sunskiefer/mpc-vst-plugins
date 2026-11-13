@@ -151,7 +151,7 @@ L="/nvme/VST2 Plugins/L'"'"'Cronx - VST - MS20XXL"; mkdir -p "$L"; echo so > "$L
 printf '"'"'<PLUGIN name="MS20XXL" manufacturer="L&apos;Cronx" file="%%payload-path%%/L&apos;Cronx - VST - MS20XXL/ms20xxl.so" uid="4d733230" isInstrument="1" numInputs="0" numOutputs="2"/>\n'"'"' > "$L/plugin-meta.xml"
 /tmp/drive_addins links > /tmp/lcronx.out
 test -f "$L/plugin.json" || { echo "no plugin.json written"; tail -n 5 /tmp/openmpc-pm/manager.log; exit 1; }
-grep -qF "\"uid\": \"0x4d733230\"" "$L/plugin.json" && grep -qF "wrote the missing plugin.json in $L" /tmp/openmpc-pm/manager.log
+grep -qF "\"uid\": \"0x4d733230\"" "$L/plugin.json" && grep -qF "\"format\": \"vst2\"" "$L/plugin.json" && grep -qF "wrote the missing plugin.json in $L" /tmp/openmpc-pm/manager.log
 grep -qE "^plugin: MS20XXL uid=4d733230 file=/nvme/VST2 Plugins/L.Cronx - VST - MS20XXL/ms20xxl.so$" /tmp/openmpc-pm/device.txt || { grep "^plugin:" /tmp/openmpc-pm/device.txt; exit 1; }
 # Move covers a drive'"'"'s Synths folder that is not in SynthContentLocations (plugins on a flash drive, Live III 2026-11-13)
 rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
@@ -396,6 +396,7 @@ echo "safety OK"
 fi # safety
 if want arch; then
 echo "== arch (offline fixture): the aarch64 zip on Gen2, the armv7 one otherwise, and no card when there is none"
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media; sh tests/devices/gen2.sh   # its own device: it used to reuse the one the previous section left, so ONLY=arch alone failed
 rm -rf /tmp/openmpc-pm; PM_ARCH=aarch64 /tmp/drive_addins arch > /tmp/arch-64.out
 grep -q "card 1: DU" /tmp/arch-64.out      # Dual only: Armonly has no aarch64 zip
 ! grep -q "card 1: AR\|card 2: DU" /tmp/arch-64.out

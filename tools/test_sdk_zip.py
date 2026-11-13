@@ -32,6 +32,7 @@ class T(unittest.TestCase):
         self.assertEqual({n.split("/")[0] for n in z.namelist()}, {F})
         pj = json.loads(z.read(F + "/plugin.json"))
         self.assertEqual((pj["file32"], pj["file64"], pj["uid"]), ("wob-arm32.so", "wob-arm64.so", "AcWb"))
+        self.assertEqual(pj["format"], "vst2")   # added when the builds' plugin.json lack it
         self.assertEqual(z.read(F + "/wob-arm32.so"), b"ELFarmv7"); self.assertEqual(z.read(F + "/wob-arm64.so"), b"ELFaarch64")
         self.assertNotIn(F + "/wob.so", z.namelist()); self.assertNotIn(F + "/plugin-meta.xml", z.namelist()); self.assertIn(F + "/Plugin Skins/TUI.json", z.namelist())
         self.assertEqual(z.getinfo(F + "/wob-arm64.so").external_attr >> 16, 0o755)
