@@ -90,7 +90,7 @@ ssh root@<device-ip> sh /tmp/Plugin-Manager-G2-<version>/install.sh -t '<your Sy
 Once it is listed in the catalog it should also install by id (`plugin-manager-g2`) from the installer app and `mpc-store.sh`; that has not been tried yet.
 
 **Use it.**
-1. Add **Plugin Manager G2** (VST, manufacturer *OpenMPC*) to an instrument track. The device needs a network connection for the catalog.
+1. Add **Plugin Manager** (VST, manufacturer *OpenMPC*) to an instrument track. The device needs a network connection for the catalog.
 2. Browse or search; tap **INSTALL** on what you want (or **UPDATE**). Queue as many as you like.
 3. Press **APPLY**, check the summary, and confirm. Save your project first: MPC restarts.
 4. Reopen the manager. The status line reports the result; the new plugin is in the browser.
@@ -120,7 +120,7 @@ for new installs; updates always stay where the plugin already is. You can also 
    Create the `local-plugins` folder if it is not there. With SSH: `ssh root@<device-ip> mkdir -p /nvme/local-plugins`, then
    `scp <the zip> root@<device-ip>:/nvme/local-plugins/`. Without SSH, use the USB plugin manager stick instead: it has its own `local-plugins` folder on
    the stick (the **Local** tab), which also works offline. The folders the manager looks in are the ones in `device.txt` (see below) under "usable".
-3. **Open the manager** (add *Plugin Manager G2* to a track). **No network is needed** (from 0.2.3): if the catalog cannot be loaded, the manager says so in
+3. **Open the manager** (add *Plugin Manager* to a track). **No network is needed** (from 0.2.3): if the catalog cannot be loaded, the manager says so in
    a small warning, and still lists the zips in `local-plugins`, what is installed and any folder to register. The list is read when the manager opens and on
    **REFRESH**; if you copied the zip while it was open, press **REFRESH** or close and reopen it. In 0.2.2 and earlier a local zip showed up only while
    the catalog loaded. The zip appears as a card marked **local zip**, newest first, named after the file; search for part of the file name if the list is long.

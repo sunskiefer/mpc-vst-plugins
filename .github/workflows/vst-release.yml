@@ -46,6 +46,10 @@ on:
         description: Folders inside the plugin folder that hold the user's own files (ROMs, banks), space-separated; the installer keeps them and moves them in from the old layout
         type: string
         default: ''
+      retire:
+        description: Old plugin folders this release replaces (a renamed plugin), separated by '|', e.g. 'Me - VST - Old Name'; the installer removes each one that is this plugin's and moves its user data (release.py --retire)
+        type: string
+        default: ''
       about:
         description: One line about the plugin, for INSTALL.md and the release notes
         type: string
@@ -159,6 +163,7 @@ jobs:
           DEPENDS: ${{ inputs.depends }}
           CONFLICTS: ${{ inputs.conflicts }}
           USER_DATA: ${{ inputs.user_data }}
+          RETIRE: ${{ inputs.retire }}
           GEN2_ONLY: ${{ inputs.gen2_only }}
         run: |
           B="$VST_DIR/build"
@@ -182,6 +187,7 @@ jobs:
           fi
           for e in $EXTRA; do args+=(--extra "$e"); done
           for u in $USER_DATA; do args+=(--user-data "$u"); done
+          IFS='|' read -r -a retired <<< "$RETIRE"; for r in "${retired[@]}"; do [ -z "$r" ] || args+=(--retire "$r"); done   # folder names have spaces
           [ "$GEN2_ONLY" = true ] || python3 "$MPC_VST/tools/release.py" "${args[@]}"   # gen2_only: there is no 32-bit build to package
           # Gen2: a port whose vst.json lists the aarch64 target also has build/aarch64/<so>: package it the same way (docs/GEN2.md).
           # The CPU result is a Gen1 measurement, so the Gen2 zip does not carry it.

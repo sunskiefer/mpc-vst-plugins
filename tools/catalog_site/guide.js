@@ -125,9 +125,9 @@
       var g = S.gen === 2 ? "Gen2" : "Gen1";
       c = card(3, 3, "Put the Plugin Manager on your MPC", "Once it is on a track, you install everything else from its screen, or from your phone or computer.");
       c.appendChild(plan([["Menu > Preferences > Enhancements: tick Enable Enhancements and External Plugin Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
-        [["Download ", link("OpenMPC-Plugin-Manager-1.0.0-" + g + ".zip", PM + g + ".zip"), " and unzip it", " (or let this page write it for you, below)"], HERE, "You get one folder, OpenMPC - VST - Plugin Manager G2."],
+        [["Download ", link("OpenMPC-Plugin-Manager-1.0.0-" + g + ".zip", PM + g + ".zip"), " and unzip it", " (or let this page write it for you, below)"], HERE, "You get one folder, OpenMPC - VST - Plugin Manager."],
         ["Copy that whole folder into a VST2 Plugins folder on the MPC. Pick a way below", HERE, "MPC lists it in its plugin browser. On a stick or card that is as soon as you plug it in."],
-        ["Press Menu, add a new Plugin track, tap its plugin slot and browse to External VST Plugins > OpenMPC > Plugin Manager G2", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]]));
+        ["Press Menu, add a new Plugin track, tap its plugin slot and browse to External VST Plugins > OpenMPC > Plugin Manager", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]]));
       var pdl = DL && DL["pm-gen" + S.gen];
       writer(c, "Write it to a USB stick from this page (Chrome or Edge)", pdl, "Plugin Manager zip",
         "Plug in a USB stick or SD card, or connect the MPC in Controller Mode, then choose that drive. This page puts the folder in VST2 Plugins on it.",
@@ -159,14 +159,14 @@
         writer(c, "Write the stick from this page (Chrome or Edge)", DL && DL["pm-stick"], "stick zip", "Use an empty, freshly formatted USB stick, then choose it.",
           function (file, root, prog) { return DriveWrite.stickZip(file, root, EASY, prog).then(function (n) { return "Done: the stick is ready (" + n + " files). Now do step 1 below."; }); });
         c.appendChild(plan([["Save your project, plug the stick into the MPC and choose Open on the prompt", MPC, "The stick installs the Plugin Manager and MPC restarts by itself. You can then unplug the stick."],
-          ["Create a new Plugin track, tap its plugin slot and choose OpenMPC Plugin Manager G2 from the plugin list", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]]));
+          ["Create a new Plugin track, tap its plugin slot and choose OpenMPC Plugin Manager from the plugin list", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]]));
         var o2 = el("details", "gothers"); o2.appendChild(el("summary", null, "Other browser, or rather use the desktop app?"));
         installer(o2, "The desktop installer app makes the same stick."); c.appendChild(o2);
       }
       else installer(c, "On 3.9.1 or earlier the desktop installer app makes the stick.");
       if (!EASY) c.appendChild(plan([["Start the app, choose 3.9.1 or earlier and follow it to Plugin Manager stick. Write it to an empty USB stick", HERE],
         ["Save your project, plug the stick into the MPC and choose Open on the prompt", MPC, "The stick installs the Plugin Manager and MPC restarts by itself. You can then unplug the stick."],
-        ["Create a new Plugin track, tap its plugin slot and choose OpenMPC Plugin Manager G2 from the plugin list", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]]));
+        ["Create a new Plugin track, tap its plugin slot and choose OpenMPC Plugin Manager from the plugin list", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]]));
       var adv = el("p", "gsub", "With root SSH the same app also installs over Wi-Fi, removes plugins, and manages backups and patches: ");
       adv.appendChild(link("details", "#installing-over-wi-fi-with-the-app-mpc-os-3-9-1-or-earlier")); c.appendChild(adv);
     }

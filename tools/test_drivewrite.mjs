@@ -13,7 +13,7 @@ class Dir { constructor(name) { this.name = name; this.k = new Map(); }
   async removeEntry(n) { if (!this.k.delete(n)) throw new Error("nf"); }
   values() { const it = [...this.k.keys()].map(name => ({ name }))[Symbol.iterator](); return { next: async () => it.next() }; }
 }
-const F = "OpenMPC - VST - Plugin Manager G2";
+const F = "OpenMPC - VST - Plugin Manager";
 let t = 0; async function test(n, fn) { await fn(); t++; console.log("ok", n); }
 await test("folder zip goes into VST2 Plugins, replacing an old copy", async () => {
   const d = new Dir("STICK"); (await (await d.getDirectoryHandle("VST2 Plugins", { create: true })).getDirectoryHandle(F, { create: true })).k.set("old.txt", Buffer.from("x"));

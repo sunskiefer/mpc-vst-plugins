@@ -119,6 +119,27 @@ grep -qF "menu: open=1 hl=1 |Internal  ·  " /tmp/drives.out && grep -qF "|STICK
 grep -qF "after pick: open=0 readout: |STICK" /tmp/drives.out
 grep -qF "prompt: |Install to: /media/STICK/VST2 Plugins  (2 of 2)|" /tmp/drives.out || { cat /tmp/drives.out; exit 1; }
 grep -qxF "/media/STICK/VST2 Plugins" /data/.openmpcpm-target
+# renamed in 1.1.0 ("Plugin Manager G2" -> "Plugin Manager"): this copy, running from the new folder, removes an old copy of itself that
+# was not retired by install.sh (a hand copy), but never a folder of that name that is someone else'"'"'s; Move doesn'"'"'t copy the old one back
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/gen2-3101-vst2.sh
+O="/nvme/VST2 Plugins/OpenMPC - VST - Plugin Manager G2"; N="/nvme/VST2 Plugins/OpenMPC - VST - Plugin Manager"; mkdir -p "$O" "$N"
+echo so > "$O/openmpc_pm_g2.so"; printf '"'"'{"schema": 1, "id": "plugin-manager-g2", "version": "1.0.0"}'"'"' > "$O/mpc-plugin.json"
+printf '"'"'{"name": "Plugin Manager G2", "uid": "0x4f4d4732", "file64": "openmpc_pm_g2.so"}'"'"' > "$O/plugin.json"
+echo so > "$N/openmpc_pm_g2.so"; printf '"'"'{"name": "Plugin Manager", "uid": "0x4f4d4732", "file64": "openmpc_pm_g2.so"}'"'"' > "$N/plugin.json"
+PM_OWN="$N" /tmp/drive_addins links > /tmp/retire.out
+! test -e "$O" && test -d "$N" || { echo "the old folder was not removed"; cat /tmp/openmpc-pm/manager.log; exit 1; }
+grep -qF "removed the old Plugin Manager folder $O" /tmp/openmpc-pm/manager.log
+! grep -q "^plugin: Plugin Manager G2 " /tmp/openmpc-pm/device.txt   # the device was read again without it
+mkdir -p "$O"; printf '"'"'{"schema": 1, "id": "someone-else"}'"'"' > "$O/mpc-plugin.json"   # same name, not ours: left alone
+PM_OWN="$N" /tmp/drive_addins links > /tmp/retire2.out; test -d "$O" && grep -qF "left $O alone" /tmp/openmpc-pm/manager.log
+rm -rf "$O"
+# Move: the old folder still in Synths is the same plugin (same uid) as the new one in VST2 Plugins: not copied back
+S="/nvme/Synths/OpenMPC - VST - Plugin Manager G2"; mkdir -p "$S"; echo so > "$S/openmpc_pm_g2.so"
+printf '"'"'<PLUGIN name="Plugin Manager G2" manufacturer="OpenMPC" file="%%payload-path%%/OpenMPC - VST - Plugin Manager G2/openmpc_pm_g2.so" uid="4f4d4732" isInstrument="1" numInputs="0" numOutputs="2"/>\n'"'"' > "$S/plugin-meta.xml"
+ARCH=aarch64 sh /tmp/openmpc-pm/vst2.sh --apply > /tmp/vst2-dedupe.out
+grep -qF "HAVE  OpenMPC - VST - Plugin Manager G2 (as OpenMPC - VST - Plugin Manager in /nvme/VST2 Plugins, same uid)" /tmp/vst2-dedupe.out || { cat /tmp/vst2-dedupe.out; exit 1; }
+! test -e "$O"
 echo "vst2 OK"
 fi # vst2
 if want pick; then
@@ -183,7 +204,7 @@ grep -qx "beta=1" /media/az01-internal/.openmpcpm-settings && grep -qx "web=0" /
 # ABOUT: the page names the running version (PM_VERSION) and this MPC, and never claims an installed copy it cannot see
 PM_NO_WEB=1 /tmp/drive_addins about > /tmp/about.out
 v=$(sed -n "s/^#define PM_VERSION .\(.*\)./\1/p" src/manager.c)
-grep -qF "|Plugin Manager G2 $v|" /tmp/about.out && grep -q "|two-targets\|mpc-\|unknown model" /tmp/about.out && grep -q "glibc" /tmp/about.out || { cat /tmp/about.out; exit 1; }
+grep -qF "|Plugin Manager $v|" /tmp/about.out && grep -q "|two-targets\|mpc-\|unknown model" /tmp/about.out && grep -q "glibc" /tmp/about.out || { cat /tmp/about.out; exit 1; }
 # A-Z: a letter filters the list to names starting with it (nothing for Z in the fixture), ALL brings everything back
 PM_NO_WEB=1 /tmp/drive_addins az > /tmp/az.out
 grep -qF "open: 1" /tmp/az.out && grep -qF "after Z: open=0 f=1 |Z| card1=| |" /tmp/az.out && grep -qF "after A: open=0 f=1 |A| card1=|A" /tmp/az.out || { cat /tmp/az.out; exit 1; }

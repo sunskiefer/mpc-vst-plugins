@@ -137,3 +137,13 @@ to be the directory of their `.so` (`wrapper/plugin_dir.h`, the Plugin Manager's
 `"arch": "universal"` and each build's `max_glibc` under `builds`. A plugin whose other files differ between builds gets no SDK zip
 (a notice, not a failure). The catalog, the Plugin Manager and the installers keep using the per-build zips (`*-mpc-armv7.zip`
 does not match the SDK zip's name). Tests: `tools/test_sdk_zip.py`. The Plugin Manager's own workflow does not make one yet. The Install page writes these to a stick from the catalog site: after uploading them, set their SHA-256 (and the tag, if it changed) in `catalog/downloads.json` (docs/CATALOG.md).
+
+## Renaming a plugin (2026-11-13)
+On MPC OS 3.10.1 a plugin's folder must be `<maker> - VST - <name>`, so a new name is a new folder. Release it with the reusable
+workflow's `retire` input (`'Maker - VST - Old Name'`, several separated by `|`, passed to `release.py --retire`): the zip's
+`install.sh` then removes the old folder when it holds this plugin's id and moves its `user_data` in. Keep the uid, so saved projects
+and MPC.settings entries stay with the plugin; keep the catalog id and the release asset names. Move (the Plugin Manager's and the
+installer's) skips a Synths folder whose uid already has a folder in `VST2 Plugins`, so the old copy isn't copied back.
+First use: the Plugin Manager, "Plugin Manager G2" -> "Plugin Manager" in 1.1.0 (it also removes a hand-copied old folder of itself
+at start). Its asset names stay `Plugin-Manager-G2-*` because installer 2.0.0 checks stick bundles by that name.
+
