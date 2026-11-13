@@ -395,3 +395,5 @@ details.more > dl.meta { margin-top: 4px; }
 .plat .n { font: 500 12px var(--text); letter-spacing: 0; margin-left: 6px; opacity: .8; }
 @media (max-width: 520px) { .plat { width: 100%; } .plat button { flex: 1; padding: 12px 10px; } }
 .notice310 { margin-top: .8em; padding: 10px 12px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 4px; }
+.notice310 ul { margin: .35em 0 .35em 1.1em; padding: 0; }
+.notice310 li { margin: .15em 0; }
