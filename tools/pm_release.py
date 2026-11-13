@@ -15,7 +15,8 @@ Needs gh (signed in, write access) and git. Nothing is merged: the pins PR is fo
 """
 import argparse, glob, hashlib, json, os, re, subprocess, sys, tempfile, urllib.request, zipfile
 
-REPO = "open-mpc/mpc-vst-plugins"
+REPO = "open-mpc/mpc-vst-plugins"      # the 3.9.1 stick releases and the pins live here (released installers read the pin from it)
+PM_REPO = "open-mpc/plugin-manager"   # the Plugin Manager's own releases, from 1.2.0 on (1.1.0 and older stay in REPO)
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SEMVER = r"\d+\.\d+\.\d+"
@@ -36,8 +37,8 @@ def sha256(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()
 
 
-def find_release(name_re, draft):
-    for r in gh_api("repos/%s/releases?per_page=50" % REPO):
+def find_release(name_re, draft, repo=REPO):
+    for r in gh_api("repos/%s/releases?per_page=50" % repo):
         if r["draft"] == draft and re.search(name_re, r["name"] or ""):
             return r
     return None
@@ -60,6 +61,7 @@ def update_pins(root, version, sums):
             for k in ("file", "url"):
                 f[k] = re.sub(r"(OpenMPC-Plugin-Manager-)%s" % SEMVER, r"\g<1>" + version, f[k])
                 f[k] = re.sub(r"(plugin-manager-g2-v)%s" % SEMVER, r"\g<1>" + version, f[k])
+                f[k] = f[k].replace("/%s/releases/download/plugin-manager-g2-v" % REPO, "/%s/releases/download/plugin-manager-g2-v" % PM_REPO)
             f["version"], f["sha256"] = version, sums[f["id"]]
     open(p, "w").write(json.dumps(d, indent=2) + "\n"); changed.append(p)
     p = os.path.join(root, "tools", "desktop", "g2stick-pin.json")
@@ -72,6 +74,9 @@ def update_pins(root, version, sums):
         p = os.path.join(root, rel)
         s = open(p).read()
         n = re.sub(r"(plugin-manager-g2-v)%s" % SEMVER, r"\g<1>" + version, s)
+        n = n.replace("github.com/%s/releases/tag/plugin-manager-g2-v" % REPO, "github.com/%s/releases/tag/plugin-manager-g2-v" % PM_REPO)
+        n = n.replace("github.com/%s/releases/download/plugin-manager-g2-v" % REPO, "github.com/%s/releases/download/plugin-manager-g2-v" % PM_REPO)
+        n = n.replace('var PM = REL + "/download/plugin-manager-g2-v', 'var PM = "https://github.com/%s/releases/download/plugin-manager-g2-v' % PM_REPO)   # guide.js
         n = re.sub(r"(OpenMPC-Plugin-Manager-)%s(-)" % SEMVER, r"\g<1>" + version + r"\2", n)
         n = re.sub(r"(Plugin-Manager-G2-)%s(-mpc-)" % SEMVER, r"\g<1>" + version + r"\2", n)
         if n != s:
@@ -95,7 +100,7 @@ def main():
     tag, stag = "plugin-manager-g2-v" + v, "g2-stick-v" + v
 
     # 1. the draft and its zips
-    rel = find_release(r"v%s$" % re.escape(v), draft=True) or sys.exit("no draft release ending in v%s: run plugin-manager-g2.yml (dry_run off)" % v)
+    rel = find_release(r"v%s$" % re.escape(v), draft=True, repo=PM_REPO) or sys.exit("no draft release ending in v%s in %s: run its workflow (dry_run off)" % (v, PM_REPO))
     want = {"Plugin-Manager-G2-%s-mpc-%s.zip" % (v, x) for x in ("armv7", "aarch64", "sdk")}
     have = {x["name"]: x for x in rel["assets"]}
     if not want <= set(have):
@@ -104,7 +109,7 @@ def main():
         out = os.path.join(work, n)
         if not os.path.exists(out) or os.path.getsize(out) != have[n]["size"]:
             with open(out, "wb") as f:
-                f.write(subprocess.run(["gh", "api", "-H", "Accept: application/octet-stream", "repos/%s/releases/assets/%d" % (REPO, have[n]["id"])],
+                f.write(subprocess.run(["gh", "api", "-H", "Accept: application/octet-stream", "repos/%s/releases/assets/%d" % (PM_REPO, have[n]["id"])],
                                        capture_output=True, check=True).stdout)
     folders = set().union(*(zip_folder(os.path.join(work, n)) for n in want))
     if len(folders) != 1:
@@ -119,7 +124,7 @@ def main():
         if fz[key] not in have:
             sh("curl", "-sf", "-o", "/dev/null", "-X", "POST", "-H", "Authorization: token " + sh("gh", "auth", "token"),
                "-H", "Content-Type: application/zip", "--data-binary", "@" + out,
-               "https://uploads.github.com/repos/%s/releases/%d/assets?name=%s" % (REPO, rel["id"], fz[key]))
+               "https://uploads.github.com/repos/%s/releases/%d/assets?name=%s" % (PM_REPO, rel["id"], fz[key]))
     print("2. folder zips attached: %s" % ", ".join(fz.values()))
 
     # 3. stick + its draft
@@ -149,10 +154,10 @@ def main():
 
     # 4. publish
     if a.publish:
-        main_sha = sh("git", "-C", ROOT, "ls-remote", "https://github.com/%s.git" % REPO, "refs/heads/main").split()[0]
         srel = find_release(r"stick .* v%s$" % re.escape(v), draft=True)
-        for r, t in ((rel, tag), (srel, stag)):
-            sh("gh", "api", "-X", "PATCH", "repos/%s/releases/%d" % (REPO, r["id"]), "-F", "draft=false", "-f", "make_latest=false",
+        for r, t, repo in ((rel, tag, PM_REPO), (srel, stag, REPO)):
+            main_sha = sh("git", "-C", ROOT, "ls-remote", "https://github.com/%s.git" % repo, "refs/heads/main").split()[0]
+            sh("gh", "api", "-X", "PATCH", "repos/%s/releases/%d" % (repo, r["id"]), "-F", "draft=false", "-f", "make_latest=false",
                "-f", "tag_name=" + t, "-f", "target_commitish=" + main_sha)
         print("4. published %s and %s at %s" % (tag, stag, main_sha[:7]))
 

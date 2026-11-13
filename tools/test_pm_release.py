@@ -27,7 +27,7 @@ class UpdatePins(unittest.TestCase):
         pm = {f["id"]: f for f in d["files"] if f.get("id") in ("pm-gen1", "pm-gen2")}
         self.assertEqual(pm["pm-gen1"]["file"], "OpenMPC-Plugin-Manager-9.8.7-Gen1.zip")
         self.assertEqual(pm["pm-gen2"]["sha256"], "b" * 64)
-        self.assertIn("/plugin-manager-g2-v9.8.7/OpenMPC-Plugin-Manager-9.8.7-Gen2.zip", pm["pm-gen2"]["url"])
+        self.assertIn("open-mpc/plugin-manager/releases/download/plugin-manager-g2-v9.8.7/OpenMPC-Plugin-Manager-9.8.7-Gen2.zip", pm["pm-gen2"]["url"])
         st = json.load(open(os.path.join(self.root, "tools/desktop/g2stick-pin.json")))
         self.assertEqual((st["version"], st["sha256"]), ("9.8.7", "c" * 64))
         self.assertTrue(st["url"].endswith("/g2-stick-v9.8.7/Plugin-Manager-G2-Stick-9.8.7.zip"), st["url"])
@@ -36,6 +36,9 @@ class UpdatePins(unittest.TestCase):
             self.assertNotIn("plugin-manager-g2-v" + self.old, s, f)
             self.assertNotIn("OpenMPC-Plugin-Manager-%s-" % self.old, s, f)
         self.assertIn("plugin-manager-g2-v9.8.7", open(os.path.join(self.root, "catalog/pages/install.md")).read())
+        g = open(os.path.join(self.root, "tools/catalog_site/guide.js")).read()
+        self.assertIn('var PM = "https://github.com/open-mpc/plugin-manager/releases/download/plugin-manager-g2-v9.8.7/OpenMPC-Plugin-Manager-9.8.7-', g)
+        self.assertIn("github.com/open-mpc/plugin-manager/releases/tag/plugin-manager-g2-v9.8.7", open(os.path.join(self.root, "catalog/pages/install.md")).read())
 
 
 if __name__ == "__main__":

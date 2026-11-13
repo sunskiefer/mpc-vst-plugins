@@ -66,7 +66,7 @@ rely on it); variables, webhooks, branch protection and deploy keys across a tra
 **What a session can and cannot do** (learned 2026-10-19/20, still true 2026-11-01 with the user's own `gh` login): repo creation and
 transfers, org members and org-level settings are done by the user in the UI. A local session with the user's `gh` can create repos in the
 org, push and run workflows (it created `open-mpc/open-mpc.github.io` on 2026-11-01). Offline tests: `go test ./...` in `tools/desktop`;
-`python3 tools/test_catalog.py` (run from `tools/`); `python3 tools/test_patches.py`; `tools/plugin_manager_g2/tests/run.sh`.
+`python3 tools/test_catalog.py` (run from `tools/`); `python3 tools/test_patches.py`; the Plugin Manager's `tests/run.sh` (now in open-mpc/plugin-manager).
 
 **Leftovers to clean up (user, in the UI):** `mpc-vst-test/scratch-caller`, the `mpc-vst-test` org if unwanted, and the `scratch-tools/`
 folder in `sd88me/sd88me.github.io` (keep that repo: the old-address copy needs it).
