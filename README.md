@@ -7,7 +7,7 @@ own **native MPC touchscreen page**. No bridge, no background app, no `LD_PRELOA
 
 > 💬 **Community:** join [**Open MPC** on Discord](https://discord.gg/sRRysZSgu3) for support, release announcements, plugin requests and MPC hacking.
 
-[**Plugin catalog**](https://open-mpc.github.io/) · [**Installer app**](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/desktop-v2.0.1) · [**Plugin Manager VST**](tools/plugin_manager_g2/README.md) · [Build guide](https://open-mpc.github.io/build.html) · [Release workflow](https://open-mpc.github.io/workflow.html)
+[**Plugin catalog**](https://open-mpc.github.io/) · [**Installer app**](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/desktop-v2.0.1) · [**Plugin Manager VST**](https://github.com/open-mpc/plugin-manager) · [Build guide](https://open-mpc.github.io/build.html) · [Release workflow](https://open-mpc.github.io/workflow.html)
 
 [![The Open MPC - Plugin Catalog home page](docs/img/catalog-home.png)](https://open-mpc.github.io/)
 
@@ -94,12 +94,12 @@ Emulator and firmware ports (big.LITTLE pinning, ring buffers, PGO): [docs/EMULA
 
 ## Installing
 
-[![The OpenMPC Plugin Manager VST on an MPC touchscreen](tools/plugin_manager_g2/docs/screenshots/manager-discover-light.png)](tools/plugin_manager_g2/README.md)
+[![The OpenMPC Plugin Manager VST on an MPC touchscreen](https://raw.githubusercontent.com/open-mpc/plugin-manager/main/docs/screenshots/manager-discover-light.png)](https://github.com/open-mpc/plugin-manager)
 
 | Route | For |
 |---|---|
 | **[Installer app](tools/desktop/README.md)** (Windows, Mac, Linux) | Connects over SSH, installs a batch of catalog plugins or your own zips with one MPC restart, backs up settings first, removes plugins, installs to SD/USB, runs device patches. |
-| **[Plugin Manager VST](tools/plugin_manager_g2/README.md)** | A plugin that browses the catalog and installs, updates and removes plugins on the MPC itself, with rollback. Gen1 and Gen2. |
+| **[Plugin Manager VST](https://github.com/open-mpc/plugin-manager)** | A plugin that browses the catalog and installs, updates and removes plugins on the MPC itself, with rollback. Gen1 and Gen2. |
 | **`tools/mpc-store.sh`** | The same install, update, remove and sync from a shell on the device. |
 | **USB stick, no SSH** | [docs/USB_STICK.md](docs/USB_STICK.md) (Gen1/Force), [docs/GEN2.md](docs/GEN2.md) (Gen2). |
 | **Release zip** | Each zip carries its own `install.sh`, `uninstall.sh` and `INSTALL.md`. [Install guide](https://open-mpc.github.io/install.html) |
