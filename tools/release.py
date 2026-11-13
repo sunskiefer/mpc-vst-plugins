@@ -42,6 +42,8 @@ ap.add_argument("--extra", action="append", default=[], help="SRC:DEST extra dat
 ap.add_argument("--bench", help="JSON line from `tools/bench.sh ... -j` on a Gen1 device")
 ap.add_argument("--about", default="", help="one-line description for INSTALL.md")
 ap.add_argument("--folder-name", help="name part of the plugin folder when it differs from the plugin-list name (default: the list name); the folder name is kept so upgrades keep the user's data")
+ap.add_argument("--asset-name", help="file-name stem of the release zips (<stem>-<version>-mpc-<arch>.zip) when it must stay as it was "
+                "after a rename (default: from the folder name); letters, digits and hyphens")
 ap.add_argument("--retire", action="append", default=[], metavar="FOLDER",
                 help="'<vendor> - VST - <name>': an OLD plugin folder this package replaces under another name (a renamed plugin, same uid). The installer removes it, "
                      "but only if its mpc-plugin.json carries this package's id, and moves its --user-data files into the new folder")
@@ -76,6 +78,10 @@ for need in ("version.xml", "Plugin Skins/TUI.json"):
 bench = json.loads(open(a.bench).read().strip().splitlines()[-1]) if a.bench else None
 
 slug = re.sub(r"[^A-Za-z0-9]+", "-", fname).strip("-")
+if a.asset_name:
+    if not re.fullmatch(r"[A-Za-z0-9]+(-[A-Za-z0-9]+)*", a.asset_name):
+        raise SystemExit("--asset-name must be letters, digits and single hyphens: %r" % a.asset_name)
+    slug = a.asset_name
 top = "%s-%s" % (slug, a.version)
 stage = tempfile.mkdtemp()
 root = os.path.join(stage, top)
