@@ -101,9 +101,12 @@ firmware-derived data and must not be shared. `{tag}` in `docs_url` becomes the 
 Optional `tested.json` at the root of your repo's default branch; the nightly build shows it as "Tested on" for the
 matching release:
 ```json
-[ { "version": "1.2.0", "device": "MPC Live II", "firmware": "3.6.0", "date": "2026-09-29" },
-  { "version": "1.2.0", "device": "MPC Live III (Gen2)", "firmware": "5.0.18", "date": "2026-10-11" } ]
+[ { "id": "my-synth", "version": "1.2.0", "device": "MPC Live II", "firmware": "3.6.0", "date": "2026-09-29" },
+  { "id": "my-synth", "version": "1.2.0", "device": "MPC Live III (Gen2)", "firmware": "5.0.18", "date": "2026-10-11" } ]
 ```
+`id` must match the plugin's registry ID. It is required when several registry entries share a repo, so plugins with the
+same version do not inherit each other's tests. Older records without `id` still work for a repo with one registry entry;
+an explicit wrong, empty or null `id` is ignored. This applies to release and build-yourself entries.
 A test of your Gen2 (aarch64) build needs "Gen2" in `device`, as in the second line; any other device counts as Gen1.
 
 ## Trust tiers

@@ -557,7 +557,7 @@ class GitHub:
             raise
 
     def tested(self, repo):
-        """Optional tested.json at the root of the repo's default branch: [{version, device, firmware, date}]."""
+        """Optional root tested.json: [{version, device, firmware, date, id?}]."""
         req = urllib.request.Request("https://raw.githubusercontent.com/%s/HEAD/tested.json" % repo,
                                      headers={"User-Agent": "mpc-vst-catalog"})
         try:
@@ -695,7 +695,8 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
         tested = []
         if hasattr(src, "tested"):
             try:
-                tested = [t for t in src.tested(e["repo"]) if isinstance(t, dict) and t.get("version") and t.get("device")]
+                tested = [t for t in src.tested(e["repo"]) if isinstance(t, dict) and t.get("version") and t.get("device")
+                          and (t["id"] == e["id"] if "id" in t else not shared_repo)]
             except Exception as ex:  # optional file: a bad one only costs the badges
                 problems.append({"id": e["id"], "tag": None, "error": "tested.json ignored: %s" % ex})
         if build_yourself:

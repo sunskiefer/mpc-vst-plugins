@@ -1019,6 +1019,54 @@ class BuildTest(Base):
         self.assertEqual(cat["plugins"][0]["versions"][0]["tested"],
                          [{"device": "MPC Live II", "firmware": "3.6", "date": "2026-09-01"}])
 
+    def shared_test_catalog(self, tested):
+        first = os.path.join(self.tmp, "first.zip")
+        shutil.copy(self.build("1.0.0"), first)
+        second = self.build("1.0.0", extra=("--id", "other-synth"))
+        entries = [dict(self.ENTRY, asset_pattern="First-*-mpc-armv7.zip"),
+                   dict(self.ENTRY, id="other-synth", asset_pattern="Second-*-mpc-armv7.zip")]
+        gh = FakeGitHub({"acme/test-synth": [self.rel("first-v1.0.0", 1, name="First-1.0.0-mpc-armv7.zip"),
+                                            self.rel("second-v1.0.0", 2, name="Second-1.0.0-mpc-armv7.zip")]},
+                        {1: first, 2: second})
+        gh.tested = lambda repo: tested
+        cat, problems = catalog_build.build(entries, gh, os.path.join(self.tmp, "shared"), set())
+        self.assertEqual(problems, [])
+        return {p["id"]: p for p in cat["plugins"]}
+
+    def test_shared_repo_scopes_same_version_test_records(self):
+        records = [{"id": "test-synth", "version": "v1.0.0", "device": "MPC Live II", "firmware": "3.9.1", "date": "2026-10-13"},
+                   {"id": "other-synth", "version": "1.0.0", "device": "Force", "firmware": "3.9.1.2", "date": "2026-10-14"}]
+        plugins = self.shared_test_catalog(records)
+        for row in records:
+            p = plugins[row["id"]]
+            self.assertEqual(p["versions"][0]["tested"], [{k: row[k] for k in ("device", "firmware", "date")}])
+            self.assertEqual((p["tier"], p["verified_on"]), ("verified", ["gen1"]))
+
+    def test_shared_repo_untested_sibling_stays_listed(self):
+        plugins = self.shared_test_catalog([{"id": "test-synth", "version": "1.0.0", "device": "MPC Live II"}])
+        self.assertEqual(plugins["test-synth"]["tier"], "verified")
+        sibling = plugins["other-synth"]
+        self.assertEqual((sibling["latest"], sibling["tier"], sibling["verified_on"]), ("1.0.0", "listed", []))
+        self.assertEqual(sibling["versions"][0]["tested"], [])
+        self.assertIn("tested", sibling["bar_missing"])
+
+    def test_shared_repo_ignores_unscoped_test_records(self):
+        plugins = self.shared_test_catalog([{"version": "1.0.0", "device": "MPC Live II"}])
+        for p in plugins.values():
+            self.assertEqual((p["tier"], p["verified_on"]), ("listed", []))
+            self.assertEqual(p["versions"][0]["tested"], [])
+
+    def test_explicit_test_ids_do_not_fall_back_to_legacy_matching(self):
+        gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
+        for ident in ("test-synth", "other-synth", "TEST-SYNTH", "", None, 7, [], {}):
+            with self.subTest(id=ident):
+                gh.tested = lambda repo: [{"id": ident, "version": "1.0.0", "device": "Force"}]
+                cat, problems = catalog_build.build([self.ENTRY], gh, os.path.join(self.tmp, "single"), set())
+                p = cat["plugins"][0]
+                self.assertEqual(problems, [])
+                self.assertEqual(p["tier"], "verified" if ident == "test-synth" else "listed")
+                self.assertEqual(len(p["versions"][0]["tested"]), int(ident == "test-synth"))
+
     def test_tiers(self):
         def tier(entry, tested):
             gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
@@ -1832,6 +1880,46 @@ class BuildYourselfTest(Base):
         self.assertEqual([c["id"] for c in p["components"]], ["fw-one", "fw-fx"])
         self.assertEqual(problems, [])   # the old tag v0.9.0 without the script is skipped quietly, not reported
         self.assertEqual(json.dumps(e, sort_keys=True), before)   # the registry entry is not mutated
+
+    def test_shared_repo_scopes_build_yourself_and_release_tests(self):
+        good = self.build("1.0.0", extra=("--repo", "acme/fw-synth"))
+
+        class Mixed(FakeTags):
+            def download(self, asset, dest):
+                shutil.copy(good, dest)
+
+        rel = BuildTest.rel(self, "v1.0.0", 1)
+        records = [{"id": "fw-synth", "version": "1.0.0", "device": "Force", "firmware": "3.9.1.2", "date": "2026-10-14"},
+                   {"id": "test-synth", "version": "1.0.0", "device": "MPC Live II", "firmware": "3.9.1", "date": "2026-10-13"},
+                   {"version": "1.0.0", "device": "MPC One"}]
+        gh = Mixed(tags={"acme/fw-synth": ["v1.0.0"]},
+                   files={("acme/fw-synth", "v1.0.0", "release/build.sh"), ("acme/fw-synth", "v1.0.0", "LICENSE")},
+                   releases={"acme/fw-synth": [rel]}, tested={"acme/fw-synth": records})
+        entries = [self.entry(), dict(BuildTest.ENTRY, repo="acme/fw-synth", asset_pattern="x-mpc-armv7.zip")]
+        cat, problems = catalog_build.build(entries, gh, os.path.join(self.tmp, "shared"), set())
+        self.assertTrue(all("LICENCE RISK" in p["error"] for p in problems), problems)
+        plugins = {p["id"]: p for p in cat["plugins"]}
+        for row in records[:2]:
+            p = plugins[row["id"]]
+            self.assertEqual(p["versions"][0]["tested"], [{k: row[k] for k in ("device", "firmware", "date")}])
+            self.assertEqual(p["tier"], "verified")
+        gh._tested["acme/fw-synth"] = [records[-1]]
+        cat, _ = catalog_build.build(entries, gh, os.path.join(self.tmp, "unscoped"), set())
+        for p in cat["plugins"]:
+            self.assertEqual(p["tier"], "listed")
+            self.assertEqual(p["versions"][0]["tested"], [])
+
+    def test_explicit_build_yourself_test_ids_do_not_fall_back_to_legacy_matching(self):
+        gh = FakeTags(tags={"acme/fw-synth": ["v1.0.0"]},
+                      files={("acme/fw-synth", "v1.0.0", "release/build.sh"), ("acme/fw-synth", "v1.0.0", "LICENSE")})
+        for ident in ("fw-synth", "other-synth", "", None):
+            with self.subTest(id=ident):
+                gh._tested["acme/fw-synth"] = [{"id": ident, "version": "1.0.0", "device": "Force"}]
+                cat, problems = catalog_build.build([self.entry()], gh, os.path.join(self.tmp, "single"), set())
+                p = cat["plugins"][0]
+                self.assertEqual(problems, [])
+                self.assertEqual(p["tier"], "verified" if ident == "fw-synth" else "listed")
+                self.assertEqual(len(p["versions"][0]["tested"]), int(ident == "fw-synth"))
 
     def test_only_the_newest_tag_missing_the_script_is_reported(self):
         files = {("acme/fw-synth", "v0.9.0", "release/build.sh"), ("acme/fw-synth", "v0.9.0", "LICENSE")}
