@@ -770,6 +770,31 @@ class BuildTest(Base):
         return {"tag_name": tag, "prerelease": pre, "draft": False, "published_at": at, "body": "notes",
                 "assets": [{"id": aid, "name": name, "browser_download_url": "https://x/" + name, "download_count": 3}]}
 
+    def test_previous_repos_keep_old_releases_and_downloads(self):
+        """A plugin that moved repo: previous_repos brings its older releases (checked against the repo they name) and their downloads."""
+        z1, z2 = self.build("1.0.0"), self.build("1.1.0")
+        moved = dict(self.ENTRY, repo="acme/new-home", previous_repos=["acme/test-synth"])
+        old = [self.rel("v1.0.0", 1, at="2026-09-01T00:00:00Z")]
+        new = [self.rel("v1.1.0", 2, at="2026-10-01T00:00:00Z")]
+        z2b = os.path.join(self.tmp, "moved.zip")   # the new release names the new repo (manifests + SHA256SUMS rewritten)
+        import hashlib
+        with zipfile.ZipFile(z2) as zin, zipfile.ZipFile(z2b, "w") as zout:
+            data = {i.filename: zin.read(i) for i in zin.infolist()}
+            for n in list(data):
+                if n.endswith("mpc-plugin.json"):
+                    data[n] = (json.dumps(dict(json.loads(data[n]), source_repo="acme/new-home"), indent=2) + "\n").encode()
+            top = next(iter(data)).split("/")[0]
+            data[top + "/SHA256SUMS"] = "".join("%s  %s\n" % (hashlib.sha256(d).hexdigest(), n.split("/", 1)[1]) for n, d in sorted(data.items())
+                                               if not n.endswith("/SHA256SUMS")).encode()
+            for i in zin.infolist():
+                zout.writestr(i, data[i.filename])
+        cat, problems = catalog_build.build([moved], FakeGitHub({"acme/new-home": new, "acme/test-synth": old}, {1: z1, 2: z2b}),
+                                            os.path.join(self.tmp, "cache"), set())
+        p = cat["plugins"][0]
+        self.assertEqual([v["version"] for v in p["versions"]], ["1.1.0", "1.0.0"], problems)
+        self.assertEqual(p["downloads"], 6)
+        self.assertEqual(catalog_build.check_entry(dict(moved, previous_repos=["acme/new-home"])) != [], True)   # not its own repo
+
     def test_310_folder_and_sdk_zip(self):
         """A release whose builds are Akai plugin folders gets vst2.folder; its -mpc-sdk.zip is listed under assets.sdk after a check
         (docs/CATALOG_SPEC.md "MPC OS 3.10.1"). There is no tested_310 field: tested.json and Works for me reports already say the OS."""
