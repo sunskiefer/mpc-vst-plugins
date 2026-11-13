@@ -4,6 +4,14 @@ Origin: mpc-forums thread "Proof of Concept: Custom Standalone Plugins"
 (viewtopic.php?f=48&t=220981, Sep 2026). Verified on a Force (MPC OS, with MockbaMod) 2026-09-23; paths below are
 from the Force and may differ on MPC Live/One/X/Key (e.g. `Force Documents` vs `MPC Documents`).
 
+## 2026-11-13: option values whose labels start with a digit ("1/16", "201") are read by name (offline only)
+The wrappers read an engine's option answer with a leading `atoi()`, so `"1/16"` became option 1: the host read back the wrong
+option and the control snapped back to its old value (mpc-vst-tape-echo SYNC/REVERB, MPC Live II, MPC OS 3.9.1.2, reported
+2026-10-31). Now an exact option name wins and only a fully numeric answer is an index, clamped to the list (`vst2_wrap.c` #859,
+`vst3_wrap.c` follow-up). An engine must answer an index as a bare integer: `"1.0"` or `"1 "` falls back to option 0. Offline:
+`tools/test_port.sh` PASSED on jn106 and OTT (and tape-echo, djfx2 per #859); no local `vst.json` has a number-only option label
+that differs from its index (167 checked). Not yet re-tested on a device.
+
 ## 2026-11-13: an Akai SDK build converted by tools/sdk_release.py installs and runs on MPC OS 3.9.1 (device, Force)
 SimpleSynth from `vendor/mpc-plugin-builder-sdk` (built with the SDK's `tools/build.py`), converted with `tools/sdk_release.py`; the
 armv7 zip's own `install.sh -y` run on a Force (3.9.1). It replaced the hand install from 2026-11-03 (same uid, one MPC.settings entry,

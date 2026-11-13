@@ -182,15 +182,19 @@ static void norm_to_str(const param_t *p, double n, char *buf, int len) {
 }
 
 /* A value as the engine reports it (an option's index, or a number; as vst2_wrap.c reads it), or with text = 1 as a person
- * types it into the host (an option's name first: "30 s" is an option, not 30, and an option named "0" is not index 0). */
+ * types it into the host. An option's name always comes first ("30 s" is an option, not 30; "1/16" is not index 1). */
 static double str_to_norm(const param_t *p, const char *s, int text) {
     if (p->nopts) {
         int idx = -1;
-        for (int i = 0; text && i < p->nopts && idx < 0; i++)
+        /* An option's name first, then only a fully numeric answer as an index: atoi("1/16") == 1
+         * read a digit-leading label as option 1 (same fix as vst2_wrap.c, PR #859). */
+        for (int i = 0; i < p->nopts && idx < 0; i++)
             if (!strcasecmp(s, p->opts[i])) idx = i;
-        if (idx < 0 && isdigit((unsigned char)s[0])) idx = atoi(s);
-        for (int i = 0; !text && idx < 0 && i < p->nopts; i++)
-            if (!strcasecmp(s, p->opts[i])) idx = i;
+        if (idx < 0) {
+            char *end = NULL;
+            const long v = strtol(s, &end, 10);
+            if (end != s && *end == 0) idx = (int)v;
+        }
         if (idx < 0 || idx >= p->nopts) idx = 0;
         return p->nopts > 1 ? (double)idx / (p->nopts - 1) : 0;
     }
