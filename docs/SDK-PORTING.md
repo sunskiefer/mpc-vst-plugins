@@ -8,6 +8,30 @@ Akai's **MPC Plugin SDK** ([`mpc-plugin-builder-sdk`](https://github.com/inmusic
 `tools/update_sdk.sh` moves the pin to Akai's latest commit and prints what changed; commit the new pin in a PR.
 ([sd88me/mpc-vst-dx7](https://github.com/sd88me/mpc-vst-dx7), branch `rev-2.0`) is the reference implementation: copy its `tools/`, `build-sdk.sh` and `src/` layout.
 
+## Which tool for what (2026-11-13)
+New plugins start from Akai's SDK; this repo adds what the SDK doesn't do. The wrapper toolchain stays for the plugins built on it
+(most of the catalog, including every outside contributor's) and gets fixes, but no new features unless an SDK plugin needs them too.
+
+| Job | New plugin (Akai SDK) | Existing port (our wrapper) |
+|---|---|---|
+| Plugin code and VST2 ABI | `<sdk>/framework/mpc_plugin.h` (C++ `mpc::Plugin`) | `wrapper/vst2_wrap.c` + `engine.h` |
+| Start a plugin | `<sdk>/tools/new_plugin.py`, `<sdk>/templates/` | copy a port (`docs/PORTING.md`) |
+| Build | `<sdk>/tools/build.py` (zig, both CPUs) | `gen_vst.py`, `build_port.sh` |
+| Screen skin | `<sdk>/ui-kit`, `gen_ui.py`, `make_knob.py` | Skin Studio: `studio.py`, `html_art.py`, `shadow_skin.py`, `skin_assets.py` |
+| Test host | `<sdk>/tools/host-sim` | `host_test.c`, `test_port.sh` |
+| Check a folder | `<sdk>/tools/validate.py` | `skin_check.py`, `skin_compat.py` |
+
+**Ours, for both** (the SDK has no equivalent):
+- Catalog releases: `release.py` (per-CPU zips, installer, 3.9.1 registration), `vst-release.yml`, `catalog_check.py`, the catalog and site.
+- 3.10.1 downloads: `sdk_zip.py` (one folder for every MPC), `folder_zip.py`.
+- MPC OS 3.9.1 and earlier: the installer zips, the Plugin Manager, the sticks, `plugin-meta.xml` registration.
+- CPU: `bench.sh` / `bench.c` and the Live III fast-core pinning (`wrapper/fast_cores.h`).
+- Extras: INSTRUMENTS browser tiles (`xpl.py`), switchable skin themes (`make_skinset.py`), the desktop VST3 build (`build_vst3.sh`, `desktop_skin.py`).
+- Renames: `release.py --retire` / `--asset-name`.
+
+To release an SDK-built plugin through the catalog, package its build in the catalog's release format, as the Dexed 2 and JV-880 2 ports do (the "catalog route" notes below)
+and use `vst-release.yml`, or attach per-CPU zips made with `release.py`.
+
 ## 1. Project layout
 
 ```
