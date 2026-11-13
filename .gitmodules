@@ -1,0 +1,3 @@
+[submodule "vendor/mpc-plugin-builder-sdk"]
+	path = vendor/mpc-plugin-builder-sdk
+	url = https://github.com/inmusic-software/mpc-plugin-builder-sdk.git
