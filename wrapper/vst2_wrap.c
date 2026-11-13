@@ -214,11 +214,20 @@ static void norm_to_str(const param_t *p, float n, char *buf, int len) {
 static float str_to_norm(const param_t *p, const char *s) {
     if (p->nopts) {
         int idx = -1;
-        if (isdigit((unsigned char)s[0])) idx = atoi(s);
-        else
-            for (int i = 0; i < p->nopts; i++)
-                if (!strcasecmp(s, p->opts[i])) idx = i;
+        /* An exact label match comes first, even when the label starts with a digit: option
+         * lists like {"1/32","1/16","1/8"} or {"201","202"} used to be parsed as numbers
+         * (atoi("1/16") == 1), so the host read back the wrong option and the control snapped
+         * back (mpc-vst-tape-echo, device 2026-10-31). Only a fully numeric answer is taken as
+         * the engine's own index. */
+        for (int i = 0; i < p->nopts; i++)
+            if (!strcasecmp(s, p->opts[i])) { idx = i; break; }
+        if (idx < 0) {
+            char *end = NULL;
+            const long v = strtol(s, &end, 10);
+            if (end && end != s && *end == 0) idx = (int)v;
+        }
         if (idx < 0) idx = 0;
+        if (idx >= p->nopts) idx = p->nopts - 1;   /* a numeric answer can be past the list */
         return p->nopts > 1 ? (float)idx / (p->nopts - 1) : 0;
     }
     return p->max > p->min ? clamp01((float)((atof(s) - p->min) / (p->max - p->min))) : 0;
@@ -742,8 +751,12 @@ static int midi_control(wrap_t *w, const uint8_t *m) {
 }
 
 static void copy_str(void *dst, const char *src, size_t max) {
-    strncpy(dst, src, max - 1);
-    ((char *)dst)[max - 1] = 0;
+    /* strncpy() reads whole words, so ASan reports a global-buffer-overflow when the
+     * source is a short option literal ("H2"). Bounded by the source length instead. */
+    size_t n = strlen(src);
+    if (n > max - 1) n = max - 1;
+    memcpy(dst, src, n);
+    ((char *)dst)[n] = 0;
 }
 
 /* ---- VST programs: MPC's PRESET menu lists them by name and loads one with effSetProgram (docs/NOTES.md) ----
