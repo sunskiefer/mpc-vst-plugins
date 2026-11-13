@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the Gen2 (aarch64) drum-layout patch for a stock MPC 3.9.1 or 3.10.0 and check it against the user's own copy.
 
-    make_patch_gen2.py <build: 3.9.1|3.10.0> <stock /usr/bin/MPC> [-o patched-copy-for-checking]
+    make_patch_gen2.py <build: 3.9.1|3.10.0|3.10.1> <stock /usr/bin/MPC> [-o patched-copy-for-checking]
 
 Same three changes as the armv7 patch (../make_patch.py), at the aarch64 addresses found by a string/table cross-reference:
   1. the one-caller helper "is this the DrumSynth:Multi program?" jumps to a name table matcher;
@@ -23,6 +23,12 @@ BUILDS = {
         colour=0x2c0d170, resume=0x2c0d198, setcol=None,         # setcol read from the loop's own `bl`
         sites_fix=[0x1795268, 0x1795d08, 0x1795ec0, 0x1796f8c, 0x179702c, 0x179733c],
         code=0x79a71a0, table=None, limit=0x79a8000),            # all in the zero tail of the code segment's last page
+    "3.10.1": dict(
+        md5="4280be032878fc321b7f58a6801cb1ea",                  # 3.10.1.8 (38fdde70994), read off a Live III
+        helper=0x2c549c0, string=0x4efc1d8, eq=None,
+        colour=0x2c54bb0, resume=0x2c54bd8, setcol=None,
+        sites_fix=[0x17b20a8, 0x17b2b48, 0x17b2d00, 0x17b3dcc, 0x17b3e6c, 0x17b417c],
+        code=0x7b10070, table=None, limit=0x7b11000),            # zero tail of the code segment's last page
     "3.9.1": dict(
         md5="a7ace6a9993df33afeae50571755bbf9",
         helper=0x28b00a0, string=0x4b77eb8,

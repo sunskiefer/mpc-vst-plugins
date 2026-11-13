@@ -15,7 +15,7 @@ run() {   # $1 root MPC, rest = script args
 }
 fresh() { rm -rf /t/w; mkdir -p /t/w/dd; }
 
-for B in 3.9.1 3.10.0; do
+for B in ${BUILDS:-3.9.1 3.10.0 3.10.1}; do
     ST=$(exp $B 2); PT=$(exp $B 3)
     echo "== Gen2 $B"
     fresh
@@ -23,7 +23,7 @@ for B in 3.9.1 3.10.0; do
         cp /t/MPC-3.9.1 /t/w/rootmpc; ROOT=/t/w/rootmpc
         printf '[Service]\nBindReadOnlyPaths=/t/MPC-3.10.0:/usr/bin/MPC /t/akai:/usr/share/Akai\n' > /t/w/dd/95-mpc310.conf
         SRC=/t/MPC-3.10.0
-    else ROOT=/t/MPC-3.9.1; SRC=$ROOT; fi
+    else ROOT=/t/MPC-$B; SRC=$ROOT; fi
     out=$(run $ROOT status); echo "$out" | grep -q 'not patched'; check "status on stock" $? 0
     echo "$out" | grep -q "state=stock supported=1"; check "  STATE line" $? 0
     out=$(echo nope | run $ROOT install); echo "$out" | grep -q cancelled; check "wrong confirmation cancels" $? 0
