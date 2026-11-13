@@ -207,6 +207,17 @@ static int is_dir(const char *p) { struct stat st; return stat(p, &st) == 0 && S
 static int is_file(const char *p) { struct stat st; return stat(p, &st) == 0 && S_ISREG(st.st_mode); }
 static int is_addin(const pkg_t *p) { return !strcmp(p->kind, "addin"); }
 static int safe(const char *s) { return !strpbrk(s, "'\\\n`$"); }   /* fits in a single-quoted shell word */
+/* s as the inside of a single-quoted shell word ('...'): a ' becomes '\'' (a maker name like L'Cronx). "" if it has a newline or does not fit. */
+static const char *shq(const char *s, char *out, size_t n) {
+    size_t o = 0;
+    out[0] = 0;
+    for (; *s; s++) {
+        if (*s == '\n' || o + 5 >= n) { out[0] = 0; return out; }
+        if (*s == '\'') { memcpy(out + o, "'\\''", 4); o += 4; } else out[o++] = *s;
+    }
+    out[o] = 0;
+    return out;
+}
 
 /* A child with MPC's LD_PRELOAD and the rest of its environment dropped; output goes to the log. */
 static int run(char *const argv[]) {
@@ -1328,6 +1339,41 @@ static int retire_old_self(mgr_t *m) {
     return removed;
 }
 
+/* MPC OS 3.10.1 lists a VST2 Plugins folder only with a plugin.json. Up to 1.1.0 an install into a folder whose name has an apostrophe
+ * ("L'Cronx - VST - MS20XXL") skipped writing it, so the plugin was there but not in the browser. At start, every "<maker> - VST - <name>"
+ * folder on a VST2 Plugins drive with a plugin-meta.xml and no plugin.json gets one (vst2.sh --json, the same writer an install uses;
+ * MPC lists it after its next start). Returns how many were written. */
+static int repair_vst2_json(mgr_t *m) {
+    const device_t *d = m->dev;
+    int n = 0, have_sh = 0;
+    for (int k = 0; d->vst2 == 2 && k < d->nvdrv; k++) {
+        DIR *vd = opendir(d->vdrv[k]);
+        struct dirent *e;
+        while (vd && (e = readdir(vd))) {
+            char dir[540], f[600];
+            if (e->d_name[0] == '.' || !strstr(e->d_name, " - VST - ")) continue;
+            if (snprintf(dir, sizeof dir, "%s/%s", d->vdrv[k], e->d_name) >= (int)sizeof dir) continue;
+            snprintf(f, sizeof f, "%s/plugin.json", dir);
+            if (is_file(f)) continue;
+            snprintf(f, sizeof f, "%s/plugin-meta.xml", dir);
+            if (!is_file(f)) continue;
+            if (!have_sh) {
+                mkdir(WORK, 0755);
+                FILE *v = fopen(WORK "/vst2.sh", "w");
+                if (!v) break;
+                fputs(VST2_MIGRATE_SH, v); fclose(v);
+                have_sh = 1;
+            }
+            char *argv[] = {"sh", WORK "/vst2.sh", "--json", dir, NULL};
+            snprintf(f, sizeof f, "%s/plugin.json", dir);
+            if (run(argv) == 0 && is_file(f)) { logf_("wrote the missing plugin.json in %s (MPC lists it after its next start)", dir); n++; }
+            else logf_("could not write plugin.json in %s", dir);
+        }
+        if (vd) closedir(vd);
+    }
+    return n;
+}
+
 static void theme_init(mgr_t *m) {   /* after the device probe: where the settings are is where the theme files go */
     char a[340], b[340];
     own_folder(m->own, sizeof m->own);
@@ -1643,6 +1689,35 @@ static void probe_device(device_t *d) {
             d->nvdrv++;
         }
         if (mf) fclose(mf);
+    }
+    /* Move also covers each drive's Synths folder that is not in SynthContentLocations (a USB stick or SD card that held plugins on 3.9.1;
+     * Live III, 2026-11-13: plugins on a flash drive and no Move offered). They are copied to that drive's own VST2 Plugins (vst2.sh). */
+    for (int k = 1; d->vst2 == 2 && k < d->nvdrv; k++) {
+        char drive[220], syn[240];
+        snprintf(drive, sizeof drive, "%s", d->vdrv[k]);
+        char *sl = strrchr(drive, '/');
+        if (!sl) continue;
+        *sl = 0;
+        snprintf(syn, sizeof syn, "%s/Synths", drive);
+        int listed = 0;
+        for (int u = 0; u < d->nusable && !listed; u++) listed = !strcmp(d->usable[u], syn);
+        if (listed || !is_dir(syn)) continue;   /* a listed one was counted above */
+        DIR *sd = opendir(syn);
+        struct dirent *e;
+        while (sd && (e = readdir(sd))) {
+            char pj[520], pd[460];
+            if (e->d_name[0] == '.' || !strstr(e->d_name, " - VST - ")) continue;
+            snprintf(pd, sizeof pd, "%s/%s", syn, e->d_name);
+            snprintf(pj, sizeof pj, "%s/%s/plugin.json", d->vdrv[k], e->d_name);
+            if (!is_dir(pd) || is_file(pj)) continue;
+            DIR *pdd = opendir(pd);
+            struct dirent *f;
+            int so = 0;
+            while (pdd && !so && (f = readdir(pdd))) { size_t l = strlen(f->d_name); so = l > 3 && !strcmp(f->d_name + l - 3, ".so"); }
+            if (pdd) closedir(pdd);
+            d->nmove += so;
+        }
+        if (sd) closedir(sd);
     }
     /* 3.10.1 lists plugin folders in VST2 Plugins whether or not MPC.settings has an entry (copied by hand, by the installer app, an SDK
      * zip): each "<maker> - VST - <name>" folder with a plugin.json naming its binary counts as installed, as an entry built from that
@@ -2174,7 +2249,7 @@ static void do_refresh(mgr_t *m) {
     probe_device(m->dev);
     l.n = add_local(m->dev, tmp, l.n);
     theme_init(m);
-    if (retire_old_self(m)) probe_device(m->dev);   /* the old folder's entry is gone too */
+    if (retire_old_self(m) + repair_vst2_json(m)) probe_device(m->dev);   /* the old folder's entry is gone; repaired folders are listed */
     m->show_beta = cfg_get(m->dev->base, "beta", 1);
     m->web_pref = cfg_get(m->dev->base, "web", 1);
     if (!m->confirm) target_init(m);   /* a pick still open on the prompt is kept */
@@ -2465,23 +2540,25 @@ static void prepare(mgr_t *m, pkg_t *q) {
             const char *synths = target;
             char fo[200] = "", dirp[560] = "";   /* the folder the installer writes (the package's "folder"), snapshotted for a rollback */
             if (is_addin(p)) snprintf(dirp, sizeof dirp, "%s", target);
-            else if (manifest_str(p->dir, "folder", fo, sizeof fo), (fo[0] || (manifest_str(p->dir, "skin", fo, sizeof fo), fo[0])) && safe(fo))
-                snprintf(dirp, sizeof dirp, "%s/%s", target, strrchr(fo, '/') ? strrchr(fo, '/') + 1 : fo);
+            else if (manifest_str(p->dir, "folder", fo, sizeof fo), (fo[0] || (manifest_str(p->dir, "skin", fo, sizeof fo), fo[0])) && !strchr(fo, '\n'))
+                snprintf(dirp, sizeof dirp, "%s/%s", target, strrchr(fo, '/') ? strrchr(fo, '/') + 1 : fo);   /* quoted below (shq): L'Cronx - VST - ... */
+            char dq[1200];
+            shq(dirp, dq, sizeof dq);
             if (!synths[0] || !safe(synths) || (is_addin(p) && !m->dev->addins[0])) { err = "has no install location"; break; }
             if (is_addin(p) && p->queued == Q_INSTALL)
                 fprintf(f, "echo '-- install %s %s'\nitem '%s' '%s' install '%s' sh '%s/install.sh' -y -n -t '%s' && rm -rf '" WORK "/%s' '" WORK "/%s.zip'\n",
-                        p->id, p->latest, p->id, dirp, p->latest, p->dir, synths, p->id, p->id);
+                        p->id, p->latest, p->id, dq, p->latest, p->dir, synths, p->id, p->id);
             else if (is_addin(p))
-                fprintf(f, "echo '-- remove %s'\nitem '%s' '%s' remove '' sh '%s/uninstall.sh' -y -n -t '%s'\n", p->id, p->id, dirp, synths, synths);
+                fprintf(f, "echo '-- remove %s'\nitem '%s' '%s' remove '' sh '%s/uninstall.sh' -y -n -t '%s'\n", p->id, p->id, dq, synths, synths);
             else if (p->queued == Q_INSTALL) {
                 fprintf(f, "echo '-- install %s %s'\nitem '%s' '%s' install '%s' sh '%s/install.sh' -y $(batch '%s/install.sh') -t '%s' && setstate '%s' '%s' && rm -rf '" WORK "/%s' '" WORK "/%s.zip'\n",
-                        p->id, p->latest, p->id, dirp, p->latest, p->dir, p->dir, synths, p->id, p->latest, p->id, p->id);
-                if (m->dev->vst2 == 2 && dirp[0])   /* the installer writes plugin-meta.xml; MPC 3.10.1 needs plugin.json beside it */
-                    fprintf(f, "[ -d '%s' ] && sh '" WORK "/vst2.sh' --json '%s'\n", dirp, dirp);
+                        p->id, p->latest, p->id, dq, p->latest, p->dir, p->dir, synths, p->id, p->latest, p->id, p->id);
+                if (m->dev->vst2 == 2 && dq[0])   /* the installer writes plugin-meta.xml; MPC 3.10.1 needs plugin.json beside it */
+                    fprintf(f, "[ -d '%s' ] && sh '" WORK "/vst2.sh' --json '%s'\n", dq, dq);
             } else {
                 fprintf(f, "echo '-- remove %s'\nitem '%s' '%s' remove '' sh '%s/uninstall.sh' -y $(batch '%s/uninstall.sh') -t '%s' && setstate '%s' '' && rm -rf '" WORK "/%s' '" WORK "/%s.zip'\n",
-                        p->id, p->id, dirp, p->dir, p->dir, synths, p->id, p->id, p->id);
-                const char *fb = strrchr(dirp, '/');   /* removed from Synths: its copy in VST2 Plugins goes too, or MPC 3.10.1 keeps listing it */
+                        p->id, p->id, dq, p->dir, p->dir, synths, p->id, p->id, p->id);
+                const char *fb = strrchr(dq, '/');   /* removed from Synths: its copy in VST2 Plugins goes too, or MPC 3.10.1 keeps listing it */
                 if (m->dev->vst2 && m->dev->vst2dir[0] && fb && strcmp(synths, m->dev->vst2dir) && safe(m->dev->vst2dir))
                     fprintf(f, "rm -rf '%s%s'\n", m->dev->vst2dir, fb);
                 for (int k = 1; fb && k < m->dev->nvdrv; k++)   /* and on any other drive */

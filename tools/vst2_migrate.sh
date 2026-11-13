@@ -86,7 +86,10 @@ write_json() {   # write_json OUT ELEMENT
 
 # Synths locations: the content locations MPC lists, plus the usual ones; only writable, existing ones.
 LOCS=$(sed -n 's:.*<Location>\(.*\)</Location>.*:\1:p' "$SETTINGS")
-LOCS=$(printf '%s\n' "$LOCS" /nvme/Synths /sdcard/Synths /media/az01-internal/Synths | sed 's:/*$::' | awk 'NF && !seen[$0]++')
+# every drive's Synths folder too, listed or not: a USB stick or SD card that held plugins on 3.9.1 may not be in SynthContentLocations
+# (Live III, 2026-11-13: no Move offered for plugins on a flash drive). Akai's own mounts are left out.
+STICKS=$(for m in "$ROOT"/media/*/Synths; do [ -d "$m" ] || continue; m=${m#"$ROOT"}; case $m in /media/az01-internal*|/media/acvs-*) continue ;; esac; echo "$m"; done)
+LOCS=$(printf '%s\n' "$LOCS" /nvme/Synths /sdcard/Synths /media/az01-internal/Synths $STICKS | sed 's:/*$::' | awk 'NF && !seen[$0]++')
 
 # MPC OS 3.10.1 draws a plugin's skin from an old copy of the same folder in a Synths location when there is one, even when it
 # runs the plugin from VST2 Plugins (Live III, 2026-11-02): set that old "Plugin Skins" aside (renamed, not deleted) once the
