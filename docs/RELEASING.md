@@ -147,3 +147,10 @@ installer's) skips a Synths folder whose uid already has a folder in `VST2 Plugi
 First use: the Plugin Manager, "Plugin Manager G2" -> "Plugin Manager" in 1.1.0 (it also removes a hand-copied old folder of itself
 at start). Its asset names stay `Plugin-Manager-G2-*` because installer 2.0.0 checks stick bundles by that name.
 
+
+## Plugin Manager releases: the rest after CI (`tools/pm_release.py`)
+After "Run workflow" on plugin-manager-g2.yml (dry_run off) has made the draft:
+`tools/pm_release.py <version> --firmware <3.9.1 update.img>` makes the Gen1/Gen2 folder zips and attaches them, builds the 3.9.1
+stick and makes its draft. Check on a device, then `--publish` publishes both (neither becomes "Latest"), and `--pins` opens the PR
+that moves catalog/downloads.json, tools/desktop/g2stick-pin.json, the Install page and the site guide to the new version (the pinned
+URLs must answer 200 first). A person merges the pins PR: installers read the stick pin live from main. Test: tools/test_pm_release.py.
