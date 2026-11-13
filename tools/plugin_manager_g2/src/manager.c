@@ -2004,6 +2004,12 @@ static void scan_installed(const device_t *d, pkg_t *pkg, int n) {
         char *sl = strrchr(folder, '/');
         if (!sl) continue;
         *sl = 0;
+        /* Akai's SDK layout keeps the binary one level down ("<maker> - VST - <name>/VST/<name>-arm64.so"): the plugin folder is the parent */
+        if (!strstr((sl = strrchr(folder, '/')) ? sl : folder, " - VST - ") && sl && sl != folder) {
+            *sl = 0;
+            const char *pb = strrchr(folder, '/');
+            if (!strstr(pb ? pb : folder, " - VST - ")) *sl = '/';   /* not an SDK layout after all: as it was */
+        }
         manifest_t mf = {{0}, {0}};
         snprintf(mpath, sizeof mpath, "%s/mpc-plugin.json", folder);
         char *js = slurp(mpath, 64 << 10);

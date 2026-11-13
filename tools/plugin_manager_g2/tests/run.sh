@@ -83,9 +83,13 @@ sh tests/devices/gen2-3101-vst2.sh
 # copied by hand into VST2 Plugins (no MPC.settings entry): counts as installed, read from its plugin.json
 H="/nvme/VST2 Plugins/acme - VST - Handcopy"; mkdir -p "$H"; echo so > "$H/hc-arm64.so"; echo so > "$H/hc-arm32.so"
 printf '"'"'{"name": "Handcopy", "uid": "0x48616e64", "file32": "hc-arm32.so", "file64": "hc-arm64.so"}'"'"' > "$H/plugin.json"
+K="/nvme/VST2 Plugins/acme - VST - Sdkish"; mkdir -p "$K/VST"; echo so > "$K/VST/sdk-arm64.so"; echo so > "$K/VST/sdk-arm32.so"
+printf '"'"'{"name": "Sdkish", "uid": "SdKi", "format": "vst2", "file32": "VST/sdk-arm32.so", "file64": "VST/sdk-arm64.so"}'"'"' > "$K/plugin.json"
 /tmp/drive_addins links > /tmp/vst2.out
 grep -qE "^plugin: Handcopy uid=48616e64 file=/nvme/VST2 Plugins/acme - VST - Handcopy/hc-arm(32|64).so$" /tmp/openmpc-pm/device.txt || { grep "^plugin:" /tmp/openmpc-pm/device.txt; exit 1; }
 ! grep -q "^plugin: .*Newbie" /tmp/openmpc-pm/device.txt   # a plugin.json naming no binary is not counted
+# the Akai SDK layout (Acid 3, Crate Digger 2): the binary in VST/, plugin.json naming VST/<so>: listed with that file
+grep -qE "^plugin: Sdkish uid=SdKi file=/nvme/VST2 Plugins/acme - VST - Sdkish/VST/sdk-arm(32|64).so$" /tmp/openmpc-pm/device.txt || { grep "^plugin:" /tmp/openmpc-pm/device.txt; exit 1; }
 grep -q "apply_state 3" /tmp/vst2.out
 grep -qF "APPLY copies your 1 installed plugin there" /tmp/vst2.out
 A=/tmp/openmpc-pm/apply.sh
