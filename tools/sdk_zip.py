@@ -83,6 +83,7 @@ def sdk_zip(out, zips):
             raise SystemExit("files differ between the builds, so this plugin can't be one folder: %s%s" % (", ".join(diff[:8]), " ..." if len(diff) > 8 else ""))
 
     pj = dict(pjs[0])
+    pj.setdefault("format", "vst2")   # Akai's plugin.json schema requires it (SDK febd2ca, 2026-11-07); older releases lack it
     for a in by_arch:
         pj[ARCH[a][0]] = "%s-%s.so" % (slug, ARCH[a][1])   # at the folder root, not VST/: see the docstring
     mans = {a: r[4] for a, r in by_arch.items() if r[4]}

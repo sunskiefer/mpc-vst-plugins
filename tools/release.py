@@ -284,7 +284,7 @@ manifest = {
 if manifest["arch"] in ("armv7", "aarch64"):
     if not re.fullmatch(r"[0-9a-fA-F]{1,8}", attr["uid"]):
         raise SystemExit("the plugin-list entry's uid must be hex for plugin.json: %r" % attr["uid"])
-    pj = {"name": name, "manufacturer": attr["manufacturer"], "version": a.version,
+    pj = {"name": name, "manufacturer": attr["manufacturer"], "version": a.version, "format": "vst2",   # Akai's schema requires "format"
           "kind": "effect" if kind == "effect" else "instrument", "uid": "0x%08x" % int(attr["uid"], 16),
           "category": attr.get("category") or ("Effect" if kind == "effect" else "Synth"),
           "numInputs": int(attr.get("numInputs", "2" if kind == "effect" else "0")), "numOutputs": int(attr.get("numOutputs", "2")),

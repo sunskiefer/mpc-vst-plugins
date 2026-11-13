@@ -213,6 +213,7 @@ class Vst2Test(Base):
         z = self.build()
         pj = self.pj(z)
         self.assertEqual((pj["name"], pj["manufacturer"], pj["file32"], pj["kind"]), ("Test Synth", "Acme", "test_synth.so", "instrument"))
+        self.assertEqual(pj["format"], "vst2")   # Akai's plugin.json schema requires it
         self.assertEqual(int(pj["uid"], 16), int(json.loads(zipfile.ZipFile(z).read("Test-Synth-1.2.0/mpc-plugin.json"))["uid"], 16))
         self.assertNotIn("file64", pj)
         e, w, _ = catalog_check.check(z)

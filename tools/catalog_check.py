@@ -425,6 +425,8 @@ def check(zpath, catalog=False, expect_id=None, expect_repo=None, require_portab
                     err("plugin.json is not valid JSON")
                 if isinstance(pj, dict):
                     key = "file64" if m["arch"] == "aarch64" else "file32"
+                    if pj.get("format") != "vst2":
+                        warn("plugin.json has no \"format\": \"vst2\" (Akai's plugin.json schema requires it; MPC OS 3.10.1 lists it without, for now)")
                     if "%s - VST - %s" % (pj.get("manufacturer"), pj.get("name")) != m["skin"]:
                         err("plugin.json manufacturer/name do not make the folder name %r" % m["skin"])
                     uid = str(pj.get("uid", ""))

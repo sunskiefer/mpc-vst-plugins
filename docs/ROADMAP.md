@@ -169,3 +169,9 @@ The catalog, its site and the installer app are live (see Done). Still open, in 
       screen (blank), not just left unrendered. Not usable; `look=native` now refuses at build time
       (`tools/skin_assets.py`) instead of building a broken skin (the filmstrip-fake `meter` stays the
       only way to show a level). See NOTES.md.
+
+## Organisation (owner steps)
+- [ ] **Private vulnerability reporting:** open-mpc/mpc-vst-plugins → Settings → Code security → Private vulnerability reporting (POLICY.md "Security").
+- [ ] **A second owner** for the open-mpc org (People → role Owner), listed in MAINTAINERS.md.
+- [ ] **POLICY.md decisions:** the three DECIDE items (wording about Akai, the delisting deadline, how the rules change).
+

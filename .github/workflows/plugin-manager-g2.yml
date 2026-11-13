@@ -20,23 +20,52 @@ on:
 permissions:
   contents: read
 jobs:
-  test:
+  # A release ("Run workflow") of a commit whose push run already passed the tests reuses that result instead of testing again.
+  tested:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    permissions:
+      actions: read
+    outputs:
+      ok: ${{ steps.find.outputs.ok }}
+    steps:
+      - id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ok=false
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            n=$(gh api "repos/${{ github.repository }}/actions/workflows/plugin-manager-g2.yml/runs?head_sha=${{ github.sha }}&status=success&event=push" --jq '.total_count' || echo 0)
+            [ "${n:-0}" -gt 0 ] && ok=true
+          fi
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"; echo "tests already passed on ${{ github.sha }}: $ok"
+  test:
+    needs: tested
+    if: ${{ needs.tested.outputs.ok != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: true
+      matrix:   # one section per job, in parallel (tests/run.sh ONLY=<section>); a section sets up its own fake devices
+        section: [devices, addins, links, vst2, pick, theme, safety, arch, web]
     steps:
       - uses: actions/checkout@v4
-      - name: Release version matches PM_VERSION in manager.c (the ABOUT page shows it)
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Offline tests, section ${{ matrix.section }} (host test under ASan; they read the live catalog)
         env:
+          ONLY: ${{ matrix.section }}
+        run: tools/plugin_manager_g2/tests/run.sh
+  version:   # checked even when the tests are reused
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
           VERSION: ${{ inputs.version }}
         run: |
           v=$(sed -n 's/^#define PM_VERSION "\(.*\)"/\1/p' tools/plugin_manager_g2/src/manager.c)
           [ "$v" = "$VERSION" ] || { echo "::error::PM_VERSION is $v but the release version is $VERSION: bump PM_VERSION in manager.c"; exit 1; }
-      - name: Offline tests (host test under ASan, every fake device, the fixture flows; they read the live catalog)
-        run: tools/plugin_manager_g2/tests/run.sh
   release:
-    needs: test
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: [tested, test, version]
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && needs.version.result == 'success' && (needs.test.result == 'success' || (needs.test.result == 'skipped' && needs.tested.outputs.ok == 'true')) }}
     permissions:
       contents: write
     uses: ./.github/workflows/vst-release.yml
