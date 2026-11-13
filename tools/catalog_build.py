@@ -53,6 +53,9 @@ DEVICES = {"mpc-sample": "MPC Sample"}
 BUILD_YOURSELF_FIELDS = ("requires_user_files", "build", "components")
 TAG_VERSION = re.compile(r"v?(\d+)\.(\d+)\.(\d+)")
 ZIP_PATTERN = "*-mpc-armv7.zip"
+# "min_os": the author supports only this MPC OS and later (2026-11-13). "3.10.1": not offered on 3.9.1 and earlier, where the plugin
+# would install through the old Synths registration (the Plugin Manager hides it there; the site says "MPC OS 3.10.1 and later").
+MIN_OS = ("3.10.1",)
 # SPDX ids accepted as open source; anything else needs a human decision (edit this list in the PR that adds it).
 MAX_SUMMARY = 350   # characters; longer detail belongs in the repo README (docs/CATALOG.md)
 MAX_TAGS = 8
@@ -117,6 +120,8 @@ def check_entry(e, fname=None):
     if "devices" in e and not (isinstance(e["devices"], list) and e["devices"] and all(d in DEVICES for d in e["devices"])
                                and len(set(e["devices"])) == len(e["devices"])):
         p.append("devices must list the only devices it is for, from: %s (leave it out for every MPC)" % ", ".join(DEVICES))
+    if "min_os" in e and e["min_os"] not in MIN_OS:
+        p.append("min_os must be one of %s (leave it out to support every MPC OS the build runs on)" % ", ".join(MIN_OS))
     if "tags" in e and not (isinstance(e["tags"], list) and all(isinstance(t, str) and ID.fullmatch(t) for t in e["tags"])):
         p.append("tags must be a list of lowercase slugs")
     elif len(e.get("tags", [])) > MAX_TAGS:
@@ -915,7 +920,7 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
         versions.sort(key=lambda v: deps.key(v["version"]), reverse=True)
         versions = versions[:keep]
         item = {k: e[k] for k in ("id", "name", "author", "repo", "kind", "license", "summary") }
-        for k in ("screenshot", "homepage", "style", "role", "devices", "youtube"):
+        for k in ("screenshot", "homepage", "style", "role", "devices", "youtube", "min_os"):
             if e.get(k):
                 item[k] = e[k]
         col = (collections or {}).get(e.get("collection"))

@@ -153,7 +153,9 @@ newest first. A record is what `catalog_check.py --json` prints (`version`, `siz
 and `tested` (`[{device, firmware, date}]`), added by the builder. `tier` is `verified`|`listed`|`experimental`; `verified_on`
 (`[]`, or `gen1`, `gen2` and/or `sample`) says which devices the newest stable release was tested on: a `tested` device naming the MPC
 Sample is `sample` and one naming Gen2 is `gen2` (both only on a version with an aarch64 build), any other is `gen1`. `devices` (optional,
-from the registry) lists the only devices the plugin is for (`"mpc-sample"`); clients must not offer it on others. Readers must treat a missing `verified_on` on a verified plugin as `["gen1"]`. `maintenance` (optional, 2026-11-09; absent when the
+from the registry) lists the only devices the plugin is for (`"mpc-sample"`); clients must not offer it on others. `min_os` (optional,
+from the registry, only `"3.10.1"`): the author supports only that MPC OS and later; clients should not offer it on older MPC OS (an
+old client that ignores it installs it the old way). Readers must treat a missing `verified_on` on a verified plugin as `["gen1"]`. `maintenance` (optional, 2026-11-09; absent when the
 repo could not be read): `{archived, open_issues, unanswered, oldest_unanswered?}`, from the repo's open issues (pull requests left
 out); `unanswered` counts issues waiting more than 60 days with no comment, not opened by the repo owner. Informational: it never
 changes `tier` (docs/CATALOG_QUALITY.md step 5).
@@ -243,7 +245,7 @@ zip uses `layout: "addin"`:
   installer understands `-n`), `os_compat` (`2.x,3.x`, `3.x` or `-`), `max_glibc` (the newest glibc the library needs, or `-`), `size64`, `sha256_64`,
   `url64` (the Gen2 zip), `requires` (the version's `requires`), `shares_hooks` (comma list of the addin ids in `shares_hooks`, 2026-10-26), `depends` (`id:rules:pick:pick64`
   joined by `;`, rules as `>=1.0.0,<2.0.0` or `*` for any version, a missing pick `-`), `conflicts` (comma list of ids) and `devices` (comma list
-  of the only devices it is for, `mpc-sample`, or `-` for every MPC; 2026-11-05). `mpc-store.sh` and the
+  of the only devices it is for, `mpc-sample`, or `-` for every MPC; 2026-11-05) and `min_os` (`3.10.1` or `-`; 2026-11-13). `mpc-store.sh` and the
   desktop app use `os_compat` and `max_glibc` to warn about a plugin that will not load on the device (it needs a newer glibc than the device has) or is 3.x only on
   a device that looks like MPC OS 2.x (glibc below 2.34); they warn and never block.
 - **`catalog.tsv`, addins:** `skin` and `uid` are `-`. `mpc-store.sh` installs an addin to `/data/mpc-addins/<id>` and reads the installed

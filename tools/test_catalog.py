@@ -885,6 +885,19 @@ class BuildTest(Base):
         self.assertEqual(cat["plugins"][0]["versions"], [])
         self.assertIn("SDK zip could not be converted", problems[0]["error"])
 
+    def test_min_os_opt_out(self):
+        """An author who supports only MPC OS 3.10.1+ sets min_os: checked, copied to the catalog and the TSV (clients hide it on older OS)."""
+        import catalog_site
+        self.assertEqual(catalog_build.check_entry(dict(self.ENTRY, min_os="3.10.1")), [])
+        self.assertTrue(catalog_build.check_entry(dict(self.ENTRY, min_os="3.9")))
+        gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
+        cat, problems = catalog_build.build([dict(self.ENTRY, min_os="3.10.1")], gh, os.path.join(self.tmp, "cache"), set())
+        self.assertEqual(cat["plugins"][0]["min_os"], "3.10.1")
+        cat["plugins"][0]["distribution"] = "release"
+        self.assertEqual(catalog_site.tsv(cat, []).splitlines()[1].split("\t")[-1], "3.10.1")
+        cat2, _ = catalog_build.build([self.ENTRY], gh, os.path.join(self.tmp, "cache"), set())
+        self.assertNotIn("min_os", cat2["plugins"][0])
+
     def test_build_keeps_good_versions_and_reports_bad(self):
         good, newer = self.build("1.0.0"), self.build("1.1.0")
         bad = self.tamper(self.build("1.2.0"), "portable/Acme - VST - Test Synth/test_synth.so", lambda d: d + b"x")

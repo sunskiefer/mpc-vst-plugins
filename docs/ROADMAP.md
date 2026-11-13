@@ -92,7 +92,7 @@ The catalog, its site and the installer app are live (see Done). Still open, in 
       A script that does all three from one release would stop them drifting.
 - [ ] **SDK-format plugins on MPC OS 3.9.1**, by converting them into our release format (decided 2026-11-13: one install format, so
       every Plugin Manager, installer and stick already out there installs them). Done: `tools/sdk_release.py` (SDK folder -> per-build
-      zips, SDK layout kept). `vst-release.yml` `sdk_project` input (builds with `vendor/`, converts, drafts). Catalog converts a release that has only an `*-mpc-sdk.zip` (docs/CATALOG.md). To do: a min-OS opt-out field for authors who want 3.10.1+ only;
+      zips, SDK layout kept). `vst-release.yml` `sdk_project` input (builds with `vendor/`, converts, drafts). Catalog converts a release that has only an `*-mpc-sdk.zip` (docs/CATALOG.md). Registry `min_os: "3.10.1"` opt-out (catalog, site, TSV; Plugin Manager hides it on 3.9.1). To do:
       device test with SimpleSynth on a 3.9.1 Force and a 3.10.1 Live III.
 - [ ] **Plugin Manager: empty MPC's skin image cache on load, if needed.** Today it is emptied only by APPLY (apply.sh, before MPC
       starts again) or a power cycle; the Manager just warns at 85%. On a Live III, reloading skin-heavy plugins many times filled the

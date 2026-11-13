@@ -299,7 +299,8 @@ function romRow(v) {
 function installRow(p) {
   return p.kind === "addin" ? "" : '<dt>Install</dt><dd>With the <a href="install.html">OpenMPC Plugin Manager</a> on your MPC (MPC OS 3.10.1 or later: into VST2 Plugins), or the installer app.</dd>';
 }
-function osRow(v) {
+function osRow(v, p) {
+  if (p && p.min_os) return '<dt>MPC OS</dt><dd>' + esc(p.min_os) + ' and later (the author does not support older MPC OS)</dd>';
   var g = osGens(v); if (!g) return "";
   if (g.indexOf("2.x") >= 0) return '<dt>MPC OS</dt><dd>2.x and 3.x (' + (tested2x(v) ? "tested on a 2.x unit" : "checked against 2.15.1's own skins, not yet tested on a 2.x unit") + ')</dd>';
   return '<dt>MPC OS</dt><dd>3.x only' + (osWhy(v) ? ' (' + esc(osWhy(v)) + ')' : '') + '</dd>';
@@ -528,7 +529,7 @@ function card(p, big) {
     (v && ID_RE.test(p.id) ? '<label class="pick"><input type="checkbox" data-pick="' + esc(p.id) + '"' + (state.sel.indexOf(p.id) >= 0 ? " checked" : "") + '> Add to install list</label>' : '') +
     '</div>' + '<div class="folds">' +
     '<details class="more fold"' + (big ? " open" : "") + '><summary>Details<span class="hint">' + esc(detailsHint(v)) + '</span></summary>' +
-    '<dl class="meta"><dt>Updated</dt><dd>' + esc(p.updated || "n/a") + '</dd><dt>Downloads</dt><dd>' + p.downloads.toLocaleString() + '</dd>' + maintRow(p) + testedRow(v) + needsRow(v) + depsRow(v) + (deviceTag(p) ? '<dt>Devices</dt><dd>' + esc(p.devices.map(function (x) { return DEVICES[x] || x; }).join(", ")) + ' only</dd>' : p.kind !== "addin" ? osRow(v) + genRow(v) : "") + romRow(v) + installRow(p) +
+    '<dl class="meta"><dt>Updated</dt><dd>' + esc(p.updated || "n/a") + '</dd><dt>Downloads</dt><dd>' + p.downloads.toLocaleString() + '</dd>' + maintRow(p) + testedRow(v) + needsRow(v) + depsRow(v) + (deviceTag(p) ? '<dt>Devices</dt><dd>' + esc(p.devices.map(function (x) { return DEVICES[x] || x; }).join(", ")) + ' only</dd>' : p.kind !== "addin" ? osRow(v, p) + genRow(v) : "") + romRow(v) + installRow(p) +
     (v && p.kind !== "addin" ? '<dt>Projects</dt><dd>Compat ' + v.param_compat + ' (saved projects break only when this changes)</dd>' : '') + '<dt>Source</dt><dd>' + esc(p.repo) + '</dd></dl></details>' + barLine(p) + hist + '</div></article>';
 }
 function render() {

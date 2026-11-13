@@ -53,8 +53,11 @@ bundles a program under another licence, e.g. `MIT AND Apache-2.0`: open when ev
 catalog page's plugin popup shows a Video button next to Copy link; anything else fails the registry check),
 `tier` (optional, only `"experimental"`) and `featured` (optional bool); see Trust tiers below. `flags_reviewed` (optional list of
 risky-call categories a maintainer has looked at, e.g. `["network"]` for a remote-control plugin; see Validation), `collection` (optional, see
-Collections below), `devices` (optional: the only devices it is for, today just `"mpc-sample"`; see "Device-limited entries" below).
-Nothing versioned.
+Collections below), `devices` (optional: the only devices it is for, today just `"mpc-sample"`; see "Device-limited entries" below),
+`min_os` (optional, only `"3.10.1"`: the author supports only MPC OS 3.10.1 and later. The Plugin Manager does not offer it on 3.9.1 and
+earlier, the site shows "MPC OS 3.10.1 and later", and `catalog.json` / `catalog.tsv` (25th column, `-` when unset) carry it. Older Plugin
+Managers and installers don't know the field and still offer it there, where it installs the 3.9.1 way: an opt-out from support, not a
+block. Added 2026-11-13). Nothing versioned.
 `catalog/added.json` (`{"<id>": "YYYY-MM-DD"}`) records when each entry joined the catalog, for the site's "Newest in catalog" sort. A
 maintainer adds a line when merging a new entry (not the contributor, so PRs don't conflict on one file); an entry without a line uses
 the date of its oldest release. Backfilled 2026-10-24 from the first commit that added each registry file.
