@@ -4,7 +4,7 @@
   tools/pm_release.py VERSION --firmware <Force or MPC 3.9.1 update.img> [--work DIR] [--publish] [--pins]
 
 Steps (each checks before it changes anything, and stops at the first problem):
-  1. find the DRAFT release of plugin-manager-g2-vVERSION (made by "Run workflow" on plugin-manager-g2.yml with dry_run off) and
+  1. find the DRAFT release of plugin-manager-g2-vVERSION (made by "Run workflow" on plugin-manager.yml in open-mpc/plugin-manager with dry_run off) and
      download its zips; check the names (Plugin-Manager-G2-VERSION-mpc-armv7/aarch64/sdk.zip) and that all hold one plugin folder
   2. make OpenMPC-Plugin-Manager-VERSION-Gen1.zip / -Gen2.zip (tools/folder_zip.py) and attach them to the draft (skipped if there)
   3. build Plugin-Manager-G2-Stick-VERSION.zip (tools/usb_g2/build_stick.py) and create the g2-stick-vVERSION draft (replaced if a draft)

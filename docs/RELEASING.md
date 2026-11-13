@@ -133,7 +133,7 @@ folder root, not in the SDK's `VST/` subfolder (allowed: `plugin.json` gives the
 to be the directory of their `.so` (`wrapper/plugin_dir.h`, the Plugin Manager's themes). `plugin-meta.xml` (3.9.1 registration, naming the old `.so` name) is left out, since the SDK zip is for 3.10.1+. `mpc-plugin.json` is kept with
 `"arch": "universal"` and each build's `max_glibc` under `builds`. A plugin whose other files differ between builds gets no SDK zip
 (a notice, not a failure). The catalog, the Plugin Manager and the installers keep using the per-build zips (`*-mpc-armv7.zip`
-does not match the SDK zip's name). Tests: `tools/test_sdk_zip.py`. The Plugin Manager's own workflow does not make one yet. The Install page writes these to a stick from the catalog site: after uploading them, set their SHA-256 (and the tag, if it changed) in `catalog/downloads.json` (docs/CATALOG.md).
+does not match the SDK zip's name). Tests: `tools/test_sdk_zip.py`. The Plugin Manager release has one too (from 1.1.1). The Install page writes these to a stick from the catalog site: after uploading them, set their SHA-256 (and the tag, if it changed) in `catalog/downloads.json` (docs/CATALOG.md).
 
 ## Renaming a plugin (2026-11-13)
 On MPC OS 3.10.1 a plugin's folder must be `<maker> - VST - <name>`, so a new name is a new folder. Release it with the reusable
@@ -146,7 +146,7 @@ at start). Its asset names stay `Plugin-Manager-G2-*` because installer 2.0.0 ch
 
 
 ## Plugin Manager releases: the rest after CI (`tools/pm_release.py`)
-After "Run workflow" on the Plugin Manager's workflow (open-mpc/plugin-manager, dry_run off) has made the draft:
+After "Run workflow" on the Plugin Manager's workflow (open-mpc/plugin-manager, dry_run off) has made the draft (start it after main's own run on that commit has passed: the release reuses it, else the tests run again):
 `tools/pm_release.py <version> --firmware <3.9.1 update.img>` makes the Gen1/Gen2 folder zips and attaches them, builds the 3.9.1
 stick and makes its draft. Check on a device, then `--publish` publishes both (neither becomes "Latest"), and `--pins` opens the PR
 that moves catalog/downloads.json, tools/desktop/g2stick-pin.json, the Install page and the site guide to the new version (the pinned
