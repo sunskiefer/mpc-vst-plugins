@@ -128,7 +128,7 @@ mv "$STAGE" "$NEW"
 rm -rf "$OLD"
 
 # 2. the plugin-list entry: %payload-path% is the Synths folder; entries with the same file= or uid are replaced
-BAK="$SETTINGS.bak-$(echo "$SO" | sed 's/\.so$//')-$(date +%Y%m%d-%H%M%S)"
+BAK="$SETTINGS.bak-$(basename "$SO" .so)-$(date +%Y%m%d-%H%M%S)"
 cp "$SETTINGS" "$BAK"
 sed "s|%payload-path%|$SYNTHS_SED|g" "portable/$SKIN/plugin-meta.xml" > "$SETTINGS.entry"
 awk -v mode=add -v file="$FILE" -v alt="$LEGACY_SO" -v uid="$UID_HEX" -v entryfile="$SETTINGS.entry" -v listkey="$LISTKEY" -f plugin_list.awk "$SETTINGS" > "$SETTINGS.new"

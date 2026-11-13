@@ -475,7 +475,7 @@ def check(zpath, catalog=False, expect_id=None, expect_repo=None, require_portab
     # installer: regenerate from the current template and compare (releases of the old layout were made by older templates)
     sub = {"@NAME@": m["name"], "@SO_NAME@": m["so"], "@SKIN@": m.get("skin", ""),
            "@EXTRAS@": " ".join("'%s'" % e for e in m.get("extras", [])), "@VERSION@": m["version"],
-           "@UID@": str(m.get("uid", "")), "@LEGACY_SO@": "/sdcard/vst/" + m["so"], "@USER_DATA@": " ".join(m.get("user_data", [])),
+           "@UID@": str(m.get("uid", "")), "@LEGACY_SO@": "/sdcard/vst/" + posixpath.basename(m["so"]), "@USER_DATA@": " ".join(m.get("user_data", [])),
            "@RETIRE@": ":".join(m.get("retire", [])), "@ID@": str(m.get("id", ""))}
     for script in ([] if legacy else list(ADDIN_SCRIPTS) if addin else ["install.sh", "uninstall.sh"]):
         tpl = os.path.join(HERE, "release", "addin" if addin else "", script)

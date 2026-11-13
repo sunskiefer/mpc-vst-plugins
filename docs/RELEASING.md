@@ -135,6 +135,17 @@ to be the directory of their `.so` (`wrapper/plugin_dir.h`, the Plugin Manager's
 (a notice, not a failure). The catalog, the Plugin Manager and the installers keep using the per-build zips (`*-mpc-armv7.zip`
 does not match the SDK zip's name). Tests: `tools/test_sdk_zip.py`. The Plugin Manager release has one too (from 1.1.1). The Install page writes these to a stick from the catalog site: after uploading them, set their SHA-256 (and the tag, if it changed) in `catalog/downloads.json` (docs/CATALOG.md).
 
+## From an Akai SDK build: `tools/sdk_release.py` (2026-11-13, offline)
+`tools/sdk_release.py "<Manufacturer> - VST - <Name>" --version X --id ID --repo owner/name [--license L]` (a folder made by the SDK's
+`tools/build.py`, or its zip) writes the per-build zips the catalog, the Plugin Manager, the installers and the sticks install: one per
+binary named in plugin.json (`file32` -> armv7, `file64` -> aarch64), each holding the whole folder with only its own binary, still at
+the SDK's path (`VST/<slug>-arm32.so`). The SDK finds its folder by walking up from the .so to plugin.json, so `Content/` is found on
+3.9.1 too. The 3.9.1 plugin-list entry comes from plugin.json (a four-character uid such as "MxSy" becomes 4d785379). It runs
+`release.py --so-path`, so every check and the install scripts are the usual ones; `tools/sdk_zip.py` then joins the zips back into
+the SDK zip with the same paths. A plugin without `Plugin Skins/TUI.json` and `version.xml` is refused. Extra options (`--bench`,
+`--user-data` ...) go on to release.py. Tests: `tools/test_sdk_release.py`. Not yet: a `vst-release.yml` input that builds with
+`vendor/mpc-plugin-builder-sdk` and runs this, and the catalog converting SDK-only releases (docs/ROADMAP.md).
+
 ## Renaming a plugin (2026-11-13)
 On MPC OS 3.10.1 a plugin's folder must be `<maker> - VST - <name>`, so a new name is a new folder. Release it with the reusable
 workflow's `retire` input (`'Maker - VST - Old Name'`, several separated by `|`, passed to `release.py --retire`): the zip's

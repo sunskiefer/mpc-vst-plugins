@@ -4,6 +4,13 @@ Origin: mpc-forums thread "Proof of Concept: Custom Standalone Plugins"
 (viewtopic.php?f=48&t=220981, Sep 2026). Verified on a Force (MPC OS, with MockbaMod) 2026-09-23; paths below are
 from the Force and may differ on MPC Live/One/X/Key (e.g. `Force Documents` vs `MPC Documents`).
 
+## 2026-11-13: an Akai SDK build converted by tools/sdk_release.py installs and runs on MPC OS 3.9.1 (device, Force)
+SimpleSynth from `vendor/mpc-plugin-builder-sdk` (built with the SDK's `tools/build.py`), converted with `tools/sdk_release.py`; the
+armv7 zip's own `install.sh -y` run on a Force (3.9.1). It replaced the hand install from 2026-11-03 (same uid, one MPC.settings entry,
+file= `/sdcard/Synths/MPC SDK Examples - VST - Simple Synth/VST/simple-synth-arm32.so`), kept the SDK layout (binary in `VST/`), and
+after MPC restarted the plugin was listed under MPC SDK Examples, loaded with its full SDK skin (OSC/FILTER/AMP/LFO pages) and its
+"Init Saw" preset, and took notes.
+
 ## Facts (verified)
 
 - **The host processes in place**: an effect's `processReplacing` gets the same buffers as input and output, so read each

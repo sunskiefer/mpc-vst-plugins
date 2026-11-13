@@ -60,12 +60,17 @@ ap.add_argument("--user-data", action="append", default=[], metavar="REL",
 ap.add_argument("--user-files", metavar="JSON",
                 help="a JSON file describing the user's own files the plugin needs (ROMs): per folder, rules for what a good file is (docs/CATALOG_SPEC.md, user_files). "
                      "The desktop installer checks and uploads them. Each folder must be inside a --user-data folder")
+ap.add_argument("--so-path", help="where the .so goes inside the plugin folder (default: its name, at the folder root); an Akai SDK "
+                "build keeps it in VST/ (e.g. VST/simple-synth-arm32.so) and finds its folder by plugin.json, so the layout is kept")
 ap.add_argument("-o", "--out", default="dist")
 a = ap.parse_args()
 
 entry = open(a.entry).read().strip()
 attr = dict(re.findall(r'(\w+)="([^"]*)"', entry))
 name, so_name = attr["name"], os.path.basename(attr["file"])
+so_path = a.so_path or so_name
+if not re.fullmatch(r"[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*", so_path) or ".." in so_path.split("/") or os.path.basename(so_path) != so_name:
+    raise SystemExit("--so-path must be a relative path ending in %s (letters, digits, . _ - and /): %r" % (so_name, so_path))
 if os.path.basename(a.so) != so_name:
     raise SystemExit("entry file= is %s but --so is %s" % (so_name, os.path.basename(a.so)))
 skin_name = os.path.basename(os.path.normpath(a.skin))
@@ -92,7 +97,8 @@ os.makedirs(root)
 folder = "portable/" + skin_name
 pdir = os.path.join(root, "portable", skin_name)
 shutil.copytree(a.skin, pdir)
-shutil.copy2(a.so, os.path.join(pdir, so_name))
+os.makedirs(os.path.dirname(os.path.join(pdir, so_path)), exist_ok=True)
+shutil.copy2(a.so, os.path.join(pdir, so_path))
 extras = []
 for spec in a.extra:
     src, dest = spec.split(":", 1)
@@ -103,7 +109,7 @@ for spec in a.extra:
     os.makedirs(os.path.dirname(d), exist_ok=True)
     shutil.copytree(src, d, symlinks=True) if os.path.isdir(src) else shutil.copy2(src, d)
     extras.append(dest)
-meta = re.sub(r'(\s)file="[^"]*"', lambda m: '%sfile="%%payload-path%%/%s/%s"' % (m.group(1), skin_name, so_name), entry, count=1)
+meta = re.sub(r'(\s)file="[^"]*"', lambda m: '%sfile="%%payload-path%%/%s/%s"' % (m.group(1), skin_name, so_path), entry, count=1)
 open(os.path.join(pdir, "plugin-meta.xml"), "w").write(meta + "\n")
 shutil.copy2(os.path.join(HERE, "release", "plugin_list.awk"), root)
 
@@ -123,7 +129,7 @@ plugin_id = a.id or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", plugin_id):
     raise SystemExit("--id must be lowercase letters, digits and hyphens")
 legacy_so = "/sdcard/vst/" + so_name   # where the previous layout installed the .so (and its data, next to it)
-sub = {"@NAME@": name, "@SO_NAME@": so_name, "@SKIN@": skin_name,
+sub = {"@NAME@": name, "@SO_NAME@": so_path, "@SKIN@": skin_name,
        "@EXTRAS@": " ".join("'%s'" % e for e in extras), "@VERSION@": a.version,
        "@UID@": attr["uid"], "@LEGACY_SO@": legacy_so, "@USER_DATA@": " ".join(a.user_data),
        "@RETIRE@": ":".join(a.retire), "@ID@": plugin_id}
@@ -259,7 +265,7 @@ manifest = {
     "uid": attr["uid"],
     "manufacturer": attr["manufacturer"],
     "layout": "portable",
-    "so": so_name,
+    "so": so_path,
     "skin": skin_name,
     "folder": folder,
     "extras": extras,
@@ -288,7 +294,7 @@ if manifest["arch"] in ("armv7", "aarch64"):
           "kind": "effect" if kind == "effect" else "instrument", "uid": "0x%08x" % int(attr["uid"], 16),
           "category": attr.get("category") or ("Effect" if kind == "effect" else "Synth"),
           "numInputs": int(attr.get("numInputs", "2" if kind == "effect" else "0")), "numOutputs": int(attr.get("numOutputs", "2")),
-          ("file64" if manifest["arch"] == "aarch64" else "file32"): so_name}
+          ("file64" if manifest["arch"] == "aarch64" else "file32"): so_path}
     if pj["numOutputs"] <= 0:
         raise SystemExit("numOutputs must be more than 0: MPC 3.10.1 does not list a plugin with no outputs")
     for k, v in (("description", a.about), ("license", a.license), ("url", "https://github.com/" + a.repo if a.repo else "")):

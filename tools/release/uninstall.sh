@@ -54,7 +54,7 @@ else
     fi
 fi
 
-BAK="$SETTINGS.bak-$(echo "$SO" | sed 's/\.so$//')-$(date +%Y%m%d-%H%M%S)"
+BAK="$SETTINGS.bak-$(basename "$SO" .so)-$(date +%Y%m%d-%H%M%S)"
 cp "$SETTINGS" "$BAK"
 awk -v mode=remove -v file="$FILE" -v alt="$LEGACY_SO" -v uid="$UID_HEX" -f plugin_list.awk "$SETTINGS" > "$SETTINGS.new"
 n=$(grep -c " uid=\"$UID_HEX\"" "$SETTINGS.new" || true)

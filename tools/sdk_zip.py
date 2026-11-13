@@ -20,6 +20,7 @@ plugin needs per-build files and stays per-build: the tool says which files and 
 Plugin Manager reads to recognise an installed plugin) is kept, with "arch": "universal" and each build's max_glibc under "builds".
 plugin-meta.xml (the MPC OS 3.9.1 plugin-list entry, which names the .so as it was) is left out: the SDK zip is for MPC OS
 3.10.1 and later; 3.9.1 installs the per-build zips. A Gen1-only or Gen2-only release gives a folder with just that binary. Modes and dates are kept. Standard library only.
+A release made from an Akai SDK build (tools/sdk_release.py: binaries at distinct paths in a subfolder, VST/) keeps those paths.
 Our Plugin Manager and installers keep installing the per-build zips; this is the download for copying by hand and for SDK tools.
 """
 import json
@@ -84,8 +85,9 @@ def sdk_zip(out, zips):
 
     pj = dict(pjs[0])
     pj.setdefault("format", "vst2")   # Akai's plugin.json schema requires it (SDK febd2ca, 2026-11-07); older releases lack it
-    for a in by_arch:
-        pj[ARCH[a][0]] = "%s-%s.so" % (slug, ARCH[a][1])   # at the folder root, not VST/: see the docstring
+    sdk_layout = len(set(sos.values())) == len(sos) and all("/" in v for v in sos.values())
+    for a in by_arch:   # a release made from an SDK build (tools/sdk_release.py) keeps its own paths (VST/<slug>-arm32.so ...)
+        pj[ARCH[a][0]] = sos[a] if sdk_layout else "%s-%s.so" % (slug, ARCH[a][1])   # ours: at the folder root, see the docstring
     mans = {a: r[4] for a, r in by_arch.items() if r[4]}
     man = None
     if mans:
