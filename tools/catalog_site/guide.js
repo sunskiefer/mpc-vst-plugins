@@ -4,7 +4,7 @@
   var root = document.getElementById("guide");
   if (!root) return;
   var REL = "https://github.com/open-mpc/mpc-vst-plugins/releases";
-  var PM = REL + "/download/plugin-manager-g2-v1.1.0/OpenMPC-Plugin-Manager-1.1.0-";
+  var PM = "https://github.com/open-mpc/plugin-manager/releases/download/plugin-manager-g2-v1.1.1/OpenMPC-Plugin-Manager-1.1.1-";
   var HERE = "on your computer", MPC = "on the MPC";
   var GROUPS = [["Gen1", 1, ["MPC Live / Live II", "MPC One / One+", "MPC X / X SE", "MPC Key 61 / Key 37", "Akai Force"]],
                 ["Gen2", 2, ["MPC Live III", "MPC One G2", "MPC Key G2", "MPC XL"]]];
@@ -125,7 +125,7 @@
       var g = S.gen === 2 ? "Gen2" : "Gen1";
       c = card(3, 3, "Put the Plugin Manager on your MPC", "Once it is on a track, you install everything else from its screen, or from your phone or computer.");
       c.appendChild(plan([["Menu > Preferences > Enhancements: tick Enable Enhancements and External Plugin Support, accept the warning, wait a few seconds, then restart", MPC, "MPC now looks for plugins in folders called VST2 Plugins."],
-        [["Download ", link("OpenMPC-Plugin-Manager-1.1.0-" + g + ".zip", PM + g + ".zip"), " and unzip it", " (or let this page write it for you, below)"], HERE, "You get one folder, OpenMPC - VST - Plugin Manager."],
+        [["Download ", link("OpenMPC-Plugin-Manager-1.1.1-" + g + ".zip", PM + g + ".zip"), " and unzip it", " (or let this page write it for you, below)"], HERE, "You get one folder, OpenMPC - VST - Plugin Manager."],
         ["Copy that whole folder into a VST2 Plugins folder on the MPC. Pick a way below", HERE, "MPC lists it in its plugin browser. On a stick or card that is as soon as you plug it in."],
         ["Press Menu, add a new Plugin track, tap its plugin slot and browse to External VST Plugins > OpenMPC > Plugin Manager", MPC, "Its screen lists the catalog. Install from there, or open the web address on its status line on your phone or computer (same Wi-Fi)."]]));
       var pdl = DL && DL["pm-gen" + S.gen];

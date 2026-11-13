@@ -25,12 +25,12 @@ Answer two questions below for your steps, or open the full instructions under t
 ![Preferences, Enhancements on an MPC: Enable Enhancements and External Plugin Support ticked](img/310-enhancements.png)
 
 ### 2. Download the Plugin Manager
-Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/plugin-manager-g2-v1.1.0) and download the zip for your MPC from **Assets**:
+Open [the Plugin Manager release](https://github.com/open-mpc/plugin-manager/releases/tag/plugin-manager-g2-v1.1.1) and download the zip for your MPC from **Assets**:
 
 | Your MPC | Download |
 |---|---|
-| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, and the Force | `OpenMPC-Plugin-Manager-1.1.0-Gen1.zip` |
-| **Second generation**: MPC Live III, One G2, Key G2, XL | `OpenMPC-Plugin-Manager-1.1.0-Gen2.zip` |
+| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, and the Force | `OpenMPC-Plugin-Manager-1.1.1-Gen1.zip` |
+| **Second generation**: MPC Live III, One G2, Key G2, XL | `OpenMPC-Plugin-Manager-1.1.1-Gen2.zip` |
 
 Unzip it. You get one folder, **`OpenMPC - VST - Plugin Manager`**.
 

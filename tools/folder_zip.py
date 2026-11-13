@@ -4,7 +4,7 @@
 A release zip holds <Name>-<ver>/portable/<Vendor> - VST - <Name>/ plus install scripts. On 3.10.1 a user only needs that
 plugin folder, copied into a `VST2 Plugins` folder, so this writes a zip whose only top-level entry is the plugin folder:
 
-    tools/folder_zip.py Plugin-Manager-G2-1.1.0-mpc-armv7.zip OpenMPC-Plugin-Manager-1.1.0-Gen1.zip
+    tools/folder_zip.py Plugin-Manager-G2-1.1.1-mpc-armv7.zip OpenMPC-Plugin-Manager-1.1.1-Gen1.zip
 
 The plugin folder must contain plugin.json (MPC OS 3.10.1 needs it). Bytes and file modes are copied unchanged.
 Standard library only.
