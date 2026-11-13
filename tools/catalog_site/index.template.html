@@ -20,8 +20,15 @@
   <section class="mast">
     <div>
       <h1>Community plugins for Akai MPC OS</h1>
-      <p>Open VST2 instruments and effects for standalone MPC and Force, plus addins that extend MPC OS. Every listing links to its source and license and ships as a checksummed release.</p>
-      <p style="margin-top:.7em">On MPC OS 3.10.1, the <a href="install.html">Plugin Manager</a> installs every plugin here into VST2 Plugins. Plugins you already have: press <strong>Move</strong> in the Plugin Manager.</p>
+      <p>Open VST2 instruments and effects for standalone MPC and Force, plus addins that extend MPC OS.</p>
+      <div class="notice310"><strong>New on MPC OS 3.10.1?</strong>
+        <ul>
+          <li>The <a href="install.html">Plugin Manager</a> installs every plugin here into VST2 Plugins.</li>
+          <li>Already have plugins? Press <strong>Move</strong> in the Plugin Manager to bring them over.</li>
+          <li>Copying by hand? Use a card's <strong>Download (3.10.1 format)</strong> where there is one.</li>
+          <li>The other downloads are installer zips for MPC OS 3.9.1 and earlier.</li>
+        </ul>
+        <a href="faq.html">More in the FAQ</a></div>
     </div>
     <svg class="mpc" viewBox="0 0 560 334" role="img" aria-label="Line drawing of an MPC: screen with four Q-Link encoders and buttons beneath it, a jog wheel below, and sixteen pads on the left">
       <rect class="body" x="4" y="4" width="552" height="326" rx="18"/>
@@ -519,7 +526,7 @@ function card(p, big) {
     (v && v.vst2 && v.assets && v.assets.sdk ? '<a class="btn-l primary" href="' + esc(v.assets.sdk.url) + '" title="' + esc("MPC OS 3.10.1 or later, " + (v.gen2_only ? "Gen2 MPCs only (Live III, One G2, Key G2, XL)" : "any MPC") + ": unzip and copy the folder into VST2 Plugins on a drive, then restart MPC. Not needed with the Plugin Manager.") + '">Download (3.10.1 format' + (v.gen2_only ? ', Gen2' : '') + ')</a>' : '') +
     '<a class="btn-l" href="https://github.com/' + esc(p.repo) + '">Source</a>' +
     (v && ID_RE.test(p.id) ? '<label class="pick"><input type="checkbox" data-pick="' + esc(p.id) + '"' + (state.sel.indexOf(p.id) >= 0 ? " checked" : "") + '> Add to install list</label>' : '') +
-    '</div>' + (v && p.kind !== "addin" && !by ? '<p class="dl-note">MPC OS 3.10.1: install it with the <a href="install.html">Plugin Manager</a>' + (v.vst2 && v.assets && v.assets.sdk ? ', or copy the folder from <b>Download (3.10.1 format)</b> into <code>VST2 Plugins</code>' : '') + '. ' + (v.vst2 && v.assets && v.assets.sdk ? 'The other downloads are installer zips.' : 'The downloads above are installer zips, for the installer app.') + '</p>' : '') + '<div class="folds">' +
+    '</div>' + '<div class="folds">' +
     '<details class="more fold"' + (big ? " open" : "") + '><summary>Details<span class="hint">' + esc(detailsHint(v)) + '</span></summary>' +
     '<dl class="meta"><dt>Updated</dt><dd>' + esc(p.updated || "n/a") + '</dd><dt>Downloads</dt><dd>' + p.downloads.toLocaleString() + '</dd>' + maintRow(p) + testedRow(v) + needsRow(v) + depsRow(v) + (deviceTag(p) ? '<dt>Devices</dt><dd>' + esc(p.devices.map(function (x) { return DEVICES[x] || x; }).join(", ")) + ' only</dd>' : p.kind !== "addin" ? osRow(v) + genRow(v) : "") + romRow(v) + installRow(p) +
     (v && p.kind !== "addin" ? '<dt>Projects</dt><dd>Compat ' + v.param_compat + ' (saved projects break only when this changes)</dd>' : '') + '<dt>Source</dt><dd>' + esc(p.repo) + '</dd></dl></details>' + barLine(p) + hist + '</div></article>';

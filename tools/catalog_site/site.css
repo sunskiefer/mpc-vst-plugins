@@ -394,4 +394,6 @@ details.more > dl.meta { margin-top: 4px; }
 .plat button[aria-pressed=true] { color: #fff; background: var(--accent); }
 .plat .n { font: 500 12px var(--text); letter-spacing: 0; margin-left: 6px; opacity: .8; }
 @media (max-width: 520px) { .plat { width: 100%; } .plat button { flex: 1; padding: 12px 10px; } }
-.dl-note { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+.notice310 { margin-top: .6em; padding: 8px 12px; font-size: 14px; line-height: 1.45; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 4px; }
+.notice310 ul { margin: .25em 0 .25em 1.1em; padding: 0; }
+.notice310 li { margin: .05em 0; }
