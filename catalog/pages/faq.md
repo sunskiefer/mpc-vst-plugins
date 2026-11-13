@@ -38,9 +38,11 @@ Installers run with full access to your MPC, so the catalog is careful, but it c
 ## Already had plugins before 3.10.1?
 
 ::: details I updated to 3.10.1 and my plugins are gone from the browser.
-They're still on the drive and your projects still load them. 3.10.1 only lists plugins in `VST2 Plugins`. Turn on External Plugin Support, then open Plugin Manager 1.0 and press Move (on its screen or its web page), then APPLY. MPC restarts once.
+**Nothing is deleted.** 3.10.1 only shows plugins in a new folder, `VST2 Plugins`. Yours are still in the old place, and your saved projects still open them. To get them back in the browser:
 
-That includes an older Plugin Manager: it won't show either, and versions before 1.0 can't move plugins. Put Plugin Manager 1.0 on first from the [Install page](install.html) (pick your MPC and 3.10.1; it can write it to a USB stick for you), then press Move.
+1. **Turn on External Plugin Support:** Menu → Preferences → Enhancements. Wait a few seconds, then restart the MPC.
+2. **Put the Plugin Manager on from the [Install page](install.html)** (pick your MPC and 3.10.1; it can write it to a USB stick for you). Do this even if you had it before: your old copy is in the old place too, so it's hidden as well.
+3. **Open it and press Move**, then **APPLY**. Add it to a Plugin track (External VST Plugins → OpenMPC), or use its web page. MPC restarts once and your plugins are back, with their ROMs, presets and settings.
 :::
 
 ::: details Do I need to reinstall or re-add my ROMs?
