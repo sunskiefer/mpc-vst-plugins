@@ -1,0 +1,19 @@
+{
+  "id": "jc303-mpc",
+  "name": "JC303",
+  "author": "303inmyheart",
+  "repo": "303inmyheart/OpenMPC-JC303",
+  "kind": "instrument",
+  "license": "GPL-3.0-only",
+  "summary": "303-style monophonic acid synth for Gen2 MPCs, with native Q-Links, a 16-step sequencer, 37 neural drive models and MPC presets. Hardware tested on Live III.",
+  "style": "synth",
+  "tags": [
+    "acid",
+    "bass",
+    "sequencer",
+    "analog",
+    "gen2"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/303inmyheart/OpenMPC-JC303/ee2f43bb9bd04855eb25ff25323399afb2e6cb39/docs/screenshots/synth.png",
+  "asset_pattern": "JC303-MPC-*-mpc-aarch64.zip"
+}
