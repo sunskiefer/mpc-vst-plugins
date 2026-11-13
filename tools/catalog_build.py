@@ -86,6 +86,9 @@ def check_entry(e, fname=None):
                  % (len(e["summary"]), MAX_SUMMARY))
     if fname and os.path.splitext(os.path.basename(fname))[0] != e["id"]:
         p.append("file name must be <id>.json")
+    prev = e.get("previous_repos", [])
+    if not isinstance(prev, list) or any(not isinstance(r, str) or not REPO.fullmatch(r) or r.lower() == str(e.get("repo", "")).lower() for r in prev):
+        p.append("previous_repos must be a list of other owner/name repos (where this plugin's older releases are)")
     if not REPO.fullmatch(e["repo"]):
         p.append("repo must be owner/name")
     if e["kind"] not in ENTRY_KINDS:
@@ -679,9 +682,16 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
         failed = []    # this entry's failing releases, with their publish time (see "superseded" below)
         if not build_yourself:
             try:
-                releases = src.list_releases(e["repo"])
+                releases = [dict(r, _repo=e["repo"]) for r in src.list_releases(e["repo"])]
             except Exception as ex:  # a repo we can't read: keep going, report it
                 problems.append({"id": e["id"], "tag": None, "unreadable": True, "error": "cannot list releases: %s" % ex})
+            # a plugin that moved repo: its older releases (and their downloads) stay where they were published
+            seen = {r.get("tag_name") for r in releases}
+            for old in e.get("previous_repos", []):
+                try:
+                    releases += [dict(r, _repo=old) for r in src.list_releases(old) if r.get("tag_name") not in seen]
+                except Exception as ex:
+                    problems.append({"id": e["id"], "tag": None, "error": "cannot list releases of previous repo %s: %s" % (old, ex)})
         tested = []
         if hasattr(src, "tested"):
             try:
@@ -713,7 +723,7 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
             try:
                 if not os.path.exists(zpath):
                     src.download(asset, zpath)
-                errors, warnings, rec = catalog_check.check(zpath, catalog=True, expect_id=e["id"], expect_repo=e["repo"],
+                errors, warnings, rec = catalog_check.check(zpath, catalog=True, expect_id=e["id"], expect_repo=rel.get("_repo", e["repo"]),
                                                               require_portable=e["id"] in require_portable)
             except Exception as ex:
                 failed.append(({"id": e["id"], "tag": tag, "error": "download/validate failed: %s" % ex}, pub))
@@ -745,7 +755,7 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
                 try:
                     if not os.path.exists(z64):
                         src.download(a64[0], z64)
-                    err64, warn64, rec64 = catalog_check.check(z64, catalog=True, expect_id=e["id"], expect_repo=e["repo"])
+                    err64, warn64, rec64 = catalog_check.check(z64, catalog=True, expect_id=e["id"], expect_repo=rel.get("_repo", e["repo"]))
                     # an addin's manifest has no "uid" (that's a VST plugin's concept, for save-file compatibility
                     # across generations); expect_id above already ties both zips to the same catalog entry
                     if not err64 and (rec64["manifest"]["arch"] != "aarch64" or rec64["version"] != rec["version"]
