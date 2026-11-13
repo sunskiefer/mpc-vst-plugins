@@ -162,7 +162,7 @@ Credits also to the MockbaMod community for assistance in development, especiall
 
 ## Legal
 
-The code in this repository is under the MIT licence (see [LICENSE](LICENSE)); vendored third-party files keep their own licences.
+The code in this repository is under the MIT licence (see [LICENSE](LICENSE)); vendored third-party files keep their own licences. Akai's MPC Plugin SDK is a git submodule at `vendor/mpc-plugin-builder-sdk` (MIT; clone with `--recursive`).
 
 VST2 is a deprecated Steinberg format; this project uses a hand-written ABI header and is for personal, non-commercial
 experimentation on hardware you own. No Akai content is redistributed. Editing `MPC.settings` is at your own risk; back it up first.

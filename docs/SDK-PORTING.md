@@ -2,6 +2,10 @@
 
 The house method from 2026-11-04 onwards, worked out on Dexed 2.0. New plugins and major revisions of existing ones are built on
 Akai's **MPC Plugin SDK** ([`mpc-plugin-builder-sdk`](https://github.com/inmusic-software/mpc-plugin-builder-sdk) from Akai, MIT). Our own tools fill the gaps. Dexed
+
+**The SDK is vendored at `vendor/mpc-plugin-builder-sdk`** (a git submodule pinned to one commit): clone this repo with
+`git clone --recursive`, or run `git submodule update --init` in an existing clone. In this document `<sdk>` means that folder.
+`tools/update_sdk.sh` moves the pin to Akai's latest commit and prints what changed; commit the new pin in a PR.
 ([sd88me/mpc-vst-dx7](https://github.com/sd88me/mpc-vst-dx7), branch `rev-2.0`) is the reference implementation: copy its `tools/`, `build-sdk.sh` and `src/` layout.
 
 ## 1. Project layout
