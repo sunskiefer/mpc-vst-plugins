@@ -136,6 +136,11 @@ printf '%s\n' "$LOCS" | while IFS= read -r loc; do
         case $uid in *[!0-9a-fA-F]*|'') echo "SKIP  $folder: uid \"$uid\" is not hex"; continue ;; esac
         dest="$ROOT$vdir/$folder"
         if [ -f "$dest/plugin.json" ]; then echo "HAVE  $folder (already in $vdir)"; retire_old_skins "$folder" "$vdir"; continue; fi
+        # the same plugin already in VST2 Plugins under another folder name (a renamed plugin, e.g. "Plugin Manager G2" -> "Plugin Manager"):
+        # MPC knows a plugin by its uid, so a second copy would list it twice
+        u=$(printf '%08x' "0x$uid" 2>/dev/null)
+        other=$(grep -lis "\"uid\": *\"0x$u\"" "$ROOT$vdir"/*/plugin.json 2>/dev/null | head -n 1)
+        if [ -n "$other" ]; then o=${other%/plugin.json}; echo "HAVE  $folder (as ${o##*/} in $vdir, same uid)"; continue; fi
         # sibling folders the skin uses ("../../AW Skin/x.png")
         sibs=$(cat "$d/Plugin Skins/"*.json 2>/dev/null | grep -o '\.\./\.\./[^/"]*/' | sed 's:^\.\./\.\./::; s:/$::' | sort -u)
         need=$(du -sk "$d" | cut -f1)

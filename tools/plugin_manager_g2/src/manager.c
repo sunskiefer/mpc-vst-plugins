@@ -74,7 +74,7 @@ typedef struct {
 #endif
 /* The version of this build, shown on the ABOUT page. The release workflow fails when its version input differs from this. */
 #ifndef PM_VERSION
-#define PM_VERSION "1.0.1"
+#define PM_VERSION "1.1.0"
 #endif
 #define WORK "/tmp/openmpc-pm"
 #define MAXPKG 256
@@ -1296,6 +1296,38 @@ static int theme_read(const char *base, const char *name, int def) {   /* 1 for 
     return !strncmp(b, "light", 5);
 }
 
+static void manifest_str(const char *dir, const char *key, char *out, size_t n);
+/* The Manager was called "Plugin Manager G2" up to 1.0.x (folder "OpenMPC - VST - Plugin Manager G2"); from 1.1.0 it is "Plugin Manager".
+ * An update through install.sh retires the old folder itself (release.py --retire). A copy put there by hand, by Write to USB or by the
+ * installer's stick writer is not: then this one, running from the new folder, removes the old one. Only a folder with that exact name
+ * whose mpc-plugin.json id is ours and that is not the folder this copy runs from. In a Synths folder (or before 3.10.1) also only when no
+ * MPC.settings entry points into it: there the listed copy is the one MPC loads. 3.10.1 lists VST2 Plugins folders whatever the
+ * settings say, so an entry there doesn't count. Returns how many it removed. */
+#define RETIRED_SELF "OpenMPC - VST - Plugin Manager G2"
+static int retire_old_self(mgr_t *m) {
+    const device_t *d = m->dev;
+    const char *b = strrchr(m->own, '/');
+    if (!m->own[0] || !b || !strcmp(b + 1, RETIRED_SELF)) return 0;   /* unknown, or this IS the old one */
+    char *st = d->settings[0] ? slurp(d->settings, 4 << 20) : NULL;
+    const char *dirs[16];
+    int listed_counts[16], nd = 0, removed = 0;
+    for (int k = 0; k < d->nvdrv && nd < 16; k++) { listed_counts[nd] = d->vst2 != 2; dirs[nd++] = d->vdrv[k]; }
+    for (int k = 0; k < d->nusable && nd < 16; k++) { listed_counts[nd] = 1; dirs[nd++] = d->usable[k]; }
+    for (int i = 0; i < nd; i++) {
+        char old[320], id[64];
+        if (snprintf(old, sizeof old, "%s/%s", dirs[i], RETIRED_SELF) >= (int)sizeof old || !is_dir(old) || !strcmp(old, m->own)) continue;
+        manifest_str(old, "id", id, sizeof id);
+        if (strcmp(id, "plugin-manager-g2")) { logf_("left %s alone: its id is \"%s\"", old, id); continue; }
+        if (listed_counts[i] && st && strstr(st, old)) { logf_("left %s alone: MPC.settings lists it", old); continue; }
+        if (!safe(old)) continue;
+        char *argv[] = {"rm", "-rf", "--", old, NULL};
+        if (run(argv) == 0 && !is_dir(old)) { logf_("removed the old Plugin Manager folder %s (renamed in 1.1.0)", old); removed++; }
+        else logf_("could not remove the old Plugin Manager folder %s", old);
+    }
+    free(st);
+    return removed;
+}
+
 static void theme_init(mgr_t *m) {   /* after the device probe: where the settings are is where the theme files go */
     char a[340], b[340];
     own_folder(m->own, sizeof m->own);
@@ -2136,6 +2168,7 @@ static void do_refresh(mgr_t *m) {
     probe_device(m->dev);
     l.n = add_local(m->dev, tmp, l.n);
     theme_init(m);
+    if (retire_old_self(m)) probe_device(m->dev);   /* the old folder's entry is gone too */
     m->show_beta = cfg_get(m->dev->base, "beta", 1);
     m->web_pref = cfg_get(m->dev->base, "web", 1);
     if (!m->confirm) target_init(m);   /* a pick still open on the prompt is kept */
@@ -3204,7 +3237,7 @@ static int mgr_get_param(void *inst, const char *key, char *b, int n) {
         snprintf(b, n, "The web page asks to %s \"%s\": find its card and tap %s once to confirm.", (m->ptweb - 1) % 2 ? "UNDO" : "APPLY",
                  m->pt[(m->ptweb - 1) / 2].title, (m->ptweb - 1) % 2 ? "UNDO" : "APPLY");
     else if (!strcmp(key, "pat_foot")) snprintf(b, n, m->npt ? "%d device patches. CHECK runs a patch's status on this MPC and changes nothing." : "No patch list yet (needs the network).", m->npt);
-    else if (!strcmp(key, "about_ver")) snprintf(b, n, "Plugin Manager G2 %s", PM_VERSION);
+    else if (!strcmp(key, "about_ver")) snprintf(b, n, "Plugin Manager %s", PM_VERSION);
     else if (!strcmp(key, "about_inst")) {   /* the manifest of the copy on disk, which can differ from the running build */
         const char *iv = "";
         for (int i = 0; i < m->npkg; i++) if (!strcmp(m->pkg[i].id, "plugin-manager-g2")) iv = m->pkg[i].installed;

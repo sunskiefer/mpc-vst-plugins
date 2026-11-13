@@ -69,7 +69,7 @@ def main():
     svg("bg.svg", 1280, 628,
         '<rect width="1280" height="628" fill="%s"/>' % BG
         + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
-        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
+        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER", 24, INK, 700, spacing=3)
         + '<rect x="1036" y="15" width="1" height="30" fill="#2e3034"/>'
         + text(1056, 26, "INTERNAL", 14, MUTED, 600, spacing=1)
         + '<rect x="1056" y="37" width="200" height="5" rx="2.5" fill="#2a2b2f"/>'
@@ -80,7 +80,7 @@ def main():
     svg("loc_bg.svg", 1280, 628,
         '<rect width="1280" height="628" fill="%s"/>' % BG
         + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
-        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
+        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER", 24, INK, 700, spacing=3)
         + text(1256, 38, "LOCATIONS", 20, MUTED, 700, anchor="end", spacing=2)
         + "".join('<rect x="24.5" y="%g" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (80.5 + 120 * i, PANEL, LINE) for i in range(4))   # the cards are part of the page: art switched by `when=` was cut short by MPC
         + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE))
@@ -103,7 +103,7 @@ def main():
     svg("set_bg.svg", 1280, 628,
         '<rect width="1280" height="628" fill="%s"/>' % BG
         + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
-        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
+        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER", 24, INK, 700, spacing=3)
         + text(1256, 38, "SETTINGS", 20, MUTED, 700, anchor="end", spacing=2)
         + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
         + text(40, 599, "Kept beside MPC.settings. Changes marked \"restart\" apply the next time MPC starts.", 22, DIM, 600))
@@ -121,7 +121,7 @@ def main():
     svg("about_bg.svg", 1280, 628,
         '<rect width="1280" height="628" fill="%s"/>' % BG
         + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
-        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
+        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER", 24, INK, 700, spacing=3)
         + text(1256, 38, "ABOUT", 20, MUTED, 700, anchor="end", spacing=2)
         + "".join('<rect x="24.5" y="%g" width="1231" height="99" rx="8" fill="%s" stroke="%s"/>' % (80.5 + 120 * i, PANEL, LINE) for i in range(4))
         + text(48, 112, "VERSION", 22, MUTED, 700, spacing=2)
@@ -136,7 +136,7 @@ def main():
     svg("pat_bg.svg", 1280, 628,
         '<rect width="1280" height="628" fill="%s"/>' % BG
         + '<rect width="1280" height="60" fill="%s"/><rect y="60" width="1280" height="1" fill="%s"/>' % (PANEL, LINE)
-        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER G2", 24, INK, 700, spacing=3)
+        + grid + text(56, 39, "OPEN MPC - PLUGIN MANAGER", 24, INK, 700, spacing=3)
         + text(1256, 38, "DEVICE PATCHES", 20, MUTED, 700, anchor="end", spacing=2)
         + "".join('<rect x="24.5" y="%g" width="1231" height="131" rx="8" fill="%s" stroke="%s"/>' % (76.5 + 148 * i, PANEL, LINE) for i in range(3))
         + '<rect y="556" width="1280" height="72" fill="%s"/><rect y="556" width="1280" height="1" fill="%s"/>' % (PANEL, LINE))

@@ -20,9 +20,9 @@ git config user.name "github-actions"
 git config user.email "github-actions@users.noreply.github.com"
 git checkout -q -b "$branch"
 git add -A "$P"
-git commit -q -m "plugin manager G2: thumbnails for new catalog plugins (${new:-list changed})"
+git commit -q -m "plugin manager: thumbnails for new catalog plugins (${new:-list changed})"
 git push -q origin "$branch"
-title="plugin manager G2: thumbnails for new catalog plugins"
+title="plugin manager: thumbnails for new catalog plugins"
 body="The catalog gained plugins with screenshots since the last build: ${new:-the plugin list changed}. This branch (\`$branch\`) adds their thumbnails to the manager's skin. They only reach devices in the next manager release; review, merge, then run the release workflow when you want to ship them. (Each release resets the Verified badge until it is device-tested.)"
 if gh pr create --base main --head "$branch" --title "$title" --body "$body" 2>/dev/null; then exit 0; fi
 gh issue create --title "$title" --body "$body

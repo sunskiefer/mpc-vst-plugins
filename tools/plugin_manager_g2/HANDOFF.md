@@ -7,7 +7,7 @@ Verified on Gen1 and Gen2 (device tests on an MPC Live III, MPC OS 3.10.0.49, an
 - Code and docs: `tools/plugin_manager_g2/`. `README.md`: features, how to use, credits (poloq first). `DESIGN.md`: the design and the evidence behind it.
 - Identity: release tag `plugin-manager-g2-v<version>`; assets `Plugin-Manager-G2-<version>-mpc-armv7.zip` and `-mpc-aarch64.zip`; catalog id
   `plugin-manager-g2` (registry entry `catalog/plugins/plugin-manager-g2.json`, `asset_pattern Plugin-Manager-G2-*-mpc-armv7.zip`, the aarch64 sibling is found by
-  name); plugin name "Plugin Manager G2", manufacturer OpenMPC, VST uid `OMG2`, folder `OpenMPC - VST - Plugin Manager G2`.
+  name); plugin name "Plugin Manager" (until 1.0.x "Plugin Manager G2"), manufacturer OpenMPC, VST uid `OMG2`, folder `OpenMPC - VST - Plugin Manager`.
 - `tested.json` (repo root): one record per version and device. Each new release resets Verified until it is tested again.
 
 ## What it does (device-tested)

@@ -32,7 +32,7 @@ Open [the Plugin Manager release](https://github.com/open-mpc/mpc-vst-plugins/re
 | **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, and the Force | `OpenMPC-Plugin-Manager-1.0.0-Gen1.zip` |
 | **Second generation**: MPC Live III, One G2, Key G2, XL | `OpenMPC-Plugin-Manager-1.0.0-Gen2.zip` |
 
-Unzip it. You get one folder, **`OpenMPC - VST - Plugin Manager G2`**.
+Unzip it. You get one folder, **`OpenMPC - VST - Plugin Manager`**.
 
 ### 3. Copy it to the MPC
 Put the folder inside a folder called **`VST2 Plugins`** (exact name; create it if needed). Pick one way:
@@ -68,7 +68,7 @@ Or let the [desktop installer app](#the-desktop-installer-app) write the stick: 
 :::
 
 ### 4. Open the Plugin Manager
-1. Add a Plugin track and choose **External VST Plugins → OpenMPC → Plugin Manager G2**.
+1. Add a Plugin track and choose **External VST Plugins → OpenMPC → Plugin Manager**.
 2. Browse and install on the MPC's screen, or open the address on its status line on your phone or computer (same Wi-Fi).
 
 ![The Plugin Manager's status line on the MPC, with the web address under the plugin count](img/310-manager-address-line.png)
