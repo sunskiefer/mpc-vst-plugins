@@ -96,6 +96,10 @@ Yes, through their own MIDI port: pick it as the other track's MIDI input (enabl
 
 ## The catalog and the community
 
+::: details What is Open MPC, and how is it different from Akai's SDK?
+They do different jobs. **Akai's MPC Plugin SDK** is how a plugin is *built*: the code framework, the build tools and the screen kit. **Open MPC** is how plugins *reach your MPC and stay looked after* once they are built, whoever built them and with whatever tools: this catalog with its checks, CPU ratings and Works-for-me reports, the Plugin Manager, the installer app and USB sticks, support for MPC OS 3.9.1 and earlier (Akai's format needs 3.10.1), browser tiles and switchable skin themes. A growing number of catalog plugins are built with Akai's SDK; Open MPC packages, lists, installs and updates them.
+:::
+
 ::: details How are plugins checked before they are listed?
 Every plugin has public source on GitHub, and a maintainer reviews its first listing. After that, each new release is checked automatically before it appears: the zip's layout, its checksums, that the plugin is built for your MPC's processor and MPC OS version, that its name and ID don't clash with another plugin, and that its `install.sh` and `uninstall.sh` are the catalog's standard copies (any difference goes to a person to review). A release that fails is hidden. Details for authors: [Workflow](workflow.html).
 :::

@@ -7,6 +7,8 @@ summary: The path from a working build to a tested, checksummed release, and how
 
 Develop on your PC, test on the device once, and let a workflow package the zip people install. The order matters because the device is somebody's live setup.
 
+This is the Open MPC part of the job. However a plugin is built (Akai's SDK or this repo's wrapper), the release workflow turns it into the zips the catalog, the Plugin Manager, the installer and the sticks use, for Gen1 and Gen2 and for MPC OS 3.9.1 as well as 3.10.1+, with checksums, a CPU rating and an SDK-format zip for copying by hand.
+
 ## The loop
 1. **Build** with `tools/build_port.sh`. It produces the `.so`, the skin and the plugin-list entry.
 2. **Host test** with `tools/test_port.sh`. It must print `PASSED`.

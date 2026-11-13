@@ -7,6 +7,8 @@ summary: Get your computer ready, build a plugin that has no download, or turn a
 
 This page is for **building**: a plugin marked "Build it yourself" in the catalog, or a plugin of your own. If you only want to put a plugin from the catalog on your device, you do not need any of it: see [Install](install.html).
 
+**Akai's SDK or Open MPC?** Both, for different jobs. A new plugin is built with Akai's [MPC Plugin SDK](https://github.com/inmusic-software/mpc-plugin-builder-sdk) (code framework, build tools, screen kit). Open MPC takes it from there: the release workflow packages it for every MPC (including MPC OS 3.9.1), the catalog checks and lists it, and the Plugin Manager and installer put it on devices and keep it updated. Many existing catalog plugins use this repo's own wrapper instead; both routes end in the same catalog.
+
 You do not need to be a programmer. Building happens on your computer, never on the device, which only receives the finished plugin. For anything you install, the linked official pages have the current steps.
 
 ## What you need to build

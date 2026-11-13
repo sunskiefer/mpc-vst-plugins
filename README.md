@@ -5,6 +5,12 @@ Plugins run inside MPC's built-in JUCE plugin host, so they behave like MPC's ow
 track, play them from pads, keys or the sequencer, turn them with Q-Links, and they save with the project. Each one gets its
 own **native MPC touchscreen page**. No bridge, no background app, no `LD_PRELOAD` for plugins.
 
+**Open MPC and Akai's SDK.** Akai's [MPC Plugin SDK](https://github.com/inmusic-software/mpc-plugin-builder-sdk) is for *building* a
+plugin. Open MPC is the layer around it that users touch: the [catalog](https://open-mpc.github.io/) (checks, CPU ratings, reports),
+the [Plugin Manager](https://github.com/open-mpc/plugin-manager), the installer app and sticks, MPC OS 3.9.1 support, browser tiles
+and skin themes. New plugins are built with the SDK (vendored here at `vendor/mpc-plugin-builder-sdk`); Open MPC releases, lists,
+installs and updates them, along with the plugins built on this repo's own wrapper.
+
 > 💬 **Community:** join [**Open MPC** on Discord](https://discord.gg/sRRysZSgu3) for support, release announcements, plugin requests and MPC hacking.
 
 [**Plugin catalog**](https://open-mpc.github.io/) · [**Installer app**](https://github.com/open-mpc/mpc-vst-plugins/releases/tag/desktop-v2.0.1) · [**Plugin Manager VST**](https://github.com/open-mpc/plugin-manager) · [Build guide](https://open-mpc.github.io/build.html) · [Release workflow](https://open-mpc.github.io/workflow.html)

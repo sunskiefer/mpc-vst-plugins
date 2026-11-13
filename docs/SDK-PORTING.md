@@ -1,5 +1,8 @@
 # Building MPC plugins the SDK way (+ our additions)
 
+**The split:** Akai's SDK builds the plugin; Open MPC delivers it: releases for every MPC (3.9.1 included), the catalog, the Plugin
+Manager, installers, sticks, CPU ratings, tiles and themes. The table "Which tool for what" below lists each job.
+
 The house method from 2026-11-04 onwards, worked out on Dexed 2.0. New plugins and major revisions of existing ones are built on
 Akai's **MPC Plugin SDK** ([`mpc-plugin-builder-sdk`](https://github.com/inmusic-software/mpc-plugin-builder-sdk) from Akai, MIT). Our own tools fill the gaps. Dexed
 
