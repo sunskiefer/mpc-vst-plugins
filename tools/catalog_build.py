@@ -39,6 +39,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import catalog_check  # noqa: E402
+import sdk_release  # noqa: E402
 import deps  # noqa: E402
 
 ID = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
@@ -608,6 +609,72 @@ class GitHub:
         os.replace(dest + ".part", dest)
 
 
+# A release that carries only an Akai SDK-format zip (*-mpc-sdk.zip, no per-build zips) is converted here into the per-build zips every
+# client installs (tools/sdk_release.py), so a developer who never runs our workflow still reaches MPC OS 3.9.1 and every Plugin Manager,
+# installer and stick already out there. The converted zips are uploaded once to one release of the catalog's own repo (the catalog
+# workflow does it, from <out>/sdk-converted.txt) and reused from there by later builds, so their URLs and checksums never change.
+SDK_CONVERTED_REPO = os.environ.get("SDK_CONVERTED_REPO", "open-mpc/mpc-vst-plugins")
+SDK_CONVERTED_TAG = "sdk-converted"
+SDK_PENDING = []   # local paths of converted zips this build made that are not hosted yet (main() writes them out)
+
+
+def sdk_hosted(src):
+    """{asset name: asset} of the converted zips already hosted (empty when the release does not exist yet)."""
+    try:
+        for r in src.list_releases(SDK_CONVERTED_REPO):
+            if r.get("tag_name") == SDK_CONVERTED_TAG:
+                return {a["name"]: a for a in r.get("assets", [])}
+    except Exception:
+        pass
+    return {}
+
+
+def sdk_converted_assets(e, rel, src, cache, hosted):
+    """Per-build assets for a release whose only package is an SDK zip: the hosted copies, or new conversions (marked _local)."""
+    sdk = [a for a in rel.get("assets", []) if a["name"].endswith("-mpc-sdk.zip")]
+    if len(sdk) != 1:
+        return []
+    zs = os.path.join(cache, "%s-%s.zip" % (e["id"], sdk[0]["id"]))
+    if not os.path.exists(zs):
+        src.download(sdk[0], zs)
+    with zipfile.ZipFile(zs) as z:
+        pjn = [n for n in z.namelist() if n.count("/") == 1 and n.endswith("/plugin.json")]
+        if len(pjn) != 1:
+            raise ValueError("the SDK zip should hold one '<maker> - VST - <name>/plugin.json'")
+        pj = json.loads(z.read(pjn[0]))
+    version = str(pj.get("version") or re.sub(r"^[^0-9]*", "", rel.get("tag_name") or ""))
+    if not re.fullmatch(r"[0-9A-Za-z.+-]+", version):
+        raise ValueError("no usable version in plugin.json or the tag")
+    arches = [a for k, a in (("file32", "armv7"), ("file64", "aarch64")) if pj.get(k)]
+    names = {a: "%s-%s-%s-mpc-%s.zip" % (e["id"], version, sdk[0]["id"], a) for a in arches}
+    out, missing = [], [a for a in arches if names[a] not in hosted]
+    made = {}
+    if missing:
+        conv = os.path.join(cache, "sdk-converted")
+        tmp = os.path.join(conv, "tmp-%s" % sdk[0]["id"])
+        made = sdk_release.convert(zs, version, tmp, plugin_id=e["id"], repo=e["repo"], license=e.get("license"))
+    for a in arches:
+        if names[a] in hosted:
+            out.append(dict(hosted[names[a]], _sdk_source=sdk[0]))
+            continue
+        dest = os.path.join(cache, "sdk-converted", names[a])
+        os.replace(made[a], dest)
+        SDK_PENDING.append(dest)
+        out.append({"name": names[a], "id": "sdkconv-%s-%s" % (sdk[0]["id"], a), "download_count": 0, "_local": dest, "_sdk_source": sdk[0],
+                    "browser_download_url": "https://github.com/%s/releases/download/%s/%s" % (
+                        SDK_CONVERTED_REPO, SDK_CONVERTED_TAG, urllib.parse.quote(names[a]))})
+    return out
+
+
+def fetch(src, asset, dest):
+    """src.download, or a copy of a zip this build converted (not hosted yet)."""
+    if asset.get("_local"):
+        import shutil
+        shutil.copyfile(asset["_local"], dest)
+    else:
+        src.download(asset, dest)
+
+
 def tag_versions(e, src, yanked, tested, keep, problems):
     """Versions of a build-yourself entry: one per vX.Y.Z git tag that contains the declared build script.
     No download, checksum or size exists for these (nothing is published). Also reports any release zip on the repo."""
@@ -673,6 +740,7 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
     in it with the same repo, and the catalog gets collections[] (collections_of)."""
     os.makedirs(cache, exist_ok=True)
     plugins, problems = [], []
+    hosted = None   # the converted SDK zips already hosted, read once when the first SDK-only release turns up
     for e in entries:
         versions = []
         build_yourself = e.get("distribution", "release") == "build-yourself"
@@ -708,6 +776,25 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
             if rel.get("draft"):
                 continue
             tag = rel.get("tag_name")
+            if ("asset_pattern" not in e and not any(fnmatch.fnmatch(a["name"], p) for a in rel.get("assets", [])
+                                                     for p in ("*-mpc-armv7.zip", "*-mpc-aarch64.zip"))
+                    and any(a["name"].endswith("-mpc-sdk.zip") for a in rel.get("assets", []))):
+                try:
+                    if hosted is None:
+                        hosted = sdk_hosted(src)
+                    conv = sdk_converted_assets(e, rel, src, cache, hosted)
+                except (Exception, SystemExit) as ex:
+                    failed.append(({"id": e["id"], "tag": tag, "error": "SDK zip could not be converted: %s" % ex}, rel.get("published_at") or ""))
+                    continue
+                if not conv:
+                    failed.append(({"id": e["id"], "tag": tag, "error": "SDK zip could not be converted: its plugin.json names no file32 or file64 binary"},
+                                   rel.get("published_at") or ""))
+                    continue
+                if not any(a["name"].endswith("-mpc-armv7.zip") for a in conv):
+                    failed.append(({"id": e["id"], "tag": tag, "error": "SDK-only release with no 32-bit build: a Gen2-only plugin needs "
+                                    "asset_pattern \"*-mpc-aarch64.zip\" and per-build zips (vst-release.yml sdk_project)"}, rel.get("published_at") or ""))
+                    continue
+                rel = dict(rel, assets=rel.get("assets", []) + conv)
             assets = [a for a in rel.get("assets", []) if fnmatch.fnmatch(a["name"], e.get("asset_pattern", "*-mpc-armv7.zip"))]
             all_time += sum(a.get("download_count", 0) for a in assets)
             if not assets and "asset_pattern" in e and (shared_repo or rel is not newest or tag_prefix(tag) not in own_prefixes):
@@ -723,7 +810,7 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
             zpath = os.path.join(cache, "%s-%s.zip" % (e["id"], asset["id"]))
             try:
                 if not os.path.exists(zpath):
-                    src.download(asset, zpath)
+                    fetch(src, asset, zpath)
                 errors, warnings, rec = catalog_check.check(zpath, catalog=True, expect_id=e["id"], expect_repo=rel.get("_repo", e["repo"]),
                                                               require_portable=e["id"] in require_portable)
             except Exception as ex:
@@ -755,7 +842,7 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
                 z64 = os.path.join(cache, "%s-%s.zip" % (e["id"], a64[0]["id"]))
                 try:
                     if not os.path.exists(z64):
-                        src.download(a64[0], z64)
+                        fetch(src, a64[0], z64)
                     err64, warn64, rec64 = catalog_check.check(z64, catalog=True, expect_id=e["id"], expect_repo=rel.get("_repo", e["repo"]))
                     # an addin's manifest has no "uid" (that's a VST plugin's concept, for save-file compatibility
                     # across generations); expect_id above already ties both zips to the same catalog entry
@@ -1138,6 +1225,8 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     json.dump(catalog, open(os.path.join(a.out, "catalog.json"), "w"), indent=1)
     json.dump(problems, open(os.path.join(a.out, "problems.json"), "w"), indent=1)
+    # converted SDK zips to upload to <SDK_CONVERTED_REPO> release <SDK_CONVERTED_TAG> before the catalog is published (catalog.yml)
+    open(os.path.join(a.out, "sdk-converted.txt"), "w").write("".join(p + "\n" for p in SDK_PENDING))
     flagged = flagged_of(catalog, entries)
     json.dump(flagged, open(os.path.join(a.out, "flags.json"), "w"), indent=1)
     overlaps = hook_overlaps_of(catalog["plugins"])

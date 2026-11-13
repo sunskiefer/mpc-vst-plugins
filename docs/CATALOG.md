@@ -162,6 +162,15 @@ bumping it breaks saved projects), `sha256` of every file. `INSTALL.md` stays fo
 A version may also have a `*-mpc-aarch64.zip` on the same release (arch `aarch64`, same id/uid/version). It is listed under the same
 registry entry as `versions[].assets.aarch64` with `gen2: true`; `url`/`sha256` stay the armv7 asset. `catalog.tsv` carries the aarch64 zip in three trailing columns (size, sha256, url). A plugin with only a Gen2 build (`asset_pattern` for `*-mpc-aarch64.zip` alone) is `gen2_only: true`, with `-` in the armv7 columns. See [GEN2.md](GEN2.md).
 
+### Releases with only an Akai SDK zip (2026-11-13, offline: unit tests)
+A registry entry (no `asset_pattern`) whose release carries only `*-mpc-sdk.zip`, Akai's one-folder format, is converted by
+`catalog_build.py` with `tools/sdk_release.py` into the per-build zips every client installs (MPC OS 3.9.1 registration included; the
+SDK zip is still listed under `assets.sdk`). The converted zips are uploaded once by the catalog workflow to the `sdk-converted` release
+of this repo (`<id>-<version>-<asset id>-mpc-<arch>.zip`) and reused from there by every later build, so the listed URLs and checksums
+never change. A conversion that fails is reported like any bad release. A Gen2-only SDK release (no 32-bit binary) is refused: release it
+with `vst-release.yml` `sdk_project` and `asset_pattern "*-mpc-aarch64.zip"`. Developers who run `vst-release.yml` with `sdk_project`
+publish the per-build zips themselves and are not converted.
+
 ### Generated `catalog.json`
 Per plugin (`distribution: release`): registry fields + `versions[]` (newest first, last N kept): `version`, `date`, `url`, `size`, `sha256`,
 `channel` (stable, or beta for GitHub prereleases), `notes` (release body), `param_compat`, `yanked`,

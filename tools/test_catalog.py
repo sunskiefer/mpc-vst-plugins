@@ -828,6 +828,63 @@ class BuildTest(Base):
         self.assertNotIn("sdk", v["assets"])
         self.assertTrue(any("SDK zip not listed" in w for w in v["warnings"]), v["warnings"])
 
+    def sdk_only_zip(self, version="1.0.0"):
+        """An Akai SDK-format zip as Akai's tools make it: one folder, binaries in VST/, no per-build zips."""
+        f = "Acme - VST - Test Synth"
+        d = os.path.join(self.tmp, "sdkfolder-" + version, f)
+        os.makedirs(os.path.join(d, "VST")); os.makedirs(os.path.join(d, "Plugin Skins"))
+        fake_so(os.path.join(d, "VST", "test-synth-arm32.so"))
+        fake_so(os.path.join(d, "VST", "test-synth-arm64.so"), machine=183, elf_class=2)
+        open(os.path.join(d, "Plugin Skins", "TUI.json"), "w").write("{}")
+        open(os.path.join(d, "version.xml"), "w").write("<v/>")
+        json.dump({"name": "Test Synth", "manufacturer": "Acme", "version": version, "format": "vst2", "kind": "instrument", "uid": "TeSy",
+                   "numInputs": 0, "numOutputs": 2, "file32": "VST/test-synth-arm32.so", "file64": "VST/test-synth-arm64.so"},
+                  open(os.path.join(d, "plugin.json"), "w"))
+        z = os.path.join(self.tmp, "Test-Synth-%s-mpc-sdk.zip" % version)
+        with zipfile.ZipFile(z, "w") as zo:
+            for root, _, files in os.walk(d):
+                for n in files:
+                    p = os.path.join(root, n)
+                    zo.write(p, os.path.relpath(p, os.path.dirname(d)))
+        return z
+
+    def test_sdk_only_release_is_converted_once_and_reused(self):
+        """A release with only an Akai SDK zip is converted into the per-build zips every client installs (3.9.1 included); the
+        converted zips are queued for upload once, and a later build reuses the hosted copies (same URL, same checksum)."""
+        sdk = self.sdk_only_zip()
+        rel = self.rel("v1.0.0", 7, name="Test-Synth-1.0.0-mpc-sdk.zip")
+        catalog_build.SDK_PENDING.clear()
+        cat, problems = catalog_build.build([self.ENTRY], FakeGitHub({"acme/test-synth": [rel]}, {7: sdk}), os.path.join(self.tmp, "cache"), set())
+        self.assertEqual(problems, [])
+        v = cat["plugins"][0]["versions"][0]
+        self.assertEqual((v["version"], set(v["assets"])), ("1.0.0", {"armv7", "aarch64", "sdk"}))
+        base = "https://github.com/%s/releases/download/sdk-converted/" % catalog_build.SDK_CONVERTED_REPO
+        self.assertEqual(v["assets"]["armv7"]["url"], base + "test-synth-1.0.0-7-mpc-armv7.zip")
+        self.assertEqual(v["assets"]["sdk"]["url"], "https://x/Test-Synth-1.0.0-mpc-sdk.zip")
+        self.assertEqual(v["manifest"]["so"], "VST/test-synth-arm32.so")
+        pending = list(catalog_build.SDK_PENDING)
+        self.assertEqual(sorted(os.path.basename(p) for p in pending), ["test-synth-1.0.0-7-mpc-aarch64.zip", "test-synth-1.0.0-7-mpc-armv7.zip"])
+        # hosted now: the next build downloads those copies, queues nothing and lists the same checksum
+        hosted = {"tag_name": "sdk-converted", "draft": False, "assets": [
+            {"id": 100 + i, "name": os.path.basename(p), "browser_download_url": base + os.path.basename(p), "download_count": 5} for i, p in enumerate(pending)]}
+        zips = {7: sdk, **{100 + i: p for i, p in enumerate(pending)}}
+        catalog_build.SDK_PENDING.clear()
+        cat2, problems2 = catalog_build.build([self.ENTRY], FakeGitHub({"acme/test-synth": [rel], catalog_build.SDK_CONVERTED_REPO: [hosted]}, zips),
+                                              os.path.join(self.tmp, "cache2"), set())
+        self.assertEqual(problems2, [])
+        self.assertEqual(catalog_build.SDK_PENDING, [])
+        self.assertEqual(cat2["plugins"][0]["versions"][0]["assets"]["armv7"]["sha256"], v["assets"]["armv7"]["sha256"])
+
+    def test_sdk_only_release_that_cannot_be_converted_says_why(self):
+        bad = os.path.join(self.tmp, "x-mpc-sdk.zip")
+        with zipfile.ZipFile(bad, "w") as zb:
+            zb.writestr("Acme - VST - Test Synth/plugin.json", json.dumps({"name": "Test Synth", "manufacturer": "Acme", "uid": "TeSy"}))
+        rel = self.rel("v1.0.0", 8, name="Test-Synth-1.0.0-mpc-sdk.zip")
+        catalog_build.SDK_PENDING.clear()
+        cat, problems = catalog_build.build([self.ENTRY], FakeGitHub({"acme/test-synth": [rel]}, {8: bad}), os.path.join(self.tmp, "cache"), set())
+        self.assertEqual(cat["plugins"][0]["versions"], [])
+        self.assertIn("SDK zip could not be converted", problems[0]["error"])
+
     def test_build_keeps_good_versions_and_reports_bad(self):
         good, newer = self.build("1.0.0"), self.build("1.1.0")
         bad = self.tamper(self.build("1.2.0"), "portable/Acme - VST - Test Synth/test_synth.so", lambda d: d + b"x")

@@ -11,7 +11,7 @@ on:
   pull_request:
     paths: ['catalog/**', 'tools/catalog_*.py', 'tools/app_*.py', 'tools/catalog_site/**', 'tools/skin_compat.py', 'tools/skin_roles_2x.json', 'tools/test_skin_compat.py', 'tools/sdk_*.py', 'tools/test_sdk_*.py', 'tools/release.py', 'tools/release/**']
 permissions:
-  contents: read
+  contents: write   # the sdk-converted release (converted SDK zips); everything else only reads
   issues: write
 # One run at a time per branch: two overlapping runs each opened the same issue (#112, #113).
 concurrency:
@@ -49,6 +49,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 tools/catalog_build.py
+      - name: Host the converted SDK zips (releases that carry only an Akai SDK zip; uploaded once, never replaced)
+        # catalog_build.py converted them into per-build zips and listed this release's URLs for them; they must exist before the site goes out
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -s catalog/dist/sdk-converted.txt ] || { echo "nothing to upload"; exit 0; }
+          gh release view sdk-converted >/dev/null 2>&1 || gh release create sdk-converted --latest=false --title "Converted Akai SDK releases" \
+            --notes "Per-build zips the catalog made from plugin releases that carry only an Akai SDK-format zip (tools/sdk_release.py). Do not edit: the catalog lists these files by URL and checksum."
+          xargs -d '\n' gh release upload sdk-converted < catalog/dist/sdk-converted.txt
       - name: Resolve companion app downloads from their releases
         if: ${{ github.event_name != 'pull_request' }}
         env:

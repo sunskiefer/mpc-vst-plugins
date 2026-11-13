@@ -61,20 +61,12 @@ def find_folder(src, work):
     return os.path.join(work, dirs[0])
 
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("src")
-    ap.add_argument("--version", required=True)
-    ap.add_argument("--id")
-    ap.add_argument("--repo")
-    ap.add_argument("--license")
-    ap.add_argument("-o", "--out", default="dist")
-    a, rest = ap.parse_known_args()   # anything else goes to tools/release.py (--bench, --user-data ...)
-    rest = [x for x in rest if x != "--"]
-
+def convert(src, version, out, plugin_id=None, repo=None, license=None, rest=()):
+    """Write the per-build zips for the SDK folder or zip src into out; returns {arch: zip path}."""
     work = tempfile.mkdtemp()
+    os.makedirs(out, exist_ok=True)
     try:
-        folder = find_folder(a.src, os.path.join(work, "in"))
+        folder = find_folder(src, os.path.join(work, "in"))
         fname = os.path.basename(folder)
         pj = json.load(open(os.path.join(folder, "plugin.json")))
         name, mfr = pj.get("name", ""), pj.get("manufacturer", "")
@@ -82,8 +74,8 @@ def main():
             raise SystemExit("folder %r does not match plugin.json (%r - VST - %r)" % (fname, mfr, name))
         if str(pj.get("format", "vst2")).lower() != "vst2":
             raise SystemExit("plugin.json format %r: only vst2" % pj.get("format"))
-        if pj.get("version") and pj["version"] != a.version:
-            print("note: plugin.json says version %s, releasing %s" % (pj["version"], a.version), file=sys.stderr)
+        if pj.get("version") and pj["version"] != version:
+            print("note: plugin.json says version %s, releasing %s" % (pj["version"], version), file=sys.stderr)
         kind = "effect" if pj.get("isInstrument") is False or str(pj.get("kind", "")).lower() == "effect" else "instrument"
         builds = [(key, arch, pj[key]) for key, arch in ARCH if pj.get(key)]
         if not builds and pj.get("file"):
@@ -91,7 +83,7 @@ def main():
         if not builds:
             raise SystemExit("plugin.json names no binary (file32 / file64)")
         binaries = {rel for _, _, rel in builds}
-        made = []
+        made = {}
         for key, arch, rel in builds:
             if rel.startswith("/") or ".." in rel.split("/") or not os.path.isfile(os.path.join(folder, rel)):
                 raise SystemExit("plugin.json %s %r is not a file inside the folder" % (key, rel))
@@ -111,19 +103,34 @@ def main():
                 '<PLUGIN name="%s" descriptiveName="%s" format="VST" category="%s" manufacturer="%s" version="%s" file="%s" '
                 'uid="%s" isInstrument="%d" fileTime="0" infoUpdateTime="0" numInputs="%d" numOutputs="%d" isShell="0"/>\n'
                 % (esc(name), esc(name), esc(pj.get("category") or ("Effect" if kind == "effect" else "Synth")), esc(mfr),
-                   esc(a.version), esc(os.path.basename(rel)), uid_hex(pj.get("uid")), kind == "instrument", ins, outs))
+                   esc(version), esc(os.path.basename(rel)), uid_hex(pj.get("uid")), kind == "instrument", ins, outs))
+            before = set(os.listdir(out))
             cmd = [sys.executable, os.path.join(HERE, "release.py"), "--so", so, "--so-path", rel, "--skin", skin, "--entry", entry,
-                   "--version", a.version, "-o", a.out, "--about", pj.get("description", "")]
-            for opt, val in (("--id", a.id), ("--repo", a.repo), ("--license", a.license or pj.get("license"))):
+                   "--version", version, "-o", out, "--about", pj.get("description", "")]
+            for opt, val in (("--id", plugin_id), ("--repo", repo), ("--license", license or pj.get("license"))):
                 if val:
                     cmd += [opt, val]
-            r = subprocess.run(cmd + rest)
+            r = subprocess.run(cmd + list(rest))
             if r.returncode:
                 raise SystemExit("release.py failed for %s" % arch)
-            made.append(arch)
-        print("made %s zips for %s %s in %s" % ("+".join(made), name, a.version, a.out))
+            new = [n for n in set(os.listdir(out)) - before if n.endswith("-mpc-%s.zip" % arch)]
+            made[arch] = os.path.join(out, new[0]) if len(new) == 1 else os.path.join(out, sorted(n for n in os.listdir(out) if n.endswith("-mpc-%s.zip" % arch))[-1])
+        return made
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("src")
+    ap.add_argument("--version", required=True)
+    ap.add_argument("--id")
+    ap.add_argument("--repo")
+    ap.add_argument("--license")
+    ap.add_argument("-o", "--out", default="dist")
+    a, rest = ap.parse_known_args()   # anything else goes to tools/release.py (--bench, --user-data ...)
+    made = convert(a.src, a.version, a.out, a.id, a.repo, a.license, [x for x in rest if x != "--"])
+    print("made %s zips for %s in %s" % ("+".join(made), a.version, a.out))
 
 
 if __name__ == "__main__":
