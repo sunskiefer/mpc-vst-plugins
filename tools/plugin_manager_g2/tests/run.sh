@@ -144,6 +144,25 @@ printf '"'"'<PLUGIN name="Plugin Manager G2" manufacturer="OpenMPC" file="%%payl
 ARCH=aarch64 sh /tmp/openmpc-pm/vst2.sh --apply > /tmp/vst2-dedupe.out
 grep -qF "HAVE  OpenMPC - VST - Plugin Manager G2 (as OpenMPC - VST - Plugin Manager in /nvme/VST2 Plugins, same uid)" /tmp/vst2-dedupe.out || { cat /tmp/vst2-dedupe.out; exit 1; }
 ! test -e "$O"
+# an install into a folder with an apostrophe (L'"'"'Cronx - VST - ...) skipped plugin.json up to 1.1.0: the Manager writes it at start
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/gen2-3101-vst2.sh
+L="/nvme/VST2 Plugins/L'"'"'Cronx - VST - MS20XXL"; mkdir -p "$L"; echo so > "$L/ms20xxl.so"
+printf '"'"'<PLUGIN name="MS20XXL" manufacturer="L&apos;Cronx" file="%%payload-path%%/L&apos;Cronx - VST - MS20XXL/ms20xxl.so" uid="4d733230" isInstrument="1" numInputs="0" numOutputs="2"/>\n'"'"' > "$L/plugin-meta.xml"
+/tmp/drive_addins links > /tmp/lcronx.out
+test -f "$L/plugin.json" || { echo "no plugin.json written"; tail -n 5 /tmp/openmpc-pm/manager.log; exit 1; }
+grep -qF "\"uid\": \"0x4d733230\"" "$L/plugin.json" && grep -qF "wrote the missing plugin.json in $L" /tmp/openmpc-pm/manager.log
+grep -qE "^plugin: MS20XXL uid=4d733230 file=/nvme/VST2 Plugins/L.Cronx - VST - MS20XXL/ms20xxl.so$" /tmp/openmpc-pm/device.txt || { grep "^plugin:" /tmp/openmpc-pm/device.txt; exit 1; }
+# Move covers a drive'"'"'s Synths folder that is not in SynthContentLocations (plugins on a flash drive, Live III 2026-11-13)
+rm -rf /media /sdcard /nvme /synths /data /tmp/openmpc-pm /tmp/pm-mounts; mkdir -p /media
+sh tests/devices/gen2-3101-vst2.sh
+K="/media/STICK/Synths/acme - VST - Sticky"; mkdir -p "$K"; echo so > "$K/sticky.so"
+printf '"'"'<PLUGIN name="Sticky" manufacturer="acme" file="%%payload-path%%/acme - VST - Sticky/sticky.so" uid="53746b79" isInstrument="1" numInputs="0" numOutputs="2"/>\n'"'"' > "$K/plugin-meta.xml"
+/tmp/drive_addins links > /tmp/stick.out
+grep -qF "vst2 to move: 2" /tmp/openmpc-pm/device.txt || { grep "vst2 to move" /tmp/openmpc-pm/device.txt; exit 1; }
+ARCH=aarch64 sh /tmp/openmpc-pm/vst2.sh --apply > /tmp/stick-move.out
+grep -qF "COPY  acme - VST - Sticky -> /media/STICK/VST2 Plugins/" /tmp/stick-move.out || { cat /tmp/stick-move.out; exit 1; }
+test -f "/media/STICK/VST2 Plugins/acme - VST - Sticky/plugin.json" && test -f "/media/STICK/VST2 Plugins/acme - VST - Sticky/sticky.so"
 echo "vst2 OK"
 fi # vst2
 if want pick; then
