@@ -267,7 +267,6 @@ mpc-vst-plugins' generic wrapper (`wrapper/vst2_wrap.c`, `adapters/schwung`).
   - Then run `sdk_zip.py` on the pair.
   - The canonical `install.sh` then upgrades a 1.x install in place, and `catalog_check --catalog --require-portable` passes.
 - The skin generated with the SDK widgets (Envelope, Button v2, overlays) makes `release.py` mark the build "MPC OS 3.x only". A 1.x that was listed for 2.x loses 2.x: say so in the release notes.
-
 - To reload a test project without restarting the MPC app, open it again from the BROWSER: that makes a fresh plugin instance.
 
 ## 10. Euclid lessons (a MIDI sequencer: the engine inside the plugin)
