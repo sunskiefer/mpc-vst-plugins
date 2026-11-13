@@ -9,10 +9,10 @@
       "license": "MIT",
       "docs": "tools/mpc_patch/README.md",
       "script": {
-        "url": "https://raw.githubusercontent.com/open-mpc/mpc-vst-plugins/17a9d5c8c1e240e88389591540b7ea58534b9aa6/tools/mpc_patch/mpc-drum-pad-patch.sh",
-        "sha256": "681bf0689bbd8f7fdc60cc65cf38689a018e11ae812d39dd124fe7c091fb8c14"
+        "url": "https://raw.githubusercontent.com/open-mpc/mpc-vst-plugins/70220abfad5998fa5ad8b19f4db9bae22b936200/tools/mpc_patch/mpc-drum-pad-patch.sh",
+        "sha256": "85eab38f16afa29585d9ed677a62cfe94b5977511ac3062a279201a1fedbffa7"
       },
-      "supports": {"os": "MPC OS 3.9.1.2 (Force); Gen1 MPC OS 3.10.0; Gen2 (aarch64) MPC OS 3.9.1 and 3.10.0", "arch": "armv7l,aarch64", "mpc_md5": ["592eebc8e1ce0797dc8c98e7002143b8", "a7ace6a9993df33afeae50571755bbf9", "15a664f6b6ae591c8b78baae8b376f02", "b6cc8e7a398bdf6c3fd8f7176eecd3ee"]},
+      "supports": {"os": "MPC OS 3.9.1.2 (Force); Gen1 MPC OS 3.10.0; Gen2 (aarch64) MPC OS 3.9.1, 3.10.0 and 3.10.1", "arch": "armv7l,aarch64", "mpc_md5": ["592eebc8e1ce0797dc8c98e7002143b8", "a7ace6a9993df33afeae50571755bbf9", "15a664f6b6ae591c8b78baae8b376f02", "b6cc8e7a398bdf6c3fd8f7176eecd3ee", "4280be032878fc321b7f58a6801cb1ea"]},
       "modifies": ["/usr/bin/MPC"],
       "backup": "/sdcard/MPC-backup",
       "restarts_mpc": true,
