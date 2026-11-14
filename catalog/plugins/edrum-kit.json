@@ -1,0 +1,5 @@
+{ "id": "edrum-kit", "name": "EDrum Kit", "author": "burgerbarn", "repo": "burgerbarn/edrum-kit-mpc",
+  "kind": "instrument", "style": "drum-machine", "tags": ["drums", "e-drums", "td-27", "midi", "sampler"], "license": "MIT",
+  "summary": "Plays the MPC's own drum kits from Roland V-Drums (TD-27): auto-mapped zones, continuous VH-14D hi-hat, positional snare and ride, cymbal chokes, velocity curves, per-drum tune/decay/tone.",
+  "screenshot": "https://raw.githubusercontent.com/burgerbarn/edrum-kit-mpc/f3886f20a42ea057c3db682d4da8306c667217e2/docs/card.png",
+  "youtube": "https://www.youtube.com/shorts/BulFtb2QcNA" }
