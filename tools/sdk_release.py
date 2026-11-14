@@ -99,7 +99,7 @@ def convert(src, version, out, plugin_id=None, repo=None, license=None, rest=())
             outs = int(pj.get("numOutputs", 2))
             ins = int(pj.get("numInputs", 2 if kind == "effect" else 0))
             esc = lambda t: str(t).replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
-            open(entry, "w").write(
+            open(entry, "w", newline="\n").write(
                 '<PLUGIN name="%s" descriptiveName="%s" format="VST" category="%s" manufacturer="%s" version="%s" file="%s" '
                 'uid="%s" isInstrument="%d" fileTime="0" infoUpdateTime="0" numInputs="%d" numOutputs="%d" isShell="0"/>\n'
                 % (esc(name), esc(name), esc(pj.get("category") or ("Effect" if kind == "effect" else "Synth")), esc(mfr),
