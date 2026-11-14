@@ -1,0 +1,21 @@
+{
+ "id": "xxl-strip-master",
+ "name": "XXL STRIP MASTER",
+ "author": "L'Cronx",
+ "repo": "sunskiefer/XXL-Strips",
+ "kind": "effect",
+ "style": "mixing",
+ "tags": [
+  "console",
+  "mastering",
+  "saturation",
+  "eq",
+  "compressor",
+  "stereo",
+  "mixing"
+ ],
+ "license": "GPL-3.0-or-later",
+ "asset_pattern": "XXL-STRIP-MASTER-[0-9]*-mpc-armv7.zip",
+ "screenshot": "https://raw.githubusercontent.com/sunskiefer/XXL-Strips/xxl-strip-master-v0.1.1/XXL-STRIP-MASTER/docs/img/page_0.png",
+ "summary": "Master-bus strip in the same console style as XXL STRIP: drive and density, low and high shelving EQ, high-frequency compressor, stereo width and space, transformer stage, high-pass filter, VU meter. By L'Cronx, GPL-3."
+}
