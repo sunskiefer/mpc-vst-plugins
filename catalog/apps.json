@@ -59,6 +59,41 @@
           "pattern": "MPC-Link-*-windows-arm64.exe"
         }
       ]
+    },
+    {
+      "id": "mpc-tools",
+      "title": "MPC TOOLS",
+      "summary": "One window for a standalone MPC on your computer: see and control the MPC's screen, browse and move its files, put computer folders into the MPC's browser, save the last 60 seconds of audio, and bench CPU load. Its Plugins tab checks versions and updates plugins from their GitHub releases (with a backup), which writes to the device and restarts the MPC app: save your project first. Connects over root SSH.",
+      "author": "PotentialBreaks",
+      "screenshot": "https://raw.githubusercontent.com/PotentialBreakfast/mpc-tools/v1.5.2/docs/images/mpc-tools-files.png",
+      "license": "MIT",
+      "repo": "PotentialBreakfast/mpc-tools",
+      "release": "https://github.com/PotentialBreakfast/mpc-tools/releases/tag/v1.5.2",
+      "version": "1.5.2",
+      "platforms": [
+        "macos",
+        "windows"
+      ],
+      "needs": [
+        "Root SSH on the device with key login (Hakai)",
+        "The Remote, File Browser and PC Folders tabs use their own addins on the MPC (see the README)"
+      ],
+      "tested": {
+        "device": "MPC One",
+        "os": "MPC OS 3.10.1"
+      },
+      "assets": [
+        {
+          "platform": "macos",
+          "label": "macOS (zip, Apple Silicon + Intel)",
+          "pattern": "MPC-TOOLS-*-mac.zip"
+        },
+        {
+          "platform": "windows",
+          "label": "Windows (x64)",
+          "pattern": "MPC-TOOLS-*-windows-x64.exe"
+        }
+      ]
     }
   ]
 }
