@@ -1,0 +1,19 @@
+{
+ "id": "xxl-strip-bus",
+ "name": "XXL STRIP BUS",
+ "author": "L'Cronx",
+ "repo": "sunskiefer/XXL-Strips",
+ "kind": "effect",
+ "style": "compressor",
+ "tags": [
+  "console",
+  "compressor",
+  "bus-compressor",
+  "emulation",
+  "mixing"
+ ],
+ "license": "GPL-3.0-or-later",
+ "asset_pattern": "XXL-STRIP-BUS-[0-9]*-mpc-armv7.zip",
+ "screenshot": "https://raw.githubusercontent.com/sunskiefer/XXL-Strips/xxl-v0.1/XXL-STRIP-BUS/docs/img/page_0.png",
+ "summary": "Stereo bus compressor in the style of the classic console bus compressor (G-series style): threshold, ratio, attack, release with auto, make-up, side-chain high-pass, mix, Classic and Modern modes, VU meter. By L'Cronx, GPL-3. Not endorsed by the makers of the original."
+}
