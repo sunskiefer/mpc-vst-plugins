@@ -9,37 +9,37 @@
       "screenshot": "https://raw.githubusercontent.com/padbangers/mpc-link/main/assets/catalog.png",
       "license": "MIT",
       "repo": "padbangers/mpc-link",
-      "release": "https://github.com/padbangers/mpc-link/releases/tag/v1.0.1",
-      "version": "1.0.1",
+      "release": "https://github.com/padbangers/mpc-link/releases/tag/v1.0.2",
+      "version": "1.0.2",
       "platforms": [
         "macos",
         "windows"
       ],
       "needs": [
-        "Root SSH on the device (Hakai)"
+        "Root SSH on the device: Developer Mode on MPC OS 3.10.1+, or Hakai on 3.9.x"
       ],
       "tested": {
         "device": "MPC X",
-        "os": "MPC OS 3.9.1"
+        "os": "MPC OS 3.10.1 (Developer Mode) and 3.9.1 (Hakai)"
       },
       "downloads": [
         {
           "platform": "macos",
           "label": "macOS (zip)",
-          "url": "https://github.com/padbangers/mpc-link/releases/download/v1.0.1/MPC-Link-1.0.1-macOS.zip",
-          "sha256": "784787a0d54d4e67e5743e749eb9757beb1342a2a1b4ff84aa4b2126b4cc12e8"
+          "url": "https://github.com/padbangers/mpc-link/releases/download/v1.0.2/MPC-Link-1.0.2-macOS.zip",
+          "sha256": "88911c8794fe312078c69e4673c9c6ccf8324c2395ad3cd9310786542fcc36d9"
         },
         {
           "platform": "windows",
           "label": "Windows (x64)",
-          "url": "https://github.com/padbangers/mpc-link/releases/download/v1.0.1/MPC-Link-1.0.1-windows-amd64.exe",
-          "sha256": "96e693e40c648f4ba054b0049e7b8ab30b7e5942be4489ba75e03be06766eedb"
+          "url": "https://github.com/padbangers/mpc-link/releases/download/v1.0.2/MPC-Link-1.0.2-windows-amd64.exe",
+          "sha256": "2527356337eba93e8c10089147dff8a18d340fd07dd4a31c96baeee9895d3bb1"
         },
         {
           "platform": "windows",
           "label": "Windows (ARM64)",
-          "url": "https://github.com/padbangers/mpc-link/releases/download/v1.0.1/MPC-Link-1.0.1-windows-arm64.exe",
-          "sha256": "238fd6c6ede74663355761c57996e24cd11cf5e6caf0c457a72ca30838d88b69"
+          "url": "https://github.com/padbangers/mpc-link/releases/download/v1.0.2/MPC-Link-1.0.2-windows-arm64.exe",
+          "sha256": "16f5e418548b430a0ce632deafe787d35813b18a27572e140790e811bf611c0c"
         }
       ],
       "assets": [

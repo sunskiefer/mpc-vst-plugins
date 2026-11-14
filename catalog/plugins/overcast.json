@@ -1,4 +1,4 @@
-{ "id": "overcast", "name": "Overcast", "author": "Padbangers", "repo": "FullPace/overcast",
+{ "id": "overcast", "name": "Overcast", "author": "Padbangers", "repo": "padbangers/overcast", "previous_repos": ["FullPace/overcast"],
   "kind": "effect", "style": "granular", "tags": ["mutable-instruments", "clouds", "parasites", "granular", "texture", "reverb", "delay", "eurorack"], "license": "MIT",
   "summary": "Mutable Instruments Clouds (Parasites firmware, six modes) with a modulation page: two envelopes, two LFOs and an 8-slot matrix onto Clouds' CV inputs.",
-  "screenshot": "https://raw.githubusercontent.com/FullPace/overcast/overcast-v1.0.6/docs/overcast-main.png" }
+  "screenshot": "https://raw.githubusercontent.com/padbangers/overcast/overcast-v1.1.0/docs/overcast-main.png" }

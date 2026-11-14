@@ -110,7 +110,7 @@ for spec in a.extra:
     shutil.copytree(src, d, symlinks=True) if os.path.isdir(src) else shutil.copy2(src, d)
     extras.append(dest)
 meta = re.sub(r'(\s)file="[^"]*"', lambda m: '%sfile="%%payload-path%%/%s/%s"' % (m.group(1), skin_name, so_path), entry, count=1)
-open(os.path.join(pdir, "plugin-meta.xml"), "w").write(meta + "\n")
+open(os.path.join(pdir, "plugin-meta.xml"), "w", newline="\n").write(meta + "\n")
 shutil.copy2(os.path.join(HERE, "release", "plugin_list.awk"), root)
 
 for d in a.user_data:
@@ -140,6 +140,21 @@ for script in ("install.sh", "uninstall.sh"):
     p = os.path.join(root, script)
     open(p, "w", newline="\n").write(text)
     os.chmod(p, 0o755)
+
+def executable(path):
+    """The file's exec bit. Windows has none: there scripts (#!) and ELF binaries count as executable, as they would be
+    in a git checkout on macOS or Linux."""
+    if os.name != "nt":
+        return bool(os.stat(path).st_mode & stat.S_IXUSR)
+    with open(path, "rb") as f:
+        head = f.read(4)
+    return head == b"\x7fELF" or head[:2] == b"#!"
+
+
+def zip_rel(path, start):
+    """A path inside the zip, SHA256SUMS and MODES: always with "/" (os.path.relpath gives backslashes on Windows)."""
+    return os.path.relpath(path, start).replace(os.sep, "/")
+
 
 def elf_machine(path):
     d = open(path, "rb").read(20)
@@ -228,7 +243,7 @@ See `SHA256SUMS`. Made with [mpc-vst-plugins](https://github.com/open-mpc/mpc-vs
            skin=skin_name, extra_md=extra_md, bench=b, user_md=user_md, synths=SYNTHS, listkey="pluginList-arm-64bit" if gen2 else "pluginList-arm",
            install_args=" -t '<your Synths folder>'" if gen2 else "", requirements=REQ_GEN2 if gen2 else REQ_GEN1,
            where="Instrument plugins" if kind == "instrument" else "Insert effects")
-open(os.path.join(root, "INSTALL.md"), "w").write(install_md)
+open(os.path.join(root, "INSTALL.md"), "w", newline="\n").write(install_md)
 
 
 
@@ -300,44 +315,44 @@ if manifest["arch"] in ("armv7", "aarch64"):
     for k, v in (("description", a.about), ("license", a.license), ("url", "https://github.com/" + a.repo if a.repo else "")):
         if v:
             pj[k] = v
-    open(os.path.join(pdir, "plugin.json"), "w").write(json.dumps(pj, indent=2) + "\n")
+    open(os.path.join(pdir, "plugin.json"), "w", newline="\n").write(json.dumps(pj, indent=2) + "\n")
     manifest["vst2"] = True
-open(os.path.join(root, "mpc-plugin.json"), "w").write(json.dumps(manifest, indent=2) + "\n")
+open(os.path.join(root, "mpc-plugin.json"), "w", newline="\n").write(json.dumps(manifest, indent=2) + "\n")
 # a copy travels with the installed folder, so a device-side manager can tell which version is installed
-open(os.path.join(pdir, "mpc-plugin.json"), "w").write(json.dumps(manifest, indent=2) + "\n")
+open(os.path.join(pdir, "mpc-plugin.json"), "w", newline="\n").write(json.dumps(manifest, indent=2) + "\n")
 
 # MODES: the executable files and symlinks inside the plugin folder (tab separated: "x<TAB>path", "l<TAB>path<TAB>target").
 # A zip unpacked on Windows, or copied file by file, loses exec bits and turns symlinks into small text files; install.sh
 # re-applies this list after copying so an engine's bundled binaries (yt-dlp, ffmpeg, a private Python) still run.
 modes = []
 for p in walk(pdir):
-    rel = os.path.relpath(p, pdir)
+    rel = zip_rel(p, pdir)
     if "\t" in rel or "\n" in rel:
         raise SystemExit("a file name with a tab or newline can't go in MODES: %r" % rel)
     if os.path.islink(p):
         modes.append("l\t%s\t%s" % (rel, os.readlink(p)))
-    elif os.stat(p).st_mode & stat.S_IXUSR:
+    elif executable(p):
         modes.append("x\t" + rel)
 open(os.path.join(root, "MODES"), "w", newline="\n").write("\n".join(modes) + ("\n" if modes else ""))
 
 sums = []
 for p in walk(root):
     if not os.path.islink(p):
-        sums.append("%s  %s" % (hashlib.sha256(open(p, "rb").read()).hexdigest(), os.path.relpath(p, root)))
-open(os.path.join(root, "SHA256SUMS"), "w").write("\n".join(sums) + "\n")
+        sums.append("%s  %s" % (hashlib.sha256(open(p, "rb").read()).hexdigest(), zip_rel(p, root)))
+open(os.path.join(root, "SHA256SUMS"), "w", newline="\n").write("\n".join(sums) + "\n")
 
 os.makedirs(a.out, exist_ok=True)
 zpath = os.path.join(a.out, "%s-mpc-%s.zip" % (top, "aarch64" if manifest["arch"] == "aarch64" else "armv7"))   # -mpc-armv7.zip (Gen1) or -mpc-aarch64.zip (Gen2)
 with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
     for p in walk(root):
-        info = zipfile.ZipInfo(os.path.relpath(p, stage), date_time=(2026, 1, 1, 0, 0, 0))
+        info = zipfile.ZipInfo(zip_rel(p, stage), date_time=(2026, 1, 1, 0, 0, 0))
         info.create_system = 3   # unix, so modes and symlinks survive
         if os.path.islink(p):
             info.external_attr = (stat.S_IFLNK | 0o777) << 16
             z.writestr(info, os.readlink(p))
         else:
             info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = (stat.S_IFREG | (0o755 if os.stat(p).st_mode & stat.S_IXUSR else 0o644)) << 16
+            info.external_attr = (stat.S_IFREG | (0o755 if executable(p) else 0o644)) << 16
             with open(p, "rb") as f:
                 z.writestr(info, f.read())
 shutil.rmtree(stage)
