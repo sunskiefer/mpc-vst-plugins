@@ -171,7 +171,9 @@ the SDK's path (`VST/<slug>-arm32.so`). The SDK finds its folder by walking up f
 3.9.1 too. The 3.9.1 plugin-list entry comes from plugin.json (a four-character uid such as "MxSy" becomes 4d785379). It runs
 `release.py --so-path`, so every check and the install scripts are the usual ones; `tools/sdk_zip.py` then joins the zips back into
 the SDK zip with the same paths. A plugin without `Plugin Skins/TUI.json` and `version.xml` is refused. Extra options (`--bench`,
-`--user-data` ...) go on to release.py. Tests: `tools/test_sdk_release.py`. In CI: `vst-release.yml` with `sdk_project` ("Releasing from CI"). A release with only the SDK zip is converted by the catalog itself (docs/CATALOG.md).
+`--user-data` ...) go on to release.py. Tests: `tools/test_sdk_release.py`. In CI: `vst-release.yml` with `sdk_project` ("Releasing from CI"). A release with only the SDK zip is converted by the catalog itself (docs/CATALOG.md). On Windows (2026-11-14): `release.py` writes `/` paths in the zip, `SHA256SUMS` and
+`MODES`, LF line endings, and takes ELF binaries and `#!` scripts as executable (Windows has no exec bits); clone this repo with
+`core.autocrlf false`, or the canonical `install.sh` / `plugin_list.awk` go into the zip with CRLF and fail the identity check.
 
 ## Renaming a plugin (2026-11-13)
 On MPC OS 3.10.1 a plugin's folder must be `<maker> - VST - <name>`, so a new name is a new folder. Release it with the reusable
