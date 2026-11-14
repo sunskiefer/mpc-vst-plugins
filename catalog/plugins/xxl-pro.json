@@ -17,6 +17,6 @@
  ],
  "license": "GPL-3.0-or-later",
  "asset_pattern": "XXL-Pro-[0-9]*-mpc-armv7.zip",
- "screenshot": "https://raw.githubusercontent.com/sunskiefer/XXL-Strips/xxl-pro-v0.1.0/XXL-Pro/docs/img/view_00_overview.png",
+ "screenshot": "https://raw.githubusercontent.com/sunskiefer/XXL-Strips/xxl-v0.1/XXL-Pro/docs/img/view_00_overview.png",
  "summary": "Fifteen process modules in the style of classic studio gear in one effect, joined on a touch patch bay: six compressors, five EQs with a preamp, two tape machines and two digital reverbs. Patch any module into any other, in series or parallel. 59 presets. By L'Cronx, GPL-3. Not endorsed by the makers of the originals."
 }
