@@ -2641,3 +2641,17 @@ with `head -c 4 | od -An -c`, which BusyBox 1.36.1 does not have (`head: invalid
 died with "the .so came out empty or broken" (exit 1) and the manager's APPLY went back to idle without restarting. The payload was
 fine. Fixed with `dd bs=1 skip=1 count=3` compared to `ELF` (installs on the device, 8808-byte `.so`); `test_script.sh` now fails on
 `head -c` / `od -A`. The catalog still pinned the old script until its pin moved to the fixed commit.
+
+## 2026-11-15: Plugin Manager 1.3.0 + Addin Restore 1.2.0 on a Live III (device, Gen2, MPC OS 3.10.1)
+Test of the 16-pad patch with the manager's detached APPLY and `also_installs`. Start: patch applied, old Addin Restore, manager 1.1.x.
+- **Passed:** manager 1.3.0 installs (`install.sh -t '/nvme/VST2 Plugins'`, ABOUT shows 1.3.0). Detached APPLY of the 16-pad patch restarted MPC
+  and the page showed "applied while MPC restarted. Now: patched.", 16 lit pads on 6W6, exe md5 `f9f37837...`. After a full reboot (no stick) Addin Restore
+  1.2.0 logged "16-pad drop-in written (reapply exit 0)", restarted MPC once, both drop-ins and the five addins came back, pads lit.
+  `mpc-drum-pad-patch.sh uninstall` (by SSH) restarted MPC to stock md5 `b24b7955...`, Addin Restore stayed.
+- **Failed, fixed (PR #921):** the `also_installs` step died with exit 1 (BusyBox has no `head -c` / `od -A`, see the entry above); APPLY returned
+  to idle with no restart. Worked once Addin Restore was installed by hand.
+- **Failed, fixed in the script (same PR as this entry):** after the patch is on, the manager's CHECK/UNDO read "unsupported". Inside MPC's mount
+  namespace `/usr/bin/MPC` is the patched copy (checksum `f9f37837...`, no stock build), so the script found an unknown build. The on-screen UNDO was not
+  tested until the fixed script is pinned in the catalog.
+- **Open (plugin-manager):** pressing APPLY again while the detached restart is slow launched it three times (three `openmpcpm-apply-*` units); no
+  "restarting" feedback, so it looked as if nothing was happening.
