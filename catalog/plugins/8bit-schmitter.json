@@ -1,0 +1,16 @@
+{
+  "id": "8bit-schmitter",
+  "name": "8Bit Schmitter Studio",
+  "author": "Tinythingz",
+  "repo": "Tinythingz/The-8bit-Schmitter",
+  "kind": "instrument",
+  "license": "MIT",
+  "summary": "CMOS-inspired drone synth with four voices, two six-step sequencers, a modulation matrix and Clouds-derived effects.",
+  "style": "synth",
+  "tags": [
+    "drone",
+    "sequencer",
+    "modulation"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/Tinythingz/The-8bit-Schmitter/b582294a2cccff88be86b8fec4a6aedce750c0f8/full-schmitt.png"
+}
