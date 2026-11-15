@@ -2634,3 +2634,10 @@ in apply.sh. Not yet checked on a device. A local zip whose `mpc-plugin.json` ha
 - **Offline:** 12 library cases under ASan/UBSan, the script's status/install/update (of a stand-in and of the real 1.1.0)/uninstall in
   Docker for both CPUs, 21 manifest tests. **Not yet on a device:** a Live III reboot with both installed (expect one restart, then
   PATCHED), and a reboot with addins and the 16-pad patch together.
+
+## 2026-11-15: Addin Restore 1.2.0 install failed on the device: `head -c` / `od -A` (device, Live III, MPC OS 3.10.1)
+Found in the Plugin Manager 1.3.0 device test. The 16-pad patch's APPLY installs Addin Restore first; its script checked the new `.so`
+with `head -c 4 | od -An -c`, which BusyBox 1.36.1 does not have (`head: invalid option -- 'c'`, `od: invalid option -- 'A'`), so it
+died with "the .so came out empty or broken" (exit 1) and the manager's APPLY went back to idle without restarting. The payload was
+fine. Fixed with `dd bs=1 skip=1 count=3` compared to `ELF` (installs on the device, 8808-byte `.so`); `test_script.sh` now fails on
+`head -c` / `od -A`. The catalog still pinned the old script until its pin moved to the fixed commit.

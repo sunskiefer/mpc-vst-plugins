@@ -150,14 +150,14 @@ cmd_install() {
     write_lua "$dir/addin_restore.lua.new"
     write_so  "$dir/addin_restore.so.new"
     write_ini "$dir/addin_restore.ini.new"
-    [ "$(head -c 4 "$dir/addin_restore.so.new" | od -An -c | tr -d ' ')" = "177ELF" ] || { rm -f "$dir"/addin_restore.*.new; die "the .so came out empty or broken (is openssl on this device?); nothing was changed"; }
+    [ "$(dd if="$dir/addin_restore.so.new" bs=1 skip=1 count=3 2>/dev/null)" = "ELF" ] || { rm -f "$dir"/addin_restore.*.new; die "the .so came out empty or broken (is openssl on this device?); nothing was changed"; }
     chmod 644 "$dir/addin_restore.lua.new" "$dir/addin_restore.ini.new"
     chmod 755 "$dir/addin_restore.so.new"
     for f in lua so ini; do mv "$dir/addin_restore.$f.new" "$dir/addin_restore.$f" || die "could not put addin_restore.$f in place"; done
     # Verify
     [ -f "$dir/addin_restore.lua" ] || die "lua not written"
     [ -f "$dir/addin_restore.so" ]  || die "so not written"
-    [ -s "$dir/addin_restore.so" ] && [ "$(head -c 4 "$dir/addin_restore.so" | od -An -c | tr -d ' ')" = "177ELF" ] || { rm -f "$dir/addin_restore.lua" "$dir/addin_restore.so" "$dir/addin_restore.ini"; die "the .so came out empty or broken (is openssl on this device?); nothing was installed"; }
+    [ -s "$dir/addin_restore.so" ] && [ "$(dd if="$dir/addin_restore.so" bs=1 skip=1 count=3 2>/dev/null)" = "ELF" ] || { rm -f "$dir/addin_restore.lua" "$dir/addin_restore.so" "$dir/addin_restore.ini"; die "the .so came out empty or broken (is openssl on this device?); nothing was installed"; }
     [ -f "$dir/addin_restore.ini" ] || die "ini not written"
     so_size=$(wc -c < "$dir/addin_restore.so")
     echo "Installed ($so_size bytes .so). MPC will pick it up at the next start."
