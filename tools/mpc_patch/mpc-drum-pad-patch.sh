@@ -355,6 +355,10 @@ g2_need() {
     [ -n "$G2_TEST" ] || { [ "$(id -u)" = 0 ] || die "run as root on the device"; command -v systemctl >/dev/null || die "systemctl not found (not an MPC OS device?)"; }
     SRC=$(g2_source); [ -f "$SRC" ] || die "$SRC not found"
     SRC_MD5=$(md5 "$SRC")
+    # Run from inside MPC (the Plugin Manager's CHECK/UNDO are children of MPC), /usr/bin/MPC is OUR patched copy, bind-mounted by the
+    # drop-in: its checksum is a patched one, not a stock one (device, Live III 3.10.1, 2026-11-15: "unsupported"). Our own copy and
+    # the stock checksum it was made from are recorded in $G2, so use that.
+    if [ -f "$G2/MPC" ] && [ -f "$G2/STOCK" ] && [ "$SRC_MD5" = "$(md5 "$G2/MPC")" ]; then SRC_MD5=$(cat "$G2/STOCK"); fi
     g2_pick "$SRC_MD5" && return 0
     G2_ID=; return 1
 }

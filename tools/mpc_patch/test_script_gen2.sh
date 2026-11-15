@@ -34,6 +34,8 @@ for B in ${BUILDS:-3.9.1 3.10.0 3.10.1}; do
     grep -q "BindReadOnlyPaths=/t/w/g2/MPC:/usr/bin/MPC" /t/w/dd/94-mpc-drumpad.conf; check "  drop-in binds the copy" $? 0
     [ "$(ls /t/w/dd | head -n 1)" = 94-mpc-drumpad.conf ]; check "  drop-in sorts first" $? 0
     out=$(run $ROOT status); echo "$out" | grep -q 'PATCHED and running'; check "status after install" $? 0
+    out=$(run /t/w/g2/MPC status); echo "$out" | grep -q "state=patched supported=1"; check "status from inside MPC (the root MPC is our copy)" $? 0
+    out=$(run /t/w/g2/MPC reapply); echo "$out" | grep -q 'drop-in written'; check "  reapply from inside MPC" $? 0
     out=$(echo PATCH | run $ROOT install); echo "$out" | grep -q 'Already patched'; check "second install is a no-op" $? 0
     rm /t/w/dd/94-mpc-drumpad.conf   # a reboot clears /run
     out=$(run $ROOT status); echo "$out" | grep -q 'not active'; check "after a reboot: prepared, not active" $? 0
