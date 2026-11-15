@@ -91,7 +91,7 @@ Warnings (need a human look): `install.sh`/`uninstall.sh`/`plugin_list.awk` diff
   "style": "synth", "tags": ["poly"], "source_available": false,
   "screenshot": "optional https URL", "youtube": "optional https://youtu.be/... link", "asset_pattern": "*-mpc-armv7.zip" }
 ```
-`youtube` (optional) is a `youtube.com` or `youtu.be` https link (a video or playlist, at most 200 characters, no spaces); `catalog.json` copies it
+`tip` (optional) is an https tip-jar link (ko-fi.com, buymeacoffee.com, github.com/sponsors, patreon.com, liberapay.com, paypal.me, opencollective.com); `catalog.json` copies it and the popup shows a Tip button. `youtube` (optional) is a `youtube.com` or `youtu.be` https link (a video or playlist, at most 200 characters, no spaces); `catalog.json` copies it
 to the plugin item and the catalog page's popup shows a Video button next to Copy link. `style` (one slug) and `tags` (slugs) are optional and drive the site filters. `role` is optional, `"midi"` only, and only on an `instrument`: the plugin is a MIDI generator or sequencer that plays other tracks (or outboard gear) rather than making its own sound; the catalog page and the installer list it under their MIDI tab instead of Instruments. A synth with a built-in arpeggiator is not `midi`. `source_available: true` is required
 when `license` is not on the open-source list; the site shows a "Restricted use" badge.
 No version fields: they are read from the releases (or, for `build-yourself`, the git tags). `id` must equal the manifest `id`, `repo` the manifest

@@ -114,6 +114,8 @@ def check_entry(e, fname=None):
         p.append("flags_reviewed must list risky-call categories a maintainer has reviewed: %s" % ", ".join(catalog_check.RISKY_CALLS))
     if "youtube" in e and not (isinstance(e["youtube"], str) and YOUTUBE.fullmatch(e["youtube"])):
         p.append("youtube must be an https://youtube.com/... or https://youtu.be/... link (a video or playlist; no spaces, at most 200 characters)")
+    if "tip" in e and not (isinstance(e["tip"], str) and TIP.fullmatch(e["tip"])):
+        p.append("tip must be an https link to ko-fi.com, buymeacoffee.com, github.com/sponsors, patreon.com, liberapay.com, paypal.me or opencollective.com (no spaces, at most 200 characters)")
     if "collection" in e and not (isinstance(e["collection"], str) and ID.fullmatch(e["collection"])):
         p.append("collection must be the id of a file in catalog/collections/ (a lowercase slug)")
     if "featured" in e and not isinstance(e["featured"], bool):
@@ -144,6 +146,7 @@ def check_entry(e, fname=None):
     return p
 
 
+TIP = re.compile(r"https://(?:ko-fi\.com|(?:www\.)?buymeacoffee\.com|github\.com/sponsors|(?:www\.)?patreon\.com|liberapay\.com|(?:www\.)?paypal\.me|opencollective\.com)/[^\s]{2,150}")   # the optional "tip" line
 YOUTUBE = re.compile(r"https://(?:(?:www\.|m\.|music\.)?youtube\.com/|youtu\.be/)[^\s]{4,170}")   # the optional "youtube" line of a registry entry
 GEN2_DEVICE = re.compile(r"gen\s*2", re.I)   # a tested.json device naming Gen2, e.g. "MPC Live III (Gen2)" (docs/GEN2.md)
 SAMPLE_DEVICE = re.compile(r"mpc\s*sample", re.I)   # a tested.json device naming the MPC Sample (its own badge, not Gen2)
@@ -933,7 +936,7 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
         versions.sort(key=lambda v: deps.key(v["version"]), reverse=True)
         versions = versions[:keep]
         item = {k: e[k] for k in ("id", "name", "author", "repo", "kind", "license", "summary") }
-        for k in ("screenshot", "homepage", "style", "role", "devices", "youtube", "min_os"):
+        for k in ("screenshot", "homepage", "style", "role", "devices", "youtube", "tip", "min_os"):
             if e.get(k):
                 item[k] = e[k]
         col = (collections or {}).get(e.get("collection"))

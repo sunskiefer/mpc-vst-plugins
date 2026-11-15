@@ -64,9 +64,13 @@ def patch_pages(doc, root):
                 ("Script", '<a href="%s">%s</a>, sha256 <code>%s</code>' % (e(p["script"]["url"]), e(os.path.basename(p["script"]["url"])), e(p["script"]["sha256"])), True)]
         dl = "".join("<dt>%s</dt><dd>%s</dd>" % (r[0], r[1] if len(r) == 3 else e(r[1])) for r in rows)
         fw = '<p class="fw" role="note"><strong>UNTESTED on a device by this project.</strong> Testers wanted (issue #150).</p>' if "UNTESTED" in p["summary"] else ""
-        cards.append('<article class="card"><header><div><h2>%s</h2><div class="by">by %s</div></div></header><div class="tags">%s</div><p>%s</p>%s'
+        arch = sup.get("arch", "")
+        pill = lambda on, l, t: '<span class="tag compat%s" title="%s">%s</span>' % (" on" if on else "", e(t), l)
+        compat = ('<div class="verbox"><div class="compatrow">%s%s</div></div>' %
+                  (pill("armv7l" in arch, "Gen1", "Patch for Gen1 MPCs and the Force (armv7l)."), pill("aarch64" in arch, "Gen2", "Patch for Gen2 MPCs (aarch64).")))
+        cards.append('<article class="card"><header><div><h2>%s</h2><div class="by">by %s</div></div>%s</header><div class="tags">%s</div><p>%s</p>%s'
                      '<dl class="meta">%s</dl><div class="actions"><a class="btn-l primary" href="patch-%s.html">Read the guide</a></div></article>'
-                     % (e(p["title"]), e(p["author"]), "".join(tags), e(summary), fw, dl, e(p["id"])))
+                     % (e(p["title"]), e(p["author"]), compat, "".join(tags), e(summary), fw, dl, e(p["id"])))
         guide = os.path.join(root, p["docs"])
         src = open(guide, encoding="utf-8").read() if os.path.isfile(guide) else "The guide is `%s` in the repository." % p["docs"]
         lines = src.splitlines()
