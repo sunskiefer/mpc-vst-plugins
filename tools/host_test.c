@@ -1,6 +1,6 @@
 /* Offline x86 host test for a port built on wrapper/vst2_wrap.c: link it with the wrapper, the engine
  * (and its adapter) and the port's generated params.h -- tools/test_port.sh does all that -- and run
- * under ASan. Checks two independent instances, names/display for every param, a set/get round
+ * under ASan. Checks two independent instances, names/display and effCanBeAutomated for every param, a set/get round
  * trip, option selection, popup open/close, note -> audio, chunk save/restore, step_of on an option list and, with
  * HAS_TRANSPORT, play/stop/jump-back (poc/steptest). Exit 1 on failure. */
 #include <stdio.h>
@@ -468,6 +468,15 @@ int main(void) {
         named += s[0] != 0;
     }
     CHECK(named == a->npar, "every param has a name (%d/%d)", named, a->npar);
+    {   /* effCanBeAutomated (26) follows params.json "automatable" (default true), and says no past the end */
+        int match = 0, off = 0;
+        for (int i = 0; i < NPARAMS; i++) {
+            match += (a->d(a, 26, i, 0, 0, 0) != 0) == (PARAMS[i].automatable != 0);
+            off += !PARAMS[i].automatable;
+        }
+        CHECK(match == NPARAMS && !a->d(a, 26, NPARAMS, 0, 0, 0) && !a->d(a, 26, -1, 0, 0, 0),
+              "effCanBeAutomated follows \"automatable\" (%d/%d; %d not automatable)", match, NPARAMS, off);
+    }
 
     int cont = -1, en = -1, pop = -1;
     for (int i = 0; i < NPARAMS; i++) {

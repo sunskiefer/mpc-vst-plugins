@@ -921,7 +921,8 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
     case effGetVendorString: copy_str(p, PLUG_VENDOR, 32); return 1;
     case effGetVendorVersion: return PLUG_VERSION;
     case effGetVstVersion: return 2400;
-    case effCanBeAutomated: return idx >= 0 && idx < NPARAMS;
+    /* MPC asks once per param at load and caches it: only a yes can be automated or get a lane (params.json "automatable": false) */
+    case effCanBeAutomated: return idx >= 0 && idx < NPARAMS && PARAMS[idx].automatable;
     case effGetParamName:
         if (idx >= 0 && idx < NPARAMS) param_name_text(w, idx, p, 32);
         return 1;

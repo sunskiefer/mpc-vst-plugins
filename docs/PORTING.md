@@ -124,6 +124,12 @@ for the pattern). This applies to every future port, not just ones that hit the 
       page, "next" at the end of a list) must do nothing in the engine: clamp and ignore it there. `setParameter` still
       arrives for a param that isn't automatable. A button with an empty on/off image draws MPC's generic "Button"
       caption: give it real artwork.
+- [ ] `"automatable": false` on a param makes the wrapper answer no to `effCanBeAutomated` for it (default true: every param can be
+      automated), so MPC leaves it out of its automation lists and lanes. Use it only for UI plumbing: a file or model browser, page
+      and prev/next buttons, readouts and status text, where a recorded move would fire an action or mean nothing. MPC asks once per
+      param when the plugin loads and caches the answer, so set it before the first release: turning it off later drops the
+      automation lanes saved projects have for that param. Unverified (offline only, 2026-11-15): whether a non-automatable param
+      still answers a skin's Q-Link and MIDI CC/NRPN on the device. Check one on hardware before flagging a param that a Q-Link drives.
 - [ ] Display strings are the only dynamic text channel into the skin (see NOTES on refresh behaviour).
       A param whose `get_param()` returns real text (a name, a status message), not a number, needs
       `"display": "string"` in its parameter entry -- otherwise the wrapper's default numeric

@@ -184,6 +184,9 @@ Parameter entries feeding `gen_vst.py` (`tools/params.py` format) can carry:
   on each one, which broke Q-Links on the automation screen (NOTES 2026-10-21). Polled readouts catch up within 100 ms.
   A param that other unpolled text depends on (a machine selector behind `dynamic_name` labels, a `"poll": false`
   readout bound with `get=`, or a `when=` panel that follows a param the engine derives from this one) takes `"refresh_display": true` to ask for one on its writes. `step_of` buttons always ask.
+- `"automatable": false` -- `param_t.automatable`: `effCanBeAutomated` says no, keeping UI plumbing (browsers, page and prev/next
+  buttons, readouts) out of MPC's automation lists. MPC caches it at load, so turning it off later drops saved lanes; Q-Link/CC
+  response of such a param is not yet checked on a device (docs/PORTING.md section 2).
 - `vst.json`'s `"tile"` (a 270x110 PNG) becomes `Plugin Skins/browser_images/soundsmode.png` plus
   `Presets/0000-Default.xpl` in the skin folder (`tools/xpl.py`): the Sounds > INSTRUMENTS browser draws the
   artwork and a tap opens the plugin. MPC indexes `Presets/` at startup, so a new preset file needs a restart.
