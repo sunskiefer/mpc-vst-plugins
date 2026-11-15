@@ -1,0 +1,17 @@
+{
+  "id": "spectral-sidechain",
+  "name": "DAVIS Spectral Sidechain",
+  "author": "elizmita",
+  "repo": "elizmita/davis-spectral-sidechain",
+  "kind": "effect",
+  "license": "MIT",
+  "summary": "One-band sidechain dynamic EQ: the kick ducks the bass frequencies, with a live spectrum display and a touchscreen skin.",
+  "style": "eq",
+  "tags": [
+    "sidechain",
+    "dynamic-eq",
+    "eq"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/elizmita/davis-spectral-sidechain/spectral-sidechain-vst-v1.4.2/docs/preview.png",
+  "asset_pattern": "Spectral-Sidechain-*-mpc-armv7.zip"
+}
