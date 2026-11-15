@@ -82,17 +82,20 @@ with sync_playwright() as p:
     # Gen2 (docs/GEN2.md): the badge, the filter and the two download buttons come from the version's gen2 flag and assets{}
     pg.goto(URL)
     check("device filter exists", pg.locator("#f-gen").count() == 1)
-    gen2_cards = pg.locator("#grid article.card:has(.tag.gen)").count()
+    GEN2_ON = ".compatrow .tag.compat.on:has-text('Gen2')"   # the Gen2 pill is lit when the newest release has a Gen2 build
+    gen2_cards = pg.locator("#grid article.card:has(%s)" % GEN2_ON).count()
     for val, want in (("gen2", True), ("gen1", False)):
         pg.select_option("#f-gen", val)
         cards = pg.locator("#grid article.card")
-        wrong = [i for i in range(cards.count()) if (cards.nth(i).locator(".tag.gen").count() == 1) != want]
+        wrong = [i for i in range(cards.count()) if (cards.nth(i).locator(GEN2_ON).count() == 1) != want]
         check("device filter %s shows only the matching cards" % val, not wrong, str(wrong))
         if val == "gen2":
             check("the Gen2 filter shows the cards that have the badge", cards.count() == gen2_cards, "%d vs %d" % (cards.count(), gen2_cards))
             if cards.count():
-                check("a Gen2 card has both download buttons",
-                      cards.first.locator("a.btn-l:has-text('Gen1')").count() == 1 and cards.first.locator("a.btn-l:has-text('Gen2')").count() == 1)
+                check("a Gen2 card has one Download menu with both builds in it",
+                      cards.first.locator("details.dlmenu").count() == 1 and cards.first.locator(".dlpop a:has-text('Gen1')").count() == 1 and cards.first.locator(".dlpop a:has-text('Gen2')").count() == 1)
+                check("a Gen2 card's compatibility pills light Gen1 and Gen2",
+                      cards.first.locator(".compatrow .tag.compat.on:has-text('Gen1')").count() == 1 and cards.first.locator(".compatrow .tag.compat.on:has-text('Gen2')").count() == 1)
     pg.select_option("#f-gen", "")
     # Trust tiers: experimental is hidden by default, shown by the Tier filter or "Show them"; Recommended puts featured, then Verified, first.
     pg.goto(URL); pg.reload()
@@ -124,8 +127,8 @@ with sync_playwright() as p:
           smp.locator(".tag.tier-verified").all_text_contents() == ["Verified Sample"], str(smp.locator(".tag.tier-verified").all_text_contents()))
     check("a plugin for the MPC Sample only says so", smp.locator(".tag:has-text('MPC Sample only')").count() == 1
           and smp.locator(".tag:has-text('Gen2')").count() == 0, smp.inner_text()[:200])
-    dl = smp.locator("a.btn-l:has-text('Download')").all_text_contents()
-    check("a plugin for the MPC Sample only has one download, named for the Sample", dl == ["Download (MPC Sample)"], str(dl))
+    dl = smp.locator("details.dlmenu .dlpop a").all_text_contents()
+    check("a plugin for the MPC Sample only has one download (a one-item menu), named for the Sample", len(dl) == 1 and dl[0].startswith("MPC Sample"), str(dl))
     pg.click('[data-plat=""]'); pg.click("#tab-all")
     for val, gen in (("verified-gen1", "gen1"), ("verified-gen2", "gen2"), ("verified-sample", "sample")):
         pg.click('[data-plat="%s"]' % ("sample" if gen == "sample" else "")); pg.select_option("#f-tier", val)

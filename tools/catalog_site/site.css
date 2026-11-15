@@ -116,6 +116,22 @@ body.modal-open { overflow: hidden; }
 .btn-l { font: 600 14px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
   padding: 11px 15px; border-radius: var(--radius); border: 1px solid var(--line); color: var(--fg); background: var(--panel-2); }
 .btn-l.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.btn-l small { display: block; margin-top: 5px; font: 500 11px/1.2 var(--body, system-ui, sans-serif); letter-spacing: .02em; text-transform: none; opacity: .85; }
+.tag.compat { opacity: .4; border-style: dashed; font-weight: 500; }
+.tag.compat.on { opacity: 1; border-style: solid; font-weight: 700; color: var(--lcd-fg); background: var(--lcd-bg); border-color: var(--lcd-bg); }
+.verbox { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.compatrow { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; }
+.compatrow .tag { padding: 4px 6px; font-size: 10px; }
+.dlmenu { position: relative; display: flex; }
+.dlmenu > summary { list-style: none; cursor: pointer; flex: 1; display: flex; align-items: center; }
+.dlmenu > summary::-webkit-details-marker { display: none; }
+.dlmenu > summary::after { content: " \25BE"; }
+.dlpop { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 260px; display: flex; flex-direction: column; padding: 4px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.dlpop a { padding: 9px 10px; border-radius: var(--radius); color: var(--fg); text-decoration: none; font-size: 14px; }
+.dlpop a:hover, .dlpop a:focus-visible { background: var(--panel-2); }
+.dlpop a b { display: block; font-weight: 600; }
+.dlpop a small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
 .empty { color: var(--muted); padding: 24px 0; }
 footer { margin-top: 36px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
 @media (max-width: 640px) { .mast { grid-template-columns: minmax(0, 1fr); } .mpc { max-width: 380px; } }

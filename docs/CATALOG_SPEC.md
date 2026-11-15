@@ -171,8 +171,8 @@ aarch64 zip (a reader that knows no `gen2_only` still parses it); in `catalog.ts
 `plugin.json` naming a `.so` inside it (that folder copies straight into `VST2 Plugins`); `assets.sdk: {url, size, sha256}` when the release also has a `*-mpc-sdk.zip` (`tools/sdk_zip.py`: one folder
 for every MPC) that holds exactly the `vst2.folder` with the binaries its `plugin.json` names (a bad one is a warning, not listed). Clients that
 read `assets` by `armv7`/`aarch64` are unaffected: checked with `tools/compat/run.sh` against Plugin Manager 0.2.0/0.2.5/1.0.0 and
-installers 0.5.5/1.1.2/2.0.0, all showing the same as without these fields. These fields only drive the site's "Download (3.10.1 format)"
-download (for copying by hand): the Plugin Manager 1.0 installs every plugin on 3.10.1 whatever its zip holds (it writes the `plugin.json`),
+installers 0.5.5/1.1.2/2.0.0, all showing the same as without these fields. These fields only drive the site's "MPC OS 3.10.1 or later"
+entry in the card's Download menu (for copying by hand): the Plugin Manager 1.0 installs every plugin on 3.10.1 whatever its zip holds (it writes the `plugin.json`),
 so the site shows no per-plugin "3.10.1" badge. Whether a plugin was tried on 3.10.1 is in its `tested` entries and Works for me reports.
 `defer` is true when the zip's `install.sh` understands `-n` (the caller stops and starts MPC), false for an older installer that restarts MPC by
 itself; batch installers (the desktop app, `mpc-store.sh`) run such a zip separately and use the flag to say how often MPC will restart.

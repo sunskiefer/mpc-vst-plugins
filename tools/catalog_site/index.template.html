@@ -25,7 +25,7 @@
         <ul>
           <li>The <a href="install.html">Plugin Manager</a> installs every plugin here into VST2 Plugins.</li>
           <li>Already have plugins? Press <strong>Move</strong> in the Plugin Manager to bring them over.</li>
-          <li>Copying by hand? Use a card's <strong>Download (3.10.1 format)</strong> where there is one.</li>
+          <li>Copying by hand? Use a card's <strong>Download (3.10.1 or later)</strong> where there is one.</li>
           <li>The other downloads are installer zips for MPC OS 3.9.1 and earlier.</li>
         </ul>
         <a href="faq.html">More in the FAQ</a></div>
@@ -288,6 +288,14 @@ function genTag(v) {
   if (v.gen2_only) return '<span class="tag gen" title="' + esc("Built for Gen2 (aarch64) MPC devices only: MPC Live III, One G2, Key G2, XL. " + (tested2(v) ? "Tested on a Gen2 unit." : "Not yet tested on a Gen2 unit.")) + '">Gen2 only</span>';
   return '<span class="tag gen" title="' + esc("Also built for Gen2 (aarch64) MPC devices. " + (tested2(v) ? "Tested on a Gen2 unit." : "Not yet tested on a Gen2 unit.")) + '">Gen2 build</span>';
 }
+/* Compatibility badges, always the same three in the same order: lit (blue) when the newest release ships a build for it, faded when not. */
+function compatRow(v) {
+  var has = { g1: !v.gen2_only, g2: !!(v.gen2 || v.gen2_only), n: !!(v.vst2 && v.assets && v.assets.sdk) };
+  function b(on, label, yes, no) { return '<span class="tag compat' + (on ? " on" : "") + '" title="' + esc(on ? yes : no) + '">' + label + '</span>'; }
+  return '<div class="compatrow">' + b(has.g1, "Gen1", "Has a build for Gen1 MPCs (Live, Live II, One, X, Key 61/37) and the Force, MPC OS 3.10 or earlier.", "No Gen1 build.") +
+    b(has.g2, "Gen2", "Has a build for Gen2 MPCs (Live III, One G2, Key G2, XL), MPC OS 3.10 or earlier.", "No Gen2 build.") +
+    b(has.n, "OS 3.10.1+", "Has the MPC OS 3.10.1 folder format: copy it straight into VST2 Plugins.", "No MPC OS 3.10.1 folder download yet (the Plugin Manager still installs it).") + '</div>';
+}
 function genRow(v) {
   return v && v.gen2 ? '<dt>Gen2</dt><dd>' + (v.gen2_only ? "aarch64 only: no Gen1 or Force build (" : "aarch64 build available (") + (tested2(v) ? "tested on a Gen2 unit" : "not yet tested on a Gen2 unit") + ')</dd>' : "";
 }
@@ -396,6 +404,27 @@ function collCard(it) {
 /* The collection view (the popup, #c=<id>; share page p/c/<id>.html): every member grouped by kind, each with its install checkbox, and
    Pick all per group. Ticks go to the same install list as the cards. */
 function groupsOf(c) { return KIND_ORDER.map(function (k) { return { k: k, ps: c.mem.filter(function (p) { return tabKindOf(p) === k; }) }; }).filter(function (g) { return g.ps.length; }); }
+/* The download choices for a plugin's newest release: one plain button when there is one file, otherwise one "Download" button that opens a
+   small menu (MPC OS 3.10.1 or later first, then the older-OS builds by generation). */
+function dlButtons(p, v) {
+  if (!v) return "";
+  var devs = deviceNames(p), opts = [];
+  if (v.vst2 && v.assets && v.assets.sdk) opts.push({ url: v.assets.sdk.url, main: "MPC OS 3.10.1 or later", sub: v.gen2_only ? "Gen2 MPCs only (Live III, One G2, Key G2, XL)" : "All MPCs",
+    short: (v.gen2_only ? "Gen2" : "All MPCs") + " · 3.10.1 or later",
+    tip: "Unzip and copy the folder into VST2 Plugins on a drive, then restart MPC. Not needed with the Plugin Manager." });
+  if (!v.gen2_only && !devs.length) opts.push({ url: v.url, main: "Gen1, MPC OS 3.10 or earlier", sub: "Live, Live II, One, X, Key 61/37, Force", short: "Gen1 · 3.10 or earlier", tip: "MPC Live/One/X/Key and Force (32-bit ARM)" });
+  if (v.gen2 && v.assets && v.assets.aarch64) opts.push({ url: v.assets.aarch64.url, main: (devs.length ? devs.join(", ") : "Gen2") + ", MPC OS 3.10 or earlier", short: "Gen2 · 3.10 or earlier", sub: devs.length ? "" : "Live III, One G2, Key G2, XL",
+    tip: devs.length ? "For the " + devs.join(" and ") + " (aarch64)" : "Gen2 MPC devices (aarch64, MPC OS 3.x)" });
+  if (!opts.length) return "";
+  function item(o) { return '<a href="' + esc(o.url) + '"' + (o.tip ? ' title="' + esc(o.tip) + '"' : '') + '><b>' + esc(o.main) + '</b>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</a>'; }
+  return '<details class="dlmenu"><summary class="btn-l primary">Download</summary><div class="dlpop">' + opts.map(item).join("") + '</div></details>';
+}
+document.addEventListener("click", function (e) {
+  document.querySelectorAll("details.dlmenu[open]").forEach(function (d) { if (!d.contains(e.target)) d.open = false; });
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") document.querySelectorAll("details.dlmenu[open]").forEach(function (d) { d.open = false; });
+});
 function pickAllLabel(ps) { var can = ps.filter(canPick); return can.length && can.every(function (p) { return state.sel.indexOf(p.id) >= 0; }) ? "Unpick all" : "Pick all"; }
 function collDetail(c) {
   var best = c.mem.slice().sort(function (a, b) { return TIERS[tierOf(a)].rank - TIERS[tierOf(b)].rank; })[0];
@@ -486,7 +515,6 @@ function card(p, big) {
   if (p.source_available) tags.push('<span class="tag warn" title="Source is public but the license limits how it may be used">Restricted use</span>');
   if (!by && p.kind !== "addin" && osTag(v)) tags.push(osTag(v));
   if (deviceTag(p)) tags.push(deviceTag(p));
-  else if (!by && p.kind !== "addin" && genTag(v)) tags.push(genTag(v));
   if (!by && userFiles(v).length) tags.push('<span class="tag warn" title="' + esc("Needs files you supply: " + userFiles(v).map(function (x) { return x.label; }).join(", ")) + '">Needs your own ROM</span>');
   (p.tags || []).forEach(function (t) { if (!(by && t === "firmware-derived")) tags.push(big ? '<span class="tag">' + esc(t) + '</span>' : '<button type="button" class="tag tag-btn" data-tag="' + esc(t) + '" title="Show plugins tagged ' + esc(t) + '">' + esc(t) + '</button>'); });
   var hist = p.versions.length ? '<details class="vers fold"><summary>Versions (' + p.versions.length + ')</summary><table>' + p.versions.map(function (x) {
@@ -500,7 +528,8 @@ function card(p, big) {
   var crumb = col ? '<nav class="crumb" aria-label="Breadcrumb">Part of <a href="p/c/' + encodeURIComponent(col.id) + '.html" data-coll="' + esc(col.id) + '">' + esc(col.title) + '</a></nav>' : '';
   var head = '<article class="card' + (by ? " by" : "") + (big ? " big" : "") + '" data-tier="' + tierOf(p) + '">' + shot + crumb + '<header><div><h2' + (big ? ' id="modal-title">' + esc(p.name)
     : '><a class="open" href="p/' + encodeURIComponent(p.id) + '.html" data-open="' + esc(p.id) + '">' + esc(p.name) + '</a>') + '</h2><div class="by">by ' + esc(p.author) + '</div></div>' +
-    (v ? '<span class="ver" title="Latest ' + (by ? "tag" : esc(v.channel) + " release") + '">v' + esc(v.version) + (v.channel === "beta" ? " beta" : "") + '</span>' : '<span class="ver">' + (by ? "no tag" : "no release") + '</span>') + '</header>' +
+    '<div class="verbox">' + (v ? '<span class="ver" title="Latest ' + (by ? "tag" : esc(v.channel) + " release") + '">v' + esc(v.version) + (v.channel === "beta" ? " beta" : "") + '</span>' : '<span class="ver">' + (by ? "no tag" : "no release") + '</span>') +
+    (!by && p.kind !== "addin" && v ? compatRow(v) : "") + '</div></header>' +
     plugBar(p, big) +
     '<div class="tags">' + tags.join("") + '</div><p>' + esc(p.summary) + '</p>' + hooksLine(p) + (big && window.signalsDetail ? signalsDetail(p) : '');
   if (by) {
@@ -522,9 +551,7 @@ function card(p, big) {
       '<a class="btn-l" href="https://github.com/' + esc(p.repo) + '">Source</a></div><div class="folds">' + barLine(p) + hist + '</div></article>';
   }
   return head +
-    '<div class="actions">' + (v && !v.gen2_only && !deviceNames(p).length ? '<a class="btn-l primary" href="' + esc(v.url) + '"' + (v.gen2 ? ' title="MPC Live/One/X/Key and Force (32-bit ARM)"' : '') + '>Download' + (v.gen2 ? ' (Gen1)' : '') + '</a>' : '') +
-    (v && v.gen2 && v.assets && v.assets.aarch64 ? '<a class="btn-l primary" href="' + esc(v.assets.aarch64.url) + '" title="' + (deviceNames(p).length ? esc("For the " + deviceNames(p).join(" and ") + " (aarch64)") : 'Gen2 MPC devices (aarch64, MPC OS 3.x)') + '">Download (' + (deviceNames(p).length ? esc(deviceNames(p).join(", ")) : 'Gen2') + ')</a>' : '') +
-    (v && v.vst2 && v.assets && v.assets.sdk ? '<a class="btn-l primary" href="' + esc(v.assets.sdk.url) + '" title="' + esc("MPC OS 3.10.1 or later, " + (v.gen2_only ? "Gen2 MPCs only (Live III, One G2, Key G2, XL)" : "any MPC") + ": unzip and copy the folder into VST2 Plugins on a drive, then restart MPC. Not needed with the Plugin Manager.") + '">Download (3.10.1 format' + (v.gen2_only ? ', Gen2' : '') + ')</a>' : '') +
+    '<div class="actions">' + dlButtons(p, v) +
     '<a class="btn-l" href="https://github.com/' + esc(p.repo) + '">Source</a>' +
     (v && ID_RE.test(p.id) ? '<label class="pick"><input type="checkbox" data-pick="' + esc(p.id) + '"' + (state.sel.indexOf(p.id) >= 0 ? " checked" : "") + '> Add to install list</label>' : '') +
     '</div>' + '<div class="folds">' +

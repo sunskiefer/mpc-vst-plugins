@@ -205,8 +205,10 @@ The MPC Sample (AC50) runs MPC OS on aarch64, so it takes a release's Gen2 zip, 
 screen (the draw handler, the rack) loads and does nothing on a Live III. A registry entry can say so with `"devices": ["mpc-sample"]`
 (`DEVICES` in `catalog_build.py`; unknown ids are refused). Then:
 - `catalog.json` carries `devices`, and `catalog.tsv` a `devices` column (24th, comma list, `-` for every MPC).
-- The site shows "MPC Sample only" in place of the Gen2 tag, and a Devices row in the popup. Its one download button is named for
-  the device, "Download (MPC Sample)", with no Gen1 button (2026-11-06, offline: the site browser test). The card's badge is the device
+- The site shows "MPC Sample only" in place of the Gen2 tag, and a Devices row in the popup. Its Download menu has one item, named for
+  the device ("MPC Sample, MPC OS 3.10 or earlier"), with no Gen1 item (2026-11-06, offline: the site browser test).
+  Every card with a build also shows three fixed pills under the version (Gen1, Gen2, OS 3.10.1+): dark when the newest release
+  has that build, faded when not. The Download menu holds the files: MPC OS 3.10.1 or later (the `-mpc-sdk.zip`), then Gen1 and Gen2 for MPC OS 3.10 or earlier. The card's badge is the device
   label, so its `tags` should not repeat it (no `mpc-sample` tag).
 - The catalog page has a device switch above the section tabs, "MPC / Force" | "MPC Sample", each with its catalog-wide count (2026-11-06,
   offline: the site browser tests). MPC / Force (the default) hides the entries limited to the Sample. MPC Sample lists only entries with
