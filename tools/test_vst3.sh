@@ -23,7 +23,9 @@ SO="$ROOT/$PORT/build/vst3-san/$NAME.vst3/Contents/$ARCH/$NAME.so"
 TEST="$ROOT/$PORT/build/vst3-san/vst3_host_test"
 X11F=""
 pkg-config --exists x11 && X11F="-DHOST_X11 $(pkg-config --cflags --libs x11)"   # the editor in a hidden X11 window
-gcc -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -std=gnu11 -Wall -Wextra -I"$MV/wrapper" \
+PROBE=""
+grep -q CHUNK_PROBE "$CFG" && PROBE="-DCHUNK_PROBE"   # poc/chunktest: also round-trip a state right at the STATE_MAX limit
+gcc -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -std=gnu11 -Wall -Wextra -I"$MV/wrapper" $PROBE \
     "$MV/tools/vst3_host_test.c" -ldl -lm $X11F -o "$TEST"
 # the engine's own threads may still be winding down at exit; leaks inside the plugin show up as ASan errors either way
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST" "$SO" "${@:2}"

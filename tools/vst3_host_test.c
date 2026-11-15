@@ -371,6 +371,33 @@ static void test_state(plug_t *a) {
     free(s1.buf); free(s2.buf);
 }
 
+#ifdef CHUNK_PROBE   /* poc/chunktest: an engine whose "state" is any text, STATE_MAX 65536 */
+/* The longest state the engine can hold (STATE_MAX - 1 characters) must come back whole, with the wrapper's own program/bypass
+ * trailer, though the stream then holds the header and trailer on top of it. */
+static void test_state_limit(void) {
+    enum { LIMIT = 65536 - 1 };
+    plug_t a, b;
+    if (!plug_new(&a) || !plug_new(&b)) { CHECK(0, "state limit: instance"); return; }
+    char *text = malloc(LIMIT + 1);
+    for (int i = 0; i < LIMIT; i++) text[i] = (char)('a' + i % 26);
+    text[LIMIT] = 0;
+    mem_stream in = { &ms_vtbl, NULL, 0, 0, 0 }, out = { &ms_vtbl, NULL, 0, 0, 0 };
+    const char *trailer = "\n\x01program=0\nbypass=1\n";
+    ms_write(&in, "mpc-vst3 state\n", 15, NULL);
+    ms_write(&in, text, LIMIT, NULL);
+    ms_write(&in, (void *)trailer, (int32_t)strlen(trailer), NULL);
+    in.pos = 0;
+    CHECK(b.c->setState(b.comp, (IBStream *)&in) == kResultOk, "state limit: setState");
+    CHECK(b.c->getState(b.comp, (IBStream *)&out) == kResultOk, "state limit: getState");
+    CHECK(out.len > 15 + LIMIT && !memcmp(out.buf, "mpc-vst3 state\n", 15) && !memcmp(out.buf + 15, text, LIMIT),
+          "state limit: a %d-character state came back cut (%lld bytes)", LIMIT, (long long)out.len);
+    CHECK(out.len > 15 + LIMIT && strstr(out.buf + 15 + LIMIT, "bypass=1") != NULL, "state limit: the program/bypass trailer was lost");
+    printf("state limit: %d-character state, %lld bytes saved, round trip ok\n", LIMIT, (long long)out.len);
+    plug_free(&a); plug_free(&b);
+    free(text); free(in.buf); free(out.buf);
+}
+#endif
+
 #ifdef HOST_X11
 /* The editor in a real X11 window, as a DAW embeds it, but hidden: the parent is never mapped, so nothing shows on the
  * desktop. A fake IPlugFrame offers an IRunLoop like Reaper's; the test pumps it, clicks the page tab and then the first
@@ -570,6 +597,9 @@ int main(int argc, char **argv) {
     test_programs(&pl);
     test_midi_cc(&pl);
     test_state(&pl);
+#ifdef CHUNK_PROBE
+    test_state_limit();
+#endif
     test_editor(&pl, h, shots);
 #ifdef HOST_X11
     void *probe = pl.e->createView(pl.ctrl, "editor");   /* is there an editor? */
