@@ -38,6 +38,23 @@ New plugins start from Akai's SDK; this repo adds what the SDK doesn't do. The w
 To release an SDK-built plugin through the catalog: `tools/sdk_release.py <built folder> --version X --id ID --repo owner/name` turns the folder `<sdk>/tools/build.py` made into the catalog's per-build zips; in CI, `vst-release.yml` with `sdk_project:` builds and does it for you (MPC OS 3.9.1 registration included, SDK layout kept; docs/RELEASING.md). Before it existed, the Dexed 2 and JV-880 2 ports did this by hand (the "catalog route" notes below)
 and use `vst-release.yml`, or attach per-CPU zips made with `release.py`.
 
+## Where we differ from the SDK docs
+
+Citations in this document written as `SDK <path>:<line>` point into the vendored SDK (commit febd2ca, `vendor/mpc-plugin-builder-sdk`).
+The SDK docs describe MPC OS 3.10.1+ only; most of our device findings were made on 3.9.1, a Force or a 3.10.0 image, so "differs"
+means the two sources disagree, not that either is wrong. Status is what we know today. Nothing here was re-tested on 3.10.1 yet.
+
+| SDK says | Hub finding | Device / firmware | Status |
+|---|---|---|---|
+| `ComboBox` is empty for VST params; use `replacementStrings` plus `MenuOverlay` (SDK docs/ui-reference.md:1078-1081; "well-trodden", :1178-1181) | Native `MenuOverlay`/`ComboBox` opens empty for an external VST2 (NOTES.md "Native picker", 2026-09-24, `poc/menuprobe.c`) | Firmware not recorded in that entry; our drawn pick-lists were verified on a Live III | Open. The recorded test probed `effGetParameterProperties` and a `.vstxml` only: "even with `replacementStrings`" has no recorded test. Pending a device test on 3.10.1 (and 3.9.1 if possible) |
+| `NonZero/<h>` hides a control while `h` is zero (SDK docs/ui-reference.md:1496; recipe :1576) | `NonZero/<param>` did not hide anything (section 10 below), one line with no NOTES entry | Live III, firmware not recorded | Single unverified observation. Retest exactly as the SDK recipe; keep `IndexedEnabling` meanwhile |
+| More outputs are allowed and are routable as stereo pairs (SDK docs/host-contract.md:13; `numOutputs` 4 in the DrumSynth example) | Only the first stereo pair is heard; a track offers one audio-out setting (NOTES.md "Multiple outputs", 2026-09-30, `poc/multiout.c`) | Force, older firmware (firmware not stated; before 3.10.1) | Firmware-dependent, probably. Retest on 3.10.1 before designing a multi-out instrument |
+| Labels do not intercept touches, so a caption can sit over a button (SDK ui-kit/README.md:93) | Labels on top of Buttons swallow taps (section 4 below) | Device-tested in our ports; firmware not recorded | Open. Retest with an SDK-generated switch skin before adopting `gen_ui` output |
+| The host asks `canDo` for `receiveVstMidiEvent`, `sendVstMidiEvent`, `bypass`, `MPE` (SDK docs/host-contract.md:75) | MPC never asks `sendVstEvents`/`sendVstMidiEvent` (NOTES.md:63, probe of 2026-09-23) | Firmware not stated in that entry (3.9.1 era) | Possibly firmware; no practical effect, because the host discards the MIDI either way (SDK docs/host-contract.md:50) |
+| MPC does not browse factory `.xpl` files in a third-party plugin's folder (SDK docs/presets.md:17); preset element is `<state64>` (presets.md:27,34) | The INSTRUMENTS tile lists `<plugin folder>/Presets/*.xpl` (NOTES.md:1184); our device-saved presets use `<state>` (section 16, "Presets") | Key 37, MPC OS 3.9.1.2 | Unresolved: may be firmware (3.9.1 vs 3.10.1+) or screen (tile vs the edit screen's browser). Keep `xpl.py` for 3.9.1; retest the tile on 3.10.1 |
+| The host nudges parameter 0 on every prepare (SDK docs/host-contract.md:35) | The same toggle also happens on every STOP, because MPC re-runs prepare (NOTES.md "MPC's host toggles parameter 0", 2026-10-10) | Live II, MPC OS 3.9.1 | Extends the SDK, no conflict. Make parameter 0 harmless on every prepare, STOP included |
+| Silent on skin caching (no SDK line) | The MPC caches skins: restart `acvs` after every skin push (section 2 above; NOTES.md:1937 for the image cache) | Live III, 3.10.x | Hub-only finding; the SDK says nothing either way |
+
 ## 1. Project layout
 
 ```
@@ -79,7 +96,7 @@ docs/PLAN-*.md         plan + dated status log (what was checked on which device
 - **Favourites = VST programs**: a fixed count at load (0 = "current patch" no-op, 1..64 = slots), names changed live, applied in `reset()`
   (the audio thread, after setProgram). The voice is stored with its edits in `<plugin folder>/favourites.dat` (write .tmp + rename). Ignore the
   program re-pick right after a state load. ±FAV are momentary params. The installer must keep the file.
-- Don't use `mpc::contentPath()`/`pluginFolder()` (a function-local static std::string segfaults at dlclose in the zig/libc++ build). Use
+- Don't use `mpc::contentPath()`/`pluginFolder()` (a function-local static std::string segfaults at dlclose in the zig/libc++ build; the static is `folder` in `pluginFolder()`, SDK framework/mpc_resources.h:165-168). Use
   `mpc::detail::computePluginFolder()`.
 - Avoid static destructors in general (generated tables: `static const T& t = *new T{...}`).
 - `build.py --debug` makes zig's UBSan trap on intentional integer wraps (e.g. FM phase): use release builds or gcc for debugging.
@@ -94,8 +111,9 @@ docs/PLAN-*.md         plan + dated status log (what was checked on which device
   (one group of 32 on a param = a lit-current-item selector). `Image` FilmStrip on a param (LED digits, algorithm pictures; Image scales, so
   use smaller strips). `Label type:"Value"` for live text. `Envelope`.
 - **A single (toggle/momentary) Button needs `buttonId: 1`** (lit when step == buttonId); `buttonId: 0` leaves it permanently lit and the first tap only switches it off ("needs two presses"). Radio groups use 0..N-1. Don't set `acceptsHWFocus` Yes on buttons.
-- **Choice pick-lists: draw them, the native `MenuOverlay`/`ComboBox` opens EMPTY for an external VST2** (even with `replacementStrings`; the SDK doc is
-  wrong for us, see mpc-vst-plugins NOTES.md 2026-09-24). Recipe (verified on a Live III, Welle 2): ONE UI-only param `ui_open` (int 0..N, appended last, not
+- **Choice pick-lists: draw them, the native `MenuOverlay`/`ComboBox` opens EMPTY for an external VST2.** This disputes SDK docs/ui-reference.md:1078-1081
+  (use `replacementStrings` plus `MenuOverlay`; `MenuOverlay` is "well-trodden", :1178-1181). Our test (NOTES.md 2026-09-24, `poc/menuprobe.c`) probed
+  `effGetParameterProperties` and a `.vstxml`; **"even with `replacementStrings`" has no recorded test yet** (pending a device test, see the table above). Recipe (verified on a Live III, Welle 2): ONE UI-only param `ui_open` (int 0..N, appended last, not
   an engine key; `kUi`). The field = a Value label (the choice text) under a transparent radio `Button` on `ui_open` (buttonId k+1, numButtonsInGroup N+1).
   The list = a local component (panel image + one radio `Button` per option on the enum, text baked into the images, + an X `Button` buttonId 0 on `ui_open`),
   instanced with `Data` remapped to the enum and `bounds` v2 `additionalInvalidatingHandles: ["IndexedEnabling/<k+1>/<N+1>/Parameter <ui_open>"]`, placed
@@ -103,7 +121,7 @@ docs/PLAN-*.md         plan + dated status log (what was checked on which device
   `notifyHostParameterChanged` from a worker thread. Share the component per option list; 40 options = 5 columns.
 - **Text/momentary params: the host only re-reads text when the value changes.** Flip a text param's value when its text changes (+ `notifyHostParameterChanged`
   from the worker); for momentary tiles that show names call `requestDisplayUpdate()` once after a list change.
-- **Labels on top of Buttons swallow taps** (contrary to the doc). Bake captions into button images, or put the Label *under* a Button whose
+- **Labels on top of Buttons swallow taps** (contrary to SDK ui-kit/README.md:93; see the table above). Bake captions into button images, or put the Label *under* a Button whose
   image has a transparent middle.
 - `Label type:"Text"` with handle `Invalid` didn't render: bake fixed text into the art.
 - **Envelope (`envelopeType: "Pitch"`) is a live, draggable 5-level/4-time EG** (DX7 style): rates via `Invert/`, two handles can share
@@ -154,9 +172,10 @@ docs/PLAN-*.md         plan + dated status log (what was checked on which device
 
 ## 6. Acid 3 lessons (a MIDI generator with an ALSA port, state, and engine-driven params)
 
-- **MIDI out still goes through ALSA.** The SDK discards a plugin's VST MIDI output; a sequencer keeps its `snd_seq` port (one client per instance, "Name", "Name 2"; free the slot on close).
+- **MIDI out still goes through ALSA.** The MPC host discards a plugin's VST MIDI output (SDK docs/host-contract.md:50); the SDK framework itself does send it
+  (`flushMidiOut()` posts `audioMasterProcessEvents`, SDK framework/mpc_plugin.h:483,598-614). A sequencer keeps its `snd_seq` port (one client per instance, "Name", "Name 2"; free the slot on close).
   ALSA means the SDK's zig build cannot be used: compile arm32 (`arm32v7/gcc:11-bullseye`, glibc 2.31 so it also loads on 3.9) and arm64 (`arm64v8/gcc:12-bookworm`) with gcc in Docker against
-  `-I<sdk>/framework` and `-Wl,--version-script=<sdk>/tools/exports.map`. Debian's bullseye security repo 404s: install `libasound2-dev` from main only. The validator's "libasound not on the MPC" is
+  `-I<sdk>/framework` and `-Wl,--version-script=<sdk>/tools/exports.map`. Debian's bullseye security repo 404s: install `libasound2-dev` from main only. The validator's "libasound not on the MPC" (SDK tools/validate.py:28-29) is
   an error you can leave (both device families have `/usr/lib/libasound.so.2`).
 - **Parameter 0 is nudged to 1 and back on every prepare.** If it is a momentary trigger (Acid: GENERATE), fire it only after ~40 ms high (worker thread); a real touch tap still works (verified on a Live III).
 - **Params the engine changes by itself** (edit cells, a snapped BLEND, running lights, readouts): flag them "pushed", read them back from a worker thread (10 ms, bounded per pass, round-robin) and
@@ -208,8 +227,8 @@ Port of [sd88me/mpc-vst-cratedigger](https://github.com/sd88me/mpc-vst-cratedigg
 - **Freeze first, then append.** 103 params from the 1.x build stay in order (`vst/params.lock`); the port only appended three (`level_l`, `level_r`, `play_state`).
   Meters and status lamps are plain int params the worker updates; a skin film strip (`Image`, 11 frames) follows each. No new engine API needed.
 - **Text readouts are int params whose value text is the display.** Override `formatValue`; bump a counter param (store + `notifyHostParameterChanged`) when the text
-  changes and call `requestDisplayUpdate()` once per pass. Wrap `effGetParamDisplay` in `VSTPluginMain` if the text must exceed the SDK's 31 characters (the MPC reads 99).
-- **The host nudges parameter 0 on every prepare.** If param 0 is a stepper (Crate Digger: genre), apply a change only after it has held ~40 ms (worker), or the style list resets.
+  changes and call `requestDisplayUpdate()` once per pass. Wrap `effGetParamDisplay` in `VSTPluginMain` if the text must exceed the SDK's 31 characters (SDK framework/mpc_plugin.h:649,673: 32-byte buffer including the NUL; the MPC reads 99).
+- **The host nudges parameter 0 on every prepare** (SDK docs/host-contract.md:35; also on every STOP, NOTES.md 2026-10-10). If param 0 is a stepper (Crate Digger: genre), apply a change only after it has held ~40 ms (worker), or the style list resets.
 - **A tap on a lit toggle arrives as two events ~130 ms apart.** Flip once per tap and ignore events inside ~300 ms; radio groups (SOURCE) follow the value.
 - **External engine bundle (yt-dlp, Python, ffmpeg, ~125/180 MB):** ship it in `Content/engine`, find it with `mpc::contentPath`, run it from the plugin folder.
   The Live III's exFAT NVMe ran it in place (exec bits are honoured), so no copy was needed; keep a first-run copy to an internal folder as a fallback (untested) and still
@@ -252,7 +271,7 @@ mpc-vst-plugins' generic wrapper (`wrapper/vst2_wrap.c`, `adapters/schwung`).
 - **host_sim is not real time.** An engine with its own emulator thread and a background ROM load stays silent there (WARN, expected); check sound in
   the paced offline test. UBSan flags the vendored core's intentional left shifts of negative samples: `-fno-sanitize=shift` for those files only.
 - **zig's arm32 target has NEON** (cortex_a17) where the 1.x gcc armv7 build had none: `vaddvq_f32` (AArch64 only) broke the build; pair the halves
-  instead. Check the arm32 `.so`'s newest `GLIBC_` symbol in the build script (2.27 here, under the Force's 2.29) rather than trusting the target name (2.31).
+  instead. Check the arm32 `.so`'s newest `GLIBC_` symbol in the build script (2.27 here; the build check's own limit, not a device value: the Force reports glibc 2.39, NOTES.md:932, docs/COMPATIBILITY.md "System library") rather than trusting the target name (2.31).
 - A front-end-only momentary (no engine key) still needs a 0..1 range. With min = max = 0, every press arrives as plain 0, which reads as a release, so it never fires. JV-880 random and favourite tiles hit this.
 - Front-end functions (random patch, favourites) get their own flag (`kLocal`) and are handled before the engine path. Favourites shared across projects live in a file in the plugin folder, written to a temp file and then renamed.
 - MPC skin Buttons toggle: a tap on a lit button sends 0. A front-end function that must fire on every tap has to treat any change as a tap, or use a momentary that the plugin drops back to 0.
@@ -280,7 +299,7 @@ Euclidier 1.x ran its sequencer as a child process (clock over ALSA in, notes ov
 - **The parameter order is frozen: append.** A new choice (lane keys 1-8 + ALL) is a new parameter (`view`), not a bigger `sel`; a saved pattern is a flag plus two 16-bit halves (a float holds 24 bits exactly), hidden and not automatable. On load, order the writes: selection first, modes, everything else, and a saved pattern last (steps, fill and shift rebuild the pattern and would erase it).
 - **Display parameters are the plugin's.** Undo a write from outside (restore the value and let the worker tell the host), except while a project loads.
 - **Relative controls over an absolute parameter (an ALL view).** Keep the existing parameters: while ALL is on, the knob shows the mean of the lanes, a change adds `plain - told_[index]` to an atomic accumulator, and the worker applies it to every lane from the snapshot (clamped); controls that make no sense in ALL are put back to the lane's value. No second set of parameters, so the Q-Link map stays static.
-- **Skin: conditional visibility.** `additionalInvalidatingHandles` in a version-2 `bounds`: `IndexedEnabling/<i>/<n>/Parameter k` or `RangedEnabling/<min>/<max>/<n>/Parameter k` on a choice parameter (`n` = its number of strings in `replacementStrings`, so the parameter must be bound somewhere). **`NonZero/<param>` did not hide anything on the Live III.** Page art cannot hide: draw captions that must follow the view as Image widgets.
+- **Skin: conditional visibility.** `additionalInvalidatingHandles` in a version-2 `bounds`: `IndexedEnabling/<i>/<n>/Parameter k` or `RangedEnabling/<min>/<max>/<n>/Parameter k` on a choice parameter (`n` = its number of strings in `replacementStrings`, so the parameter must be bound somewhere). **`NonZero/<param>` did not hide anything on the Live III** (a single unverified observation, no NOTES entry; SDK docs/ui-reference.md:1496,1576 document it, so retest exactly as the SDK recipe before relying on either). Page art cannot hide: draw captions that must follow the view as Image widgets.
 - **Skin: tapping a display.** Four things found on the device: a fully transparent picture has no touch area (alpha 3 is enough and invisible); buttons stacked over each other give the tap to the topmost, so overlays for several size classes starve the ones below; a button bound to a display parameter that writes a value is not a reliable "tap" (a hidden cell swallows it); and the log tells you which of these happened, so put one `ELOG` in the path before guessing. What works: dedicated momentary parameters, a button each, none overlapping (32 slices per lane row, 32 sectors round a circle), and the plugin maps slice or sector to the step it knows is drawn there.
 - **Installer for a rename or a replacement.** Same uid, new folder name: the installer must remove the old folder and its plugin-list entry (by uid, from `MPC.settings`, and only a folder named like the old one that holds the old plugin's files), keep the user's data (a preset bank) by moving it, back up first, and be safe to run twice. `ls a* b*` exits non-zero if either glob is empty: test with a loop over `[ -e ]`. Test it offline against a fake device (`tools/test_installers.sh`), including a decoy folder, a second plugin and a beta; the first run found the `ls` bug. Through the catalog (Plugin Manager runs the zip's own `install.sh`, which replaces the plugin-list entry by uid but leaves a renamed folder behind) use `release.py --retire "<vendor> - VST - <old name>"`: the installer removes that folder only if its `mpc-plugin.json` has this plugin's id, and moves the `--user-data` files across (`tools/package_catalog.sh` and `tools/test_catalog_install.sh` in Euclid). Guard deletes with `rm -rf "${VAR:?}"` so an empty variable can never become `rm -rf /x`.
 - **Device sessions.** Every MPC restart closes the open project, and every skin or plugin change needs one: agree on restarts with whoever is using the device, batch changes between them, and log what you need to know instead of screenshotting every step.
@@ -316,8 +335,8 @@ Profit-08's, trimmed (no favourites, no `display_rev`).
   host_sim's load failed with an undefined symbol.
 - **Any function-local static object crashes at dlclose** in the zig/libc++ build, not just `std::string`: the engine's shared library state
   (`static Shared s`) did it in host_sim's teardown. `static T& t = *new T;`.
-- **`std::condition_variable::wait_for` needs glibc 2.30 in zig's libc++** (`pthread_cond_clockwait`): the arm32 `.so` stopped loading on the
-  Force's 2.29. `wait_until(system_clock::now() + d)` uses `pthread_cond_timedwait`. The build's glibc check caught it.
+- **`std::condition_variable::wait_for` needs glibc 2.30 in zig's libc++** (`pthread_cond_clockwait`): the arm32 `.so` stopped loading
+  against the build check's 2.29 threshold (not the Force's glibc, which is 2.39: NOTES.md:932; no 2.29 value appears in this repo's tools, so where the threshold comes from is not recorded here). `wait_until(system_clock::now() + d)` uses `pthread_cond_timedwait`. The build's glibc check caught it.
 - **Find user drives from `/proc/mounts`.** The Live III's `/media` is an empty tmpfs and has no `/sdcard`; the user drive is `/nvme` (exFAT, rw;
   `/synths` is the read-only factory part). Keep writable disk filesystems (vfat/exfat/ntfs/ext4...) mounted under `/media`, `/mnt`, `/run/media`,
   `/nvme`, `/sdcard`, drop the system mounts (`acvs-synths`, `az01-internal`), de-duplicate by `realpath`. Show folders as `Internal / Expansions`.
@@ -362,7 +381,7 @@ Port of [sd88me/mpc-vst-xenia](https://github.com/sd88me/mpc-vst-xenia) (branch 
 - **A project's state can arrive before an emulator boots.** Hold a state dump until the firmware first answers; and return the last given state from a save
   until the engine is ready (else the saved sound is lost).
 - **Engine logs on stdout break `host_sim dump`:** parse the first JSON object out of the output (`build-sdk.sh test`). `validate.py` refuses `<uiversion>` above
-  `0.1.0.0` (the plugin would not load); `file32` missing is expected for an arm64-only plugin.
+  `0.1.0.0` (SDK tools/validate.py:34 `UIVERSION_MAX`) (the plugin would not load); `file32` missing is expected for an arm64-only plugin.
 - **Random patch for a ROM synth:** an engine verb (`random_sound`) that picks among the slots the engine knows to hold a sound, across every loaded bank, never
   the current one, so user banks added later are included without front-end changes.
 - **User SysEx banks:** MIDI files carry the dumps as SMF sysex events (`F0 <varlen> 3E 0E ...`), so scan `.mid` as well as `.syx` and parse each dump by its
@@ -454,7 +473,7 @@ empty. Before deleting a beta, diff its data folders (banks, carts, roms, favour
 - **Check what the 1.x wrapper did with a header flag.** The Sequencer's generated `params.h` had `HAS_CC_MAP`, but its hand-written wrapper never read CCs; only the generic wrapper (Voice) used the map. Port the behaviour, not the header.
 - **Re-derive the released table from the tag and its pinned tools commit** (`tools/make_released_tables.sh`: `gen_vst.py --params-h` at the release workflow's `tools_ref`), then check every key against the strings in the released `.so`. Two ids, two tools commits.
 - **host_sim's state check wants `ui_open` to round-trip.** Closing the lists on load fails "param N did not come back"; restore it as saved (it is UI-only and never reaches the engine).
-- **`validate.py` reports `libasound.so.2` as "not on the MPC".** It is there (Euclid 2 and Maze Sequencer 1.x link it); ignore that error for ALSA-port plugins.
+- **`validate.py` reports `libasound.so.2` as "not on the MPC"** (it is not in `ALLOWED_LIBS`, SDK tools/validate.py:28-29). It is there (Euclid 2 and Maze Sequencer 1.x link it); ignore that error for ALSA-port plugins.
 - **One SDK project per id in one repo:** `plugins/<id>/{plugin.json,params.json,params.lock,src}` with a shared `plugins/common/` header. The framework's build compiles `src/*.cpp` with `-Isrc` only, so the shared header and the engine are reached by relative includes, and a beta builds from a staging copy *beside* `plugins/<id>` (`plugins/.stage-<id>`) so those relative paths still resolve.
 - **Name ring commands apart from table flags.** A `kStep` ring command (3) shadowed the generated `kStep` flag (4) inside an anonymous namespace; `isStep()` then matched momentaries and read past a key. ASan caught it in the first host test run: prefix commands `kCmd*`.
 - **The MPC draws a skin Label's font at about 0.62 of its `height`.** A value at height 23 looks like a 14 px Pillow preview; previews that draw at full height make values look far too big. Scale preview text by that factor (`DEVICE_TEXT` in mpc-vst-maze `tools/make_tui.py`).

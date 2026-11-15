@@ -23,25 +23,38 @@ MPC OS 2.x skin plan is in [OS2_SKINS.md](OS2_SKINS.md); Gen2 is in [GEN2.md](GE
 - **MPC OS 2.x needs a compatible skin.** A plugin marked *MPC OS 3.x only* loads on 2.x and plays from the Q-Links, but its
   touchscreen page stays empty until its developer releases a version with a compatible skin. See
   [MPC OS 2.x vs 3.x](#mpc-os-2x-vs-3x).
-- **A plugin shows no skin (just "Load Plugin") when its folder isn't a content location.** MPC finds a plugin's skin only through
-  a `Synths` folder listed under `SynthContentLocations` in `MPC.settings`. The plugin still loads from its `file=` path, so
+- **A plugin shows no skin (just "Load Plugin") when its folder isn't a content location.** On MPC OS 3.9.1 and 3.10.0, MPC finds a
+  plugin's skin only through a `Synths` folder listed under `SynthContentLocations` in `MPC.settings`. On 3.10.1+ it also looks in
+  the `VST2 Plugins` folder, by name: it builds `<Manufacturer> - VST - <Name>` from strings in the binary and looks for `Plugin Skins`
+  there (SDK docs/plugin-folder-format.md:7-25, docs/ui-reference.md:68-81, SDK commit febd2ca, vendored at
+  `vendor/mpc-plugin-builder-sdk`; our device note: NOTES.md 2026-10-31). A stale copy in a `Synths` folder can still win on 3.10.1
+  (NOTES.md 2026-11-02). The plugin still loads from its `file=` path, so
   it works but looks bare. Install into a listed folder (the installers warn when the target isn't one: `install.sh -t <folder>`),
   or add the folder to the list with MPC stopped and `MPC.settings` backed up, then start MPC. A trailing `/` is fine. Checked
   on a Live III (MPC 3.10.0), 2026-10-27; details in docs/NOTES.md.
 - **VST2 only.** MPC OS has no VST3 or LV2 support. (For a desktop DAW, a port can also be built as a VST3 on this machine:
   [docs/DESKTOP_VST3.md](DESKTOP_VST3.md); its window shows the port's MPC skin.)
-- **Setup needs root SSH to the device**, to copy the plugin and add it to `MPC.settings`, so it is for modded units.
-  Adding a new plugin needs one MPC restart; the installers stop and start MPC for you (the service is `acvs`, or
-  `inmusic-mpc` on firmware that has no `acvs`).
+- **Setup depends on the firmware.** On MPC OS 3.10.1+ no root is needed: copy the plugin folder (with its `plugin.json`) into
+  `<drive>/VST2 Plugins/` and switch on VST2 Support under Preferences, Enhancements (SDK docs/plugin-folder-format.md:46-58 and
+  docs/faq-and-legal.md:39; the Developer-mode sshd is an option, NOTES.md 2026-10-31). On MPC OS 3.9.1, the Force and the MPC
+  Sample (no plugin browser, no `VST2 Plugins` route) setup still needs root SSH to the device, to copy the plugin and add it to
+  `MPC.settings`, so those are for modded units. Adding a new plugin there needs one MPC restart; the installers stop and start
+  MPC for you (the service is `acvs`, or `inmusic-mpc` on firmware that has no `acvs`).
 - **No native drop-down picker.** MPC's own menu opens empty for plugins (and can't practically be patched), so option
   lists are drawn by the skin instead: segment buttons or our own pop-up.
-- **No custom-drawn widgets.** No live-drawn graphs or XY pads; only knobs, faders, buttons, text and images. Displays
-  are pre-drawn pictures or filmstrips that follow a parameter (a waveform per wave shape, an envelope that follows its
-  knobs: docs/COMMUNITY_SKINS.md), kept still between changes, since animating them costs MPC's screen thread a lot.
-- **Two fonts for live text:** Titillium Web and Roboto. Any other typeface has to be baked into the artwork.
+- **Live-drawn widgets are limited.** The stock skins use none, but the SDK documents `Envelope`, `XYPad`, `Meter` and `Plotter`
+  (SDK docs/ui-reference.md:1216-1391). `Envelope` works on hardware (draggable, used in our SDK ports: docs/SDK-PORTING.md:95,109-111).
+  `XYPad`, `Meter` and `Plotter` are marked "less tested" by the SDK itself (ui-reference.md:1318,1333,1360) and are untested
+  here. Everything else is knobs, faders, buttons, text and images. Displays are mostly pre-drawn pictures or filmstrips that follow
+  a parameter (a waveform per wave shape, an envelope that follows its knobs: docs/COMMUNITY_SKINS.md), kept still between
+  changes, since animating them costs MPC's screen thread a lot.
+- **Three font families for live text:** Titillium Web, Roboto and Nexa (SDK docs/ui-reference.md:133-139). We tested only the
+  first two (NOTES.md 2026-09-24); Nexa is untested here, on 3.9.1 and the Force especially. An unknown name falls back to Titillium
+  Web. Any other typeface has to be baked into the artwork.
 - **No text entry** on the page.
-- **Plugin MIDI out is ignored by MPC.** Generators work around it by opening their own MIDI port, which MPC picks up
-  like a new device. This is confirmed on a modded Force but not yet on a stock unit.
+- **Plugin MIDI out is ignored by MPC.** The host accepts it and then discards it (SDK docs/host-contract.md:50, docs/faq-and-legal.md:19);
+  confirmed on a modded Force and on a stock Live III running 3.10.1 (NOTES.md 2026-10-31). Generators work around it by opening
+  their own MIDI port, which MPC picks up like a new device.
 - **Timing resolution:** notes land on 128-sample blocks (about 3 ms), because the wrapper ignores the in-block position MPC
   sends with sequenced notes. An instrument whose engine renders any 1..128 frames can opt in to sample-accurate starts
   (`"defines": {"SAMPLE_ACCURATE": 1}`, docs/NOTES.md "Sample-accurate note starts").
@@ -56,7 +69,11 @@ MPC OS 2.x skin plan is in [OS2_SKINS.md](OS2_SKINS.md); Gen2 is in [GEN2.md](GE
 2. The `.so` exports `VSTPluginMain` (VST2 ABI, hand-written, no Steinberg SDK). Build for armhf against glibc 2.31
    (`arm32v7/gcc:11-bullseye`, which `tools/build_port.sh` uses) so it loads on MPC OS 2.x (glibc 2.32) and 3.x (2.39). A
    newer toolchain binds `pthread_create` and friends to `GLIBC_2.34`, which older firmware cannot load; the catalog
-   check lists anything above 2.32 (up to 2.36) as MPC OS 3.x only and rejects more than that. Audio is 44.1 kHz in 128-frame blocks.
+   check lists anything above 2.32 (up to 2.36) as MPC OS 3.x only and rejects more than that. Audio is 44.1 kHz. The block size is
+   the user's choice in Preferences (32, 64, 96, 128, 192, 256 or 512 frames; SDK docs/host-contract.md:11-12), and the announced size (at least 128) is a
+   maximum, so a plugin must handle any smaller count. Known issue, under review: a wrapper effect run at a block size that is not a
+   multiple of 128 (32, 64, 96, 192) is collected and processed one 128-frame block late (`run_block` in `wrapper/vst2_wrap.c`), about
+   2.9 ms of added latency that is not reported to the host; 128, 256 and 512 add none.
 3. A skin folder `/sdcard/Synths/<manufacturer> - VST - <name>/` (`version.xml`, `Plugin Skins/TUI.json`,
    `Q-Links.json`) gives it a native screen. Controls bind to `"Parameter N"`, the VST parameter index.
 

@@ -63,6 +63,9 @@ after MPC restarted the plugin was listed under MPC SDK Examples, loaded with it
    MPC never asks canDo `sendVstEvents`/`sendVstMidiEvent` (only `receiveVstMidiEvent`, `bypass`);
    `audioMasterProcessEvents` is accepted silently and the events go nowhere. A plugin can't be picked as
    a MIDI input on another track, and the track's "MIDI send to" only forwards the notes coming *into* it.
+   *(Note 2026-11-15: the discard is confirmed by the SDK, docs/host-contract.md:50, and on a stock Live III running 3.10.1, see
+   2026-10-31 below. The SDK docs/host-contract.md:75 says the host asks canDo `sendVstMidiEvent` on 3.10.1+, which this 2026-09-23
+   probe did not see; its firmware is not recorded here. The outcome is the same either way. See SDK-PORTING.md, "Where we differ".)*
    Transport/tempo via `audioMasterGetTime` do work (flags 0x7fc4, tempo and ppqPos valid), and so does MIDI in.
    **Workaround, verified 2026-09-23 (`poc/midiport.c`):** the plugin opens its own ALSA sequencer client/port
    (`snd_seq_create_simple_port`, CAP_READ|SUBS_READ; link `-lasound`, which ships with MPC OS) and sends notes
@@ -506,6 +509,8 @@ once its last instance is gone and re-opens it on the next insert. A restart is 
 system fonts by name and installing a `.ttf` on the device won't give skins a new native font. Choice for
 live (value/name) text: those two families at any weight/size. Any other typeface has to be baked into PNGs
 (`vst.json` `"title_font"`).
+*(Note 2026-11-15: superseded in part. The SDK lists three families, Titillium Web, Roboto and Nexa, and says an unknown name renders as
+Titillium Web: SDK docs/ui-reference.md:131-139. The fallback finding above agrees. Nexa was never tested here, on 3.9.1 or the Force.)*
 
 ## VST3: not supported by MPC OS (checked on a Force, OS base 5.0.17, 2026-09-24, `tools/probe_device.sh`)
 MPC's JUCE host has only `juce::VSTPluginFormat` compiled in. The binary has no `VST3PluginFormat` /
@@ -586,6 +591,9 @@ uses knobs instead" but "no shipping `TUI.json`, in any panel of any instrument,
 `type` is Envelope/EnvelopeOverlay/XYPad/Plotter" — the reverse-engineering reference's terminal-component
 list for these four does not match what's actually on this device. ROADMAP's Envelope/XYPad/Plotter item
 resolved as **not available**, same conclusion as the native menu picker.
+*(Note 2026-11-15: superseded. What this entry shows is that no stock skin uses these types, not that MPC cannot draw them. The SDK
+documents Envelope, XYPad, Meter and Plotter (SDK docs/ui-reference.md:1216-1391, the last three marked "less tested" at :1318,1333,1360),
+and Envelope works on hardware in our SDK ports (SDK-PORTING.md:95,109-111). XYPad, Meter and Plotter are untested here.)*
 
 ## KnobOverlay: works for VST2 params (verified on a Force 2026-09-25, Maze Voice)
 Every knob/slider/stepper this repo builds already fires `Show Overlay "knob overlay"` on Double Click and
@@ -1861,6 +1869,10 @@ Question: do plugins installed to some folders load on MPC OS 3.10 but show no s
 - `<PLUGIN>` tags span several lines in `MPC.settings`; a per-line grep undercounts them. Join the lines first.
 
 ## 2026-10-27: a plugin's skin is found only through a `SynthContentLocations` entry; tested on MPC 3.10.0.49 (device: Live III, Gen2)
+
+*(Note 2026-11-15: this holds for 3.10.0.49 and 3.9.1. On 3.10.1+ MPC also looks in the `VST2 Plugins` folder, by `<Manufacturer> - VST - <Name>`
+built from the binary's strings: SDK docs/plugin-folder-format.md:7-25, docs/ui-reference.md:68-81, and our 2026-10-31 entry below. The SDK says nothing
+about `SynthContentLocations` or about a stale `Synths` copy winning (2026-11-02 below).)*
 
 Write test on a Live III running the 3.10.0.49 app from a kit over a 3.9.1 rootfs. A copy of an installed plugin was registered in `pluginList-arm-64bit` with a new name and uid, in a `Synths` folder (`/nvme/Synths-test/Synths`, exfat, rw) that is not in `SynthContentLocations`. The plugin always loaded from its `file=` path (the log shows `Attempting to load VST: <that path>`); only the skin varied.
 - **A copy whose binary still reports the original name is a trap.** With the copy's own `Plugin Skins` hidden, a skin still drew: MPC found the original plugin's skin in a listed folder, apparently by the name the loaded binary reports (the log shows `Creating VST instance: lucky_dip`), not the registered name. The test only means something once the copy's binary reports its own name (same-length patch of the name string and the uid in the `.so` copy).
