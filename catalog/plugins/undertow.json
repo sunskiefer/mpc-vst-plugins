@@ -1,4 +1,4 @@
 { "id": "undertow", "name": "Undertow", "author": "Fullban", "repo": "fullbann/undertow",
   "kind": "effect", "style": "delay", "tags": ["delay", "tape", "lo-fi", "reverse", "stereo"], "license": "MIT",
   "summary": "Altered stereo delay with Analogue, Tape, Lo-Fi and Reverse modes, degrading repeats, runaway feedback, tempo sync and Tails. Nine presets, sepia touchscreen skin.",
-  "screenshot": "https://raw.githubusercontent.com/fullbann/undertow/v1.0.0/docs/catalog-thumbnail.png" }
+  "screenshot": "https://raw.githubusercontent.com/fullbann/undertow/e357bf20fe7c4fc1e68b73097c514bce38043b8d/docs/catalog-thumbnail.png" }
