@@ -21,6 +21,38 @@
 #include <ctype.h>
 #include <pthread.h>
 #include "params.h"
+
+/* Flush-to-zero around rendering. MPC's host sets it on its 32-bit (armv7) products and not on the 64-bit ones, where
+ * denormals in an engine's feedback paths (filters, delays, reverb tails) cost tens of times more per block. Set FZ
+ * (bit 24 of FPCR on aarch64, of FPSCR on armv7) for the audio call and put the host's value back before returning, so
+ * the host's own floating-point state is untouched. Nothing on x86 builds (host tests, desktop). */
+static inline uint64_t ftz_on(void) {
+#if defined(__aarch64__)
+    uint64_t fpcr;
+    __asm__ __volatile__("mrs %0, fpcr" : "=r"(fpcr));
+    uint64_t on = fpcr | (1u << 24);
+    __asm__ __volatile__("msr fpcr, %0" : : "r"(on));
+    return fpcr;
+#elif defined(__arm__) && defined(__VFP_FP__)
+    uint32_t fpscr;
+    __asm__ __volatile__("vmrs %0, fpscr" : "=r"(fpscr));
+    uint32_t on = fpscr | (1u << 24);
+    __asm__ __volatile__("vmsr fpscr, %0" : : "r"(on));
+    return fpscr;
+#else
+    return 0;
+#endif
+}
+static inline void ftz_restore(uint64_t saved) {
+#if defined(__aarch64__)
+    __asm__ __volatile__("msr fpcr, %0" : : "r"(saved));
+#elif defined(__arm__) && defined(__VFP_FP__)
+    uint32_t v = (uint32_t)saved;
+    __asm__ __volatile__("vmsr fpscr, %0" : : "r"(v));
+#else
+    (void)saved;
+#endif
+}
 #ifndef HAS_LFO_BPM
 #define HAS_LFO_BPM 0 /* 1: pass the host tempo to the DSP as "lfo_bpm" */
 #endif
@@ -662,6 +694,7 @@ static int16_t f2s(float f) { f *= 32768.0f; return f >= 32767.0f ? 32767 : f <=
  * any other block size is collected and processed one block late. */
 static void run_block(AEffect *e, float **in, float **out, int32_t n, int accumulate) {
     wrap_t *w = e->object;
+    uint64_t fpsave = ftz_on();   /* host FP state restored at the end */
     flush_pend0(e);   /* parameter 0, set since the last block (setParameter) */
 #ifdef SAMPLE_PAGE
     page_apply(w);    /* knob, dial and preset changes from the page on the MPC Sample's screen */
@@ -691,12 +724,14 @@ static void run_block(AEffect *e, float **in, float **out, int32_t n, int accumu
         if (++w->inpos == DSP_BLOCK) { eng_process(w, w->inb, w->block, DSP_BLOCK); w->pos = 0; w->inpos = 0; }
         i++;
     }
+    ftz_restore(fpsave);
 }
 static void processReplacing(AEffect *e, float **in, float **out, int32_t n) { run_block(e, in, out, n, 0); }
 static void process(AEffect *e, float **in, float **out, int32_t n) { run_block(e, in, out, n, 1); }
 #else
 static void run_block(AEffect *e, float **out, int32_t n, int accumulate) {
     wrap_t *w = e->object;
+    uint64_t fpsave = ftz_on();   /* host FP state restored at the end */
     flush_pend0(e);   /* parameter 0, set since the last block (setParameter) */
 #ifdef SAMPLE_PAGE
     page_apply(w);    /* knob, dial and preset changes from the page on the MPC Sample's screen */
@@ -707,6 +742,7 @@ static void run_block(AEffect *e, float **out, int32_t n, int accumulate) {
 #else
     render_frames(w, out, n, accumulate);
 #endif
+    ftz_restore(fpsave);
 }
 
 static void processReplacing(AEffect *e, float **in, float **out, int32_t n) { (void)in; run_block(e, out, n, 0); }

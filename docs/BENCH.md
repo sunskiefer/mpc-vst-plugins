@@ -75,6 +75,9 @@ Cortex-A76 @ 2.4 GHz, MPC's `AudioWorker0-3` pinned to 4-7 under SCHED_FIFO.
 slower. A feedback-heavy plugin can run fine on Gen1 and spike by orders of magnitude on Gen2: Acid-303's first
 aarch64 build measured a worst block of 3870% (Q-Link sweep) and went to 17% after setting FPCR.FZ around its render
 call. If a Gen2 bench shows huge worst blocks in the release tail or the sweep, look here first.
+The wrapper (`vst2_wrap.c`, `ftz_on`/`ftz_restore`) now sets FZ around every `processReplacing()` and puts the host's value
+back before returning, so a wrapper port gets it without code of its own; an engine with its own render thread, or a
+hand-written plugin, still has to set it itself. `bench.sh` on a Gen2 device is still the check.
 
 | Plugin (Gen2, Live III) | idle | 16 voices | Q-Link sweep p99 | worst block | Verdict |
 |---|---|---|---|---|---|
