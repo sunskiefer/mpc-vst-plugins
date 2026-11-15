@@ -4,16 +4,18 @@
   "author": "PotentialBreaks",
   "repo": "PotentialBreakfast/potential-plugins",
   "repos": [
+    "PotentialBreakfast/mpc-vst-potential1200",
     "PotentialBreakfast/mpc-vst-potentialbleed",
     "PotentialBreakfast/mpc-vst-potentialbreaks",
     "PotentialBreakfast/mpc-vst-potentialcrates",
     "PotentialBreakfast/mpc-vst-potentialgrit",
     "PotentialBreakfast/mpc-vst-potentialheat",
+    "PotentialBreakfast/mpc-vst-potentialkits",
     "PotentialBreakfast/mpc-vst-potentialnoise",
     "PotentialBreakfast/mpc-vst-potentialpatina",
     "PotentialBreakfast/mpc-vst-potentialpunch",
     "PotentialBreakfast/mpc-vst-potentialwarp",
     "PotentialBreakfast/mpc-vst-potentialwax"
   ],
-  "summary": "Ten plugins for sample-based beatmaking that share one look (Print Plate, Night Rack or Colour Block): samplers for breaks and songs, a crate-digging player, and effects for vinyl age, drum punch, tape heat, noise, grit and bleed, with matching FX chain presets across Patina, Punch, Grit and Bleed. Install all or pick single plugins."
+  "summary": "Twelve plugins for sample-based beatmaking that share one look (Print Plate, Night Rack or Colour Block): samplers for breaks and songs, a 12-bit vintage drum sampler, a drum-kit builder, a record digger, and effects for vinyl age, drum punch, tape heat, noise, grit and bleed, with matching FX chains. Install all, or pick any one."
 }

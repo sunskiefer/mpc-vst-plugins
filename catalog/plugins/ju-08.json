@@ -1,0 +1,4 @@
+{ "id": "ju-08", "name": "Ju-08", "author": "Stephane Schmitz", "repo": "eldontyrellcorp/mpc-plugin-ju08",
+  "kind": "instrument", "style": "synth", "tags": ["poly", "analog", "jupiter", "arpeggiator", "chorus"], "license": "MIT",
+  "summary": "A Jupiter-8 style polysynth: two parts of four voices (or eight on one patch), two VCOs with sync and cross mod, HPF, 12/24 dB VCF, two envelopes, LFO, arpeggiator, 17 chorus and multi-effects, delay, reverb with shimmer, 64 patches. Built with the Akai MPC Plugin SDK; Gen1 and Gen2.",
+  "screenshot": "https://raw.githubusercontent.com/eldontyrellcorp/mpc-plugin-ju08/v1.0.0/screenshots/main_page.png" }

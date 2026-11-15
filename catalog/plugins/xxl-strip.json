@@ -1,0 +1,21 @@
+{
+ "id": "xxl-strip",
+ "name": "XXL STRIP",
+ "author": "L'Cronx",
+ "repo": "sunskiefer/XXL-Strips",
+ "kind": "effect",
+ "style": "mixing",
+ "tags": [
+  "console",
+  "channel-strip",
+  "eq",
+  "compressor",
+  "gate",
+  "emulation",
+  "mixing"
+ ],
+ "license": "GPL-3.0-or-later",
+ "asset_pattern": "XXL-STRIP-[0-9]*-mpc-armv7.zip",
+ "screenshot": "https://raw.githubusercontent.com/sunskiefer/XXL-Strips/xxl-v0.1/XXL-STRIP/docs/img/page_0.png",
+ "summary": "Channel strip in the style of a classic large-format British console (4000 E / G style): input drive, high- and low-pass filters, four-band EQ in three models (E Brown, E Black, G), compressor, gate / expander and a VU meter. 56 presets. By L'Cronx, GPL-3; the E-model filters and EQ are Dusk Audio's. Not endorsed by the makers of the originals."
+}

@@ -1,4 +1,4 @@
 { "id": "potentialheat", "name": "PotentialHeat", "author": "PotentialBreaks", "repo": "PotentialBreakfast/mpc-vst-potentialheat", "collection": "potentialsuite", "kind": "effect",
   "style": "saturation", "tags": ["saturation", "soft-clipper", "bus", "drums", "loudness", "warmth"], "license": "MIT",
   "summary": "Soft clipper and bus saturator: push drums, breaks or a whole beat into a warm curve (soft, tape or hard) that rounds the peaks off instead of clipping, with tone, ceiling, level match, mix, a live meter and 12 one-tap presets. Pairs with PotentialPunch.",
-  "screenshot": "https://raw.githubusercontent.com/PotentialBreakfast/mpc-vst-potentialheat/3fa8a1f49c7ed57320375a4c86d119ab679bccf3/docs/images/potentialheat.png" }
+  "screenshot": "https://raw.githubusercontent.com/PotentialBreakfast/mpc-vst-potentialheat/6ade776dda00fcd70053168b6b7ede87cd7fa091/docs/images/potentialheat.png" }
