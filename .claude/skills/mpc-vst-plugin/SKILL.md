@@ -319,7 +319,7 @@ A change is not done until the docs it touches are updated in the same PR (CLAUD
 | a vst.json key, `defines` option, `params.json` field or layout.conf widget | `tools/gen_vst.py` / `tools/shadow_skin.py` docstring, `docs/PORTING.md` checklist, this skill |
 | the wrapper or the engine contract (`wrapper/`) | `wrapper/engine.h` comment, `docs/NOTES.md`, README "What you can build" / `docs/COMPATIBILITY.md` limitations, PORTING if ports must act; a change to what `vst2_wrap.c` does for ports (a new `defines` option, param field) also asks whether `vst3_wrap.c` needs it (docs/DESKTOP_VST3.md) |
 | a build, toolchain, release or installer step | `docs/RELEASING.md`, `docs/PORTING.md`, `tools/*.sh` header comments, this skill's Pipeline |
-| the catalog, a registry field or a release check | `docs/CATALOG.md`, `docs/CATALOG_SPEC.md`, `catalog/README.md`, `docs/ROADMAP.md` |
+| the catalog, a registry field or a release check | `docs/CATALOG.md`, `docs/CATALOG_SPEC.md`, `catalog/README.md`, `docs/ROADMAP.md`, `docs/CATALOG_REVIEW.md` checklist if reviewers must check it |
 | a feature shipped or a limitation fixed | `docs/ROADMAP.md` (Done), README, and remove the now-false limitation line |
 | a new tool or script | its header comment, this skill, README if users run it |
 | a gotcha you hit twice | "Gotchas" or "Agent habits" above |

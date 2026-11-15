@@ -1,0 +1,22 @@
+# Who must approve a pull request, by path (docs/CATALOG_REVIEW.md). The last matching line wins.
+# Every team must exist in the open-mpc org and have Write access, or GitHub ignores its lines.
+# Approving is not merging: the branch ruleset lets only maintainers merge.
+
+# Everything by default (code, tools, workflows, docs): a code reviewer may approve.
+*                         @open-mpc/code-reviewers @open-mpc/maintainers
+
+# The catalog's trust files: maintainers only.
+/catalog/downloads.json   @open-mpc/maintainers
+/catalog/yanked.json      @open-mpc/maintainers
+/catalog/confirmed.json   @open-mpc/maintainers
+/catalog/added.json       @open-mpc/maintainers
+/catalog/patches.json     @open-mpc/maintainers
+
+# Catalog entries and collections: a catalog reviewer may approve.
+/catalog/plugins/         @open-mpc/catalog-reviewers @open-mpc/maintainers
+/catalog/collections/     @open-mpc/catalog-reviewers @open-mpc/maintainers
+
+# The review rules themselves stay with maintainers.
+/docs/CATALOG_REVIEW.md   @open-mpc/maintainers
+/.github/CODEOWNERS       @open-mpc/maintainers
+/.claude/                 @open-mpc/maintainers
