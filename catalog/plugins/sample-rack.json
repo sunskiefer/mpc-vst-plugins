@@ -14,5 +14,6 @@
   "screenshot": "https://raw.githubusercontent.com/jacob-sabella/mpc-addin-sample-rack/c2a988ddc52bf92dc3bf83f5f4283cadc78eeb47/docs/screenshots/rack-page.png",
   "asset_pattern": "MPC-Sample-rack-addin-*-mpc-aarch64.zip",
   "devices": ["mpc-sample"],
-  "depends": ["sample-draw-handler>=0.3.0"]
+  "depends": ["sample-draw-handler>=0.3.0"],
+  "tip": "https://github.com/sponsors/jacob-sabella"
 }
