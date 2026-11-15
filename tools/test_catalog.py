@@ -1758,6 +1758,13 @@ class SiteTest(unittest.TestCase):
         for lic in ("MIT AND MAME license", "MIT AND", "AND MIT", "MIT WITH Apache-2.0", "MIT Apache-2.0"):
             self.assertTrue(catalog_build.check_entry(dict(BuildTest.ENTRY, license=lic)), lic)
 
+    def test_registry_tip_line(self):
+        """The optional "tip" line: a known tip-jar https link, validated, and carried into catalog.json."""
+        for good in ("https://ko-fi.com/someone", "https://www.buymeacoffee.com/someone", "https://github.com/sponsors/someone", "https://liberapay.com/someone"):
+            self.assertEqual(catalog_build.check_entry(dict(BuildTest.ENTRY, tip=good)), [], good)
+        for bad in ("http://ko-fi.com/x", "https://ko-fi.com.evil.example/x", "https://evil.example/ko-fi.com/x", "https://ko-fi.com/a b", "javascript:alert(1)", "", 7):
+            self.assertTrue(catalog_build.check_entry(dict(BuildTest.ENTRY, tip=bad)), repr(bad))
+
     def test_registry_youtube_line(self):
         """The optional "youtube" line: a youtube.com or youtu.be https link, validated, and carried into catalog.json."""
         for good in ("https://www.youtube.com/watch?v=abc123", "https://youtu.be/abc123", "https://youtube.com/playlist?list=PL1", "https://m.youtube.com/watch?v=x1"):

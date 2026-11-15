@@ -91,6 +91,7 @@
     <div class="modal-in" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-tools"><button class="modal-share" type="button" id="modal-share">Copy link</button>
       <a class="modal-share" id="modal-video" target="_blank" rel="noopener noreferrer" hidden>&#9654; Video</a>
+      <a class="modal-share" id="modal-tip" target="_blank" rel="noopener noreferrer" hidden>&#9749; Tip</a>
       <a class="modal-share" id="modal-follow" type="application/atom+xml" title="Follow this plugin's new releases in a feed reader" hidden>&#128276; Follow updates</a></div>
       <button class="modal-x" type="button" id="modal-x" aria-label="Close">&times;</button>
       <div id="modal-body"></div>
@@ -289,12 +290,12 @@ function genTag(v) {
   return '<span class="tag gen" title="' + esc("Also built for Gen2 (aarch64) MPC devices. " + (tested2(v) ? "Tested on a Gen2 unit." : "Not yet tested on a Gen2 unit.")) + '">Gen2 build</span>';
 }
 /* Compatibility badges, always the same three in the same order: lit (blue) when the newest release ships a build for it, faded when not. */
-function compatRow(v) {
+function compatRow(v, addin) {
   var has = { g1: !v.gen2_only, g2: !!(v.gen2 || v.gen2_only), n: !!(v.vst2 && v.assets && v.assets.sdk) };
   function b(on, label, yes, no) { return '<span class="tag compat' + (on ? " on" : "") + '" title="' + esc(on ? yes : no) + '">' + label + '</span>'; }
   return '<div class="compatrow">' + b(has.g1, "Gen1", "Has a build for Gen1 MPCs (Live, Live II, One, X, Key 61/37) and the Force, MPC OS 3.10 or earlier.", "No Gen1 build.") +
     b(has.g2, "Gen2", "Has a build for Gen2 MPCs (Live III, One G2, Key G2, XL), MPC OS 3.10 or earlier.", "No Gen2 build.") +
-    b(has.n, "OS 3.10.1+", "Has the MPC OS 3.10.1 folder format: copy it straight into VST2 Plugins.", "No MPC OS 3.10.1 folder download yet (the Plugin Manager still installs it).") + '</div>';
+    (addin ? "" : b(has.n, "OS 3.10.1+", "Has the MPC OS 3.10.1 folder format: copy it straight into VST2 Plugins.", "No MPC OS 3.10.1 folder download yet (the Plugin Manager still installs it).")) + '</div>';
 }
 function genRow(v) {
   return v && v.gen2 ? '<dt>Gen2</dt><dd>' + (v.gen2_only ? "aarch64 only: no Gen1 or Force build (" : "aarch64 build available (") + (tested2(v) ? "tested on a Gen2 unit" : "not yet tested on a Gen2 unit") + ')</dd>' : "";
@@ -529,7 +530,7 @@ function card(p, big) {
   var head = '<article class="card' + (by ? " by" : "") + (big ? " big" : "") + '" data-tier="' + tierOf(p) + '">' + shot + crumb + '<header><div><h2' + (big ? ' id="modal-title">' + esc(p.name)
     : '><a class="open" href="p/' + encodeURIComponent(p.id) + '.html" data-open="' + esc(p.id) + '">' + esc(p.name) + '</a>') + '</h2><div class="by">by ' + esc(p.author) + '</div></div>' +
     '<div class="verbox">' + (v ? '<span class="ver" title="Latest ' + (by ? "tag" : esc(v.channel) + " release") + '">v' + esc(v.version) + (v.channel === "beta" ? " beta" : "") + '</span>' : '<span class="ver">' + (by ? "no tag" : "no release") + '</span>') +
-    (!by && p.kind !== "addin" && v ? compatRow(v) : "") + '</div></header>' +
+    (!by && v ? compatRow(v, p.kind === "addin") : "") + '</div></header>' +
     plugBar(p, big) +
     '<div class="tags">' + tags.join("") + '</div><p>' + esc(p.summary) + '</p>' + hooksLine(p) + (big && window.signalsDetail ? signalsDetail(p) : '');
   if (by) {
@@ -639,12 +640,15 @@ addEventListener("hashchange", function () { load(); sync(); render(); showTab(s
 /* Plugin popup: the screenshot opens the card over a dark backdrop. Its link is the page's hash plus p=<catalog id> (ids never
    change), so it can be shared; Back, Escape, the backdrop and the close button all close it. */
 var pushed = 0, returnTo = null;   /* pushed: popup states this page added to the history (a member opened from a collection is two) */
+var TIP_RE = /^https:\/\/(ko-fi\.com|www\.buymeacoffee\.com|buymeacoffee\.com|github\.com\/sponsors|www\.patreon\.com|patreon\.com|liberapay\.com|paypal\.me|www\.paypal\.me|opencollective\.com)\/[^\s]+$/;
 var YT_RE = /^https:\/\/(www\.|m\.|music\.)?youtube\.com\/[^\s]+$|^https:\/\/youtu\.be\/[^\s]+$/;
 function modal() {
   var p = state.open && BYID[state.open], c = !p && state.coll && COLL[state.coll];
   $("modal-body").innerHTML = p ? card(p, true) : c ? collDetail(c) : "";
   var yt = p && typeof p.youtube === "string" && YT_RE.test(p.youtube) ? p.youtube : "";   /* the catalog's optional youtube line */
   $("modal-video").hidden = !yt; if (yt) $("modal-video").href = yt;
+  var tip = p && typeof p.tip === "string" && TIP_RE.test(p.tip) ? p.tip : "";   /* the catalog's optional tip line (Ko-fi etc.) */
+  $("modal-tip").hidden = !tip; if (tip) $("modal-tip").href = tip;
   var fl = p && ID_RE.test(p.id) && p.versions.length > 0;   /* feed/<id>.xml: this plugin's releases (tools/catalog_site.py plugin_atom) */
   var fc = !p && c && ID_RE.test(c.id);                       /* feed/c/<id>.xml: the collection's releases (collection_atom) */
   $("modal-follow").hidden = !(fl || fc); if (fl) $("modal-follow").href = "feed/" + encodeURIComponent(p.id) + ".xml"; else if (fc) $("modal-follow").href = "feed/c/" + encodeURIComponent(c.id) + ".xml";
