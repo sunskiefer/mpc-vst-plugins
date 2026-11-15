@@ -40,12 +40,14 @@ MPC OS 2.x skin plan is in [OS2_SKINS.md](OS2_SKINS.md); Gen2 is in [GEN2.md](GE
   Sample (no plugin browser, no `VST2 Plugins` route) setup still needs root SSH to the device, to copy the plugin and add it to
   `MPC.settings`, so those are for modded units. Adding a new plugin there needs one MPC restart; the installers stop and start
   MPC for you (the service is `acvs`, or `inmusic-mpc` on firmware that has no `acvs`).
-- **No native drop-down picker.** MPC's own menu opens empty for plugins (and can't practically be patched), so option
+- **No native drop-down picker.** MPC's own menu opens empty for plugins, even with `replacementStrings` as the SDK describes
+  (Key 37, MPC OS 3.10.1.12, 2026-11-15; and it can't practically be patched), so option
   lists are drawn by the skin instead: segment buttons or our own pop-up.
 - **Live-drawn widgets are limited.** The stock skins use none, but the SDK documents `Envelope`, `XYPad`, `Meter` and `Plotter`
   (SDK docs/ui-reference.md:1216-1391). `Envelope` works on hardware (draggable, used in our SDK ports: docs/SDK-PORTING.md sections 3 and 4, "Envelope").
-  `XYPad`, `Meter` and `Plotter` are marked "less tested" by the SDK itself (ui-reference.md:1318,1333,1360) and are untested
-  here. Everything else is knobs, faders, buttons, text and images. Displays are mostly pre-drawn pictures or filmstrips that follow
+  `XYPad`, `Meter` and `Plotter` are marked "less tested" by the SDK itself (ui-reference.md:1318,1333,1360). On a Key 37 with
+  MPC OS 3.10.1.12 (2026-11-15) a `Meter` written exactly to the spec (version 3, every key) worked, and a `Plotter` (version 2)
+  loaded but drew nothing; `XYPad` is untested here. Everything else is knobs, faders, buttons, text and images. Displays are mostly pre-drawn pictures or filmstrips that follow
   a parameter (a waveform per wave shape, an envelope that follows its knobs: docs/COMMUNITY_SKINS.md), kept still between
   changes, since animating them costs MPC's screen thread a lot.
 - **Three font families for live text:** Titillium Web, Roboto and Nexa (SDK docs/ui-reference.md:133-139). We tested only the

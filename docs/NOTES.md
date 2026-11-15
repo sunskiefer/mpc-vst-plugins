@@ -2667,3 +2667,20 @@ Test of the 16-pad patch with the manager's detached APPLY and `also_installs`. 
   tested until the fixed script is pinned in the catalog.
 - **Open (plugin-manager):** pressing APPLY again while the detached restart is slow launched it three times (three `openmpcpm-apply-*` units); no
   "restarting" feedback, so it looked as if nothing was happening.
+
+## 2026-11-15: SDK claims re-tested on a Key 37 (device, Gen1, MPC OS 3.10.1.12)
+Checks of the Akai SDK (`vendor/mpc-plugin-builder-sdk` @ febd2ca) against the hub's findings; table in SDK-PORTING.md.
+- **Q-Link banking (Stompbox, 16 Q-Links a page):** tapping a control moved the 4 knobs to its bank, as the SDK says. Before any
+  touch the knobs drove thresh/attack/level/release, not bank 1. Not tested: whether the Q-Link bank button cycles banks.
+- **Parameter-0 nudge (NAM):** on insert NAM read its first model, then its last one 170 ms later, so the insert nudge happens on
+  3.10.1.12. STOP (stopped, and after PLAY) caused no model change. The STOP nudge was seen on a Live II with 3.9.1 only.
+- **`.xpl` presets (Chordsmith):** the INSTRUMENTS tile is drawn; a short tap (not a ~300 ms hold) lists the shipped
+  `Presets/0000-Default.xpl` and loads the plugin from it. A preset saved on the device went to
+  `MPC Documents/Plugin Presets/Instruments/<plugin folder>/` with `<state>` (JUCE base64) and a hex `uid`, not `<state64>`. Seen
+  in Chordsmith: the PRESET field stays blank after loading Default, and two labels are clipped.
+- **Probe skin:** `MenuOverlay` with `replacementStrings` exactly as SDK 3.3: blank rows (a checkmark on the current one), a tap picks
+  nothing, a tap outside does not close it; only the MENU button leaves. `NonZero/` never hid, in either the "Show" or the SDK "Hide"
+  shape; `IndexedEnabling` worked in both. `Meter` v3 followed its parameter; `Plotter` v2 loaded but drew nothing.
+- **`"automatable": false` (Keyscope build from `sdk-wrapper-automatable`, `hold` and `status` off):** both were missing from Grid
+  view's automation "Add New > Insert 1: Keyscope" list; the on-screen Hold toggle still worked. Not tested: a Q-Link on Hold.
+- **Not tested yet:** block size 64.
