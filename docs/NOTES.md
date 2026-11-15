@@ -2655,3 +2655,11 @@ Test of the 16-pad patch with the manager's detached APPLY and `also_installs`. 
   tested until the fixed script is pinned in the catalog.
 - **Open (plugin-manager):** pressing APPLY again while the detached restart is slow launched it three times (three `openmpcpm-apply-*` units); no
   "restarting" feedback, so it looked as if nothing was happening.
+
+## 2026-11-16: Plugin Manager 1.3.0 on-screen APPLY, CHECK and UNDO of the 16-pad patch: passed (device, Live III, MPC OS 3.10.1)
+Follow-up to the 2026-11-15 entry, with the fixes of #921 (BusyBox), #922 (script reads our own copy as stock) and plugin-manager #15 merged (a local aarch64 build
+of main, `.so` md5 `8778086c...`, put on the device; one MPC restart to load it). Start: stock MPC, Addin Restore removed.
+- APPLY on the PATCHES page: companion step "patch addin-restore (for drum-pad-layout) install: exit 0, now patched", then the detached restart; the status after it read "patched". The restart took much less time than the first run.
+- CHECK with the patch on: `patched` (was "unsupported"). UNDO on screen: `uninstall (detached): exit 0, now stock`, exe md5 `b24b7955...`, `94-mpc-drumpad.conf` and `/data/mpc-drumpad` gone, Addin Restore stayed.
+- **Open (UX):** the "Restarting MPC…" and result messages are on the status line of the main page, which you do not see while on PATCHES. Show them on the PATCHES page.
+- Not re-tested: the double-tap guard on a device (offline test only), Gen1/Force.
