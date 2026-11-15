@@ -53,7 +53,8 @@
   "momentary": true,
   "step_of": "mode",
   "step_delta": -1,
-  "debounce_ms": 0
+  "debounce_ms": 0,
+  "automatable": false
  },
  {
   "key": "mode_next",
@@ -61,7 +62,8 @@
   "momentary": true,
   "step_of": "mode",
   "step_delta": 1,
-  "debounce_ms": 0
+  "debounce_ms": 0,
+  "automatable": false
  },
  {
   "key": "transport_log",

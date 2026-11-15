@@ -21,6 +21,38 @@
 #include <ctype.h>
 #include <pthread.h>
 #include "params.h"
+
+/* Flush-to-zero around rendering. MPC's host sets it on its 32-bit (armv7) products and not on the 64-bit ones, where
+ * denormals in an engine's feedback paths (filters, delays, reverb tails) cost tens of times more per block. Set FZ
+ * (bit 24 of FPCR on aarch64, of FPSCR on armv7) for the audio call and put the host's value back before returning, so
+ * the host's own floating-point state is untouched. Nothing on x86 builds (host tests, desktop). */
+static inline uint64_t ftz_on(void) {
+#if defined(__aarch64__)
+    uint64_t fpcr;
+    __asm__ __volatile__("mrs %0, fpcr" : "=r"(fpcr));
+    uint64_t on = fpcr | (1u << 24);
+    __asm__ __volatile__("msr fpcr, %0" : : "r"(on));
+    return fpcr;
+#elif defined(__arm__) && defined(__VFP_FP__)
+    uint32_t fpscr;
+    __asm__ __volatile__("vmrs %0, fpscr" : "=r"(fpscr));
+    uint32_t on = fpscr | (1u << 24);
+    __asm__ __volatile__("vmsr fpscr, %0" : : "r"(on));
+    return fpscr;
+#else
+    return 0;
+#endif
+}
+static inline void ftz_restore(uint64_t saved) {
+#if defined(__aarch64__)
+    __asm__ __volatile__("msr fpcr, %0" : : "r"(saved));
+#elif defined(__arm__) && defined(__VFP_FP__)
+    uint32_t v = (uint32_t)saved;
+    __asm__ __volatile__("vmsr fpscr, %0" : : "r"(v));
+#else
+    (void)saved;
+#endif
+}
 #ifndef HAS_LFO_BPM
 #define HAS_LFO_BPM 0 /* 1: pass the host tempo to the DSP as "lfo_bpm" */
 #endif
@@ -47,6 +79,15 @@
 #endif
 #if SAMPLE_ACCURATE && defined(PLUG_EFFECT)
 #error "SAMPLE_ACCURATE is for instruments: an effect has no notes to place"
+#endif
+#ifndef STATE_MAX
+#define STATE_MAX 8192 /* the largest state chunk, bytes, NUL included: what effGetChunk can hand the host and the most effSetChunk
+                        * takes (a bigger one is refused whole). Allocated per instance when it is created. A port with a bigger
+                        * "state" sets it through vst.json "defines"; a project saved with a chunk above 8192 loads in an
+                        * older wrapper build as the default state (docs/PORTING.md) */
+#endif
+#if STATE_MAX < 16
+#error "STATE_MAX must be at least 16"
 #endif
 #ifdef WRAP_TRACE   /* poc/inputprobe: the port provides wrap_trace() and logs every raw host call (kind 0 = setParameter, 1 = getParameter) */
 void wrap_trace(int kind, int idx, float value);
@@ -152,7 +193,7 @@ typedef struct {
     pthread_t rev_th; volatile int rev_stop; int rev_th_on;   /* the display_rev reporter thread (see rev_scan) */
 #endif
     float open[NPARAMS];     /* popup "open" flags (popup.h): kept here, never sent to the DSP or saved */
-    char chunk[8192];
+    char *chunk;             /* STATE_MAX bytes, allocated with the instance (never on the audio thread) */
     pthread_mutex_t lock;    /* one engine call at a time: see eng_set() */
     int nrpn;                /* HAS_NRPN: the parameter CC 99/98 selected (-1: none), its coarse value from CC 6 */
     int nrpn_msb;
@@ -662,6 +703,7 @@ static int16_t f2s(float f) { f *= 32768.0f; return f >= 32767.0f ? 32767 : f <=
  * any other block size is collected and processed one block late. */
 static void run_block(AEffect *e, float **in, float **out, int32_t n, int accumulate) {
     wrap_t *w = e->object;
+    uint64_t fpsave = ftz_on();   /* host FP state restored at the end */
     flush_pend0(e);   /* parameter 0, set since the last block (setParameter) */
 #ifdef SAMPLE_PAGE
     page_apply(w);    /* knob, dial and preset changes from the page on the MPC Sample's screen */
@@ -691,12 +733,14 @@ static void run_block(AEffect *e, float **in, float **out, int32_t n, int accumu
         if (++w->inpos == DSP_BLOCK) { eng_process(w, w->inb, w->block, DSP_BLOCK); w->pos = 0; w->inpos = 0; }
         i++;
     }
+    ftz_restore(fpsave);
 }
 static void processReplacing(AEffect *e, float **in, float **out, int32_t n) { run_block(e, in, out, n, 0); }
 static void process(AEffect *e, float **in, float **out, int32_t n) { run_block(e, in, out, n, 1); }
 #else
 static void run_block(AEffect *e, float **out, int32_t n, int accumulate) {
     wrap_t *w = e->object;
+    uint64_t fpsave = ftz_on();   /* host FP state restored at the end */
     flush_pend0(e);   /* parameter 0, set since the last block (setParameter) */
 #ifdef SAMPLE_PAGE
     page_apply(w);    /* knob, dial and preset changes from the page on the MPC Sample's screen */
@@ -707,6 +751,7 @@ static void run_block(AEffect *e, float **out, int32_t n, int accumulate) {
 #else
     render_frames(w, out, n, accumulate);
 #endif
+    ftz_restore(fpsave);
 }
 
 static void processReplacing(AEffect *e, float **in, float **out, int32_t n) { (void)in; run_block(e, out, n, 0); }
@@ -873,6 +918,7 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
 #endif
         g_api->destroy(w->dsp);
         pthread_mutex_destroy(&w->lock);
+        free(w->chunk);
         free(w);
         return 1;
 #ifdef PLUG_EFFECT
@@ -885,7 +931,8 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
     case effGetVendorString: copy_str(p, PLUG_VENDOR, 32); return 1;
     case effGetVendorVersion: return PLUG_VERSION;
     case effGetVstVersion: return 2400;
-    case effCanBeAutomated: return idx >= 0 && idx < NPARAMS;
+    /* MPC asks once per param at load and caches it: only a yes can be automated or get a lane (params.json "automatable": false) */
+    case effCanBeAutomated: return idx >= 0 && idx < NPARAMS && PARAMS[idx].automatable;
     case effGetParamName:
         if (idx >= 0 && idx < NPARAMS) param_name_text(w, idx, p, 32);
         return 1;
@@ -933,13 +980,14 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
                 !strcmp(p, "receiveVstTimeInfo")) ? 1 : -1;
     case effGetChunk: {
         flush_pend0(e);
-        int len = eng_get(w, "state", w->chunk, sizeof w->chunk);
+        int len = eng_get(w, "state", w->chunk, STATE_MAX);
         if (len <= 0) return 0;
+        w->chunk[STATE_MAX - 1] = 0;   /* an engine that filled the buffer without a NUL */
         *(void **)p = w->chunk;
         return (intptr_t)strlen(w->chunk) + 1;
     }
     case effSetChunk: {
-        if (v <= 0 || (size_t)v > sizeof w->chunk) return 0;
+        if (v <= 0 || (uintmax_t)v > STATE_MAX) return 0;
         memcpy(w->chunk, p, v);
         w->chunk[v - 1] = 0;
         __atomic_store_n(&w->has_pend0, 0, __ATOMIC_RELEASE);   /* a restore sets parameter 0 too */
@@ -961,6 +1009,8 @@ __attribute__((visibility("default"))) AEffect *VSTPluginMain(audioMasterCallbac
 #endif
     wrap_t *w = calloc(1, sizeof *w);
     if (!w) return NULL;
+    w->chunk = calloc(1, STATE_MAX);
+    if (!w->chunk) { free(w); return NULL; }
     pthread_mutexattr_t ma;
     pthread_mutexattr_init(&ma);
     pthread_mutexattr_settype(&ma, PTHREAD_MUTEX_RECURSIVE);
@@ -976,7 +1026,7 @@ __attribute__((visibility("default"))) AEffect *VSTPluginMain(audioMasterCallbac
 #else
     w->dsp = g_api->create(MODULE_DIR);
 #endif
-    if (!w->dsp) { pthread_mutex_destroy(&w->lock); free(w); return NULL; }
+    if (!w->dsp) { pthread_mutex_destroy(&w->lock); free(w->chunk); free(w); return NULL; }
     for (int i = 0; i < NPARAMS; i++)
         if (PARAMS[i].string_display && !PARAMS[i].no_poll) w->poll_list[w->npoll++] = (short)i;
     w->n_on = w->npoll;

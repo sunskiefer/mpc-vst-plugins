@@ -2127,6 +2127,11 @@ Fixes (offline-tested; not yet on a device): the manager's keys get the same 250
 - So a plugin moved to VST2 Plugins and then updated would show its old skin. `tools/vst2_migrate.sh` now renames the old copy's
   `Plugin Skins` to `Plugin Skins.vst2-moved` (nothing deleted) after a move, for plugins moved before, and after every install's
   `--json` run. On the test unit that was 41 plugins. Saved projects that name the old path still load (and draw the new skin).
+- 2026-11-15 (offline only, scratch trees): `vst2_migrate.sh` wrote `file64`/`file32` as the binary's bare file name, so a plugin
+  that keeps its `.so` in a subfolder (the Akai SDK layout, `VST/x.so`) got a `plugin.json` pointing at nothing after a Plugin Manager
+  install (plugin-manager#12, reported on an MPC One G2 and a Key 37 G2), and the move from a Synths folder skipped it ("binary not
+  in the folder"). It now writes the path inside the plugin folder (`relfile`); a `.so` at the top of the folder gives the same
+  `plugin.json` as before.
 
 ## 2026-11-01: a plugin can serve a web page on the local network (Live III, MPC OS 3.10.1.6, device)
 
@@ -2681,6 +2686,14 @@ Checks of the Akai SDK (`vendor/mpc-plugin-builder-sdk` @ febd2ca) against the h
 - **Probe skin:** `MenuOverlay` with `replacementStrings` exactly as SDK 3.3: blank rows (a checkmark on the current one), a tap picks
   nothing, a tap outside does not close it; only the MENU button leaves. `NonZero/` never hid, in either the "Show" or the SDK "Hide"
   shape; `IndexedEnabling` worked in both. `Meter` v3 followed its parameter; `Plotter` v2 loaded but drew nothing.
-- **`"automatable": false` (Keyscope build from `sdk-wrapper-automatable`, `hold` and `status` off):** both were missing from Grid
+- **`"automatable": false` (a Keyscope build with the wrapper's `"automatable"` flag, #925; `hold` and `status` off):** both were missing from Grid
   view's automation "Add New > Insert 1: Keyscope" list; the on-screen Hold toggle still worked. Not tested: a Q-Link on Hold.
 - **Not tested yet:** block size 64.
+
+## 2026-11-16: Plugin Manager 1.3.0 on-screen APPLY, CHECK and UNDO of the 16-pad patch: passed (device, Live III, MPC OS 3.10.1)
+Follow-up to the 2026-11-15 entry, with the fixes of #921 (BusyBox), #922 (script reads our own copy as stock) and plugin-manager #15 merged (a local aarch64 build
+of main, `.so` md5 `8778086c...`, put on the device; one MPC restart to load it). Start: stock MPC, Addin Restore removed.
+- APPLY on the PATCHES page: companion step "patch addin-restore (for drum-pad-layout) install: exit 0, now patched", then the detached restart; the status after it read "patched". The restart took much less time than the first run.
+- CHECK with the patch on: `patched` (was "unsupported"). UNDO on screen: `uninstall (detached): exit 0, now stock`, exe md5 `b24b7955...`, `94-mpc-drumpad.conf` and `/data/mpc-drumpad` gone, Addin Restore stayed.
+- **Open (UX):** the "Restarting MPC…" and result messages are on the status line of the main page, which you do not see while on PATCHES. Show them on the PATCHES page.
+- Not re-tested: the double-tap guard on a device (offline test only), Gen1/Force.

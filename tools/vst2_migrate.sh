@@ -68,6 +68,13 @@ element() {   # element DIR LOC: the folder's plugin-meta.xml, else the MPC.sett
     [ -n "$e" ] || e=$(printf '%s\n' "$ENTRIES" | grep -F "/${1##*/}/" | head -n 1)   # registered from another location (the old Synths copy)
     printf '%s\n' "$e"
 }
+relfile() {   # relfile DIR FILE: the binary's path inside the plugin folder DIR, from an element's file=. Most plugins keep
+              # the .so at the top of the folder; the Akai SDK layout keeps it in a subfolder ("VST/x.so").
+    so=${2##*/}
+    [ -f "$1/$so" ] && { printf '%s' "$so"; return; }
+    r=$(cd "$1" 2>/dev/null && find . -name "$so" -type f | head -n 1)
+    [ -n "$r" ] && printf '%s' "${r#./}" || printf '%s' "$so"
+}
 write_json() {   # write_json OUT ELEMENT
     el=$2
     name=$(unxml "$(attr name "$el")"); mfr=$(unxml "$(attr manufacturer "$el")"); uid=$(attr uid "$el"); file=$(attr file "$el")
@@ -80,7 +87,7 @@ write_json() {   # write_json OUT ELEMENT
         [ -n "$ver" ] && printf '  "version": "%s",\n' "$(jstr "$ver")"
         [ -n "$cat" ] && printf '  "category": "%s",\n' "$(jstr "$cat")"
         printf '  "numInputs": %s,\n  "numOutputs": %s,\n' "${ins:-0}" "${outs:-2}"
-        printf '  "%s": "%s"\n}\n' "$KEY" "$(jstr "${file##*/}")"
+        printf '  "%s": "%s"\n}\n' "$KEY" "$(jstr "$(relfile "${1%/*}" "$file")")"
     } > "$1.new" && mv "$1.new" "$1"
 }
 
@@ -131,7 +138,7 @@ printf '%s\n' "$LOCS" | while IFS= read -r loc; do
         el=$(element "$d" "$loc")
         if [ -z "$el" ]; then echo "SKIP  $folder: no plugin-meta.xml and no MPC.settings entry (no plugin here?)"; continue; fi
         name=$(unxml "$(attr name "$el")"); mfr=$(unxml "$(attr manufacturer "$el")"); uid=$(attr uid "$el")
-        file=$(attr file "$el"); so=${file##*/}
+        file=$(attr file "$el"); so=$(relfile "$d" "$file")
         if [ "$folder" != "$mfr - VST - $name" ]; then
             echo "SKIP  $folder: folder name is not \"<manufacturer> - VST - <name>\" ($mfr / $name), MPC would not match it"; continue
         fi
