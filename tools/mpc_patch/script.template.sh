@@ -249,12 +249,15 @@ G2_TEST=${MPC_G2_TEST:-}                  # set: no systemctl, no running-MPC ch
 STOCK_G2_391=@@STOCK_391@@
 STOCK_G2_310=@@STOCK_310@@
 STOCK_G2_3101=@@STOCK_3101@@
+STOCK_G2_3101R=@@STOCK_3101R@@
 PATCHED_G2_391=@@PATCHED_391@@
 PATCHED_G2_310=@@PATCHED_310@@
 PATCHED_G2_3101=@@PATCHED_3101@@
+PATCHED_G2_3101R=@@PATCHED_3101R@@
 PATCH_DATA_G2_391='@@PATCH_391@@'
 PATCH_DATA_G2_310='@@PATCH_310@@'
 PATCH_DATA_G2_3101='@@PATCH_3101@@'
+PATCH_DATA_G2_3101R='@@PATCH_3101R@@'
 
 g2_sysd() { [ -n "$G2_TEST" ] || systemctl "$@"; }
 g2_source() {   # the MPC this system runs when we are not installed: a bind-mount drop-in of someone else's, else the root's
@@ -270,6 +273,7 @@ g2_pick() {   # $1 = stock md5 -> sets G2_ID, G2_STOCK, G2_PATCHED, G2_DATA; ret
     case "$1" in
         "$STOCK_G2_391") G2_ID=3.9.1; G2_STOCK=$STOCK_G2_391; G2_PATCHED=$PATCHED_G2_391; G2_DATA=$PATCH_DATA_G2_391 ;;
         "$STOCK_G2_310") G2_ID=3.10.0; G2_STOCK=$STOCK_G2_310; G2_PATCHED=$PATCHED_G2_310; G2_DATA=$PATCH_DATA_G2_310 ;;
+        "$STOCK_G2_3101R") G2_ID=3.10.1; G2_STOCK=$STOCK_G2_3101R; G2_PATCHED=$PATCHED_G2_3101R; G2_DATA=$PATCH_DATA_G2_3101R ;;
         "$STOCK_G2_3101") G2_ID=3.10.1; G2_STOCK=$STOCK_G2_3101; G2_PATCHED=$PATCHED_G2_3101; G2_DATA=$PATCH_DATA_G2_3101 ;;
         *) return 1 ;;
     esac
