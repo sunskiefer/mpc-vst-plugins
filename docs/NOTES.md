@@ -2115,6 +2115,11 @@ Fixes (offline-tested; not yet on a device): the manager's keys get the same 250
 - So a plugin moved to VST2 Plugins and then updated would show its old skin. `tools/vst2_migrate.sh` now renames the old copy's
   `Plugin Skins` to `Plugin Skins.vst2-moved` (nothing deleted) after a move, for plugins moved before, and after every install's
   `--json` run. On the test unit that was 41 plugins. Saved projects that name the old path still load (and draw the new skin).
+- 2026-11-15 (offline only, scratch trees): `vst2_migrate.sh` wrote `file64`/`file32` as the binary's bare file name, so a plugin
+  that keeps its `.so` in a subfolder (the Akai SDK layout, `VST/x.so`) got a `plugin.json` pointing at nothing after a Plugin Manager
+  install (plugin-manager#12, reported on an MPC One G2 and a Key 37 G2), and the move from a Synths folder skipped it ("binary not
+  in the folder"). It now writes the path inside the plugin folder (`relfile`); a `.so` at the top of the folder gives the same
+  `plugin.json` as before.
 
 ## 2026-11-01: a plugin can serve a web page on the local network (Live III, MPC OS 3.10.1.6, device)
 
