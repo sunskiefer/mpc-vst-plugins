@@ -14,6 +14,8 @@ for arch in aarch64 armv7l; do
   rm -rf /nvme /data /tmp/shim; mkdir -p "/nvme/MPC Documents" /tmp/shim
   printf "#!/bin/sh\necho $arch\n" > /tmp/shim/uname; chmod +x /tmp/shim/uname
   export PATH=/tmp/shim:$PATH
+  # the devices BusyBox 1.36.1 has no head -c and no od -A (device, 2026-11-15): the script must not use them
+  grep -nE "head +-c|od +-A" /t/addin-restore-patch.sh && fail "$arch: script uses head -c / od -A (BusyBox on the device lacks them)"
   S=/t/addin-restore-patch.sh; D="/nvme/MPC Documents/Devices/Addin Restore"
   sh $S status | grep -qx "STATE state=stock supported=1" || fail "$arch: not stock before install"
   sh $S install --confirmed > /tmp/o || fail "$arch: install"; grep -q "16-pad drum layout patch on Gen2" /tmp/o || fail "$arch: install text"
