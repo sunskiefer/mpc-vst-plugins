@@ -137,8 +137,8 @@ device internals: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md), [docs/OS2_SKIN
 
 ## Limits
 
-VST2 only (a desktop VST3 build exists) · no native drop-down picker, custom-drawn widgets or text entry · two fonts for live text
-(Titillium Web, Roboto) · plugin MIDI out is ignored by MPC (generators open their own port) · notes land on 128-sample blocks
+VST2 only (a desktop VST3 build exists) · no native drop-down picker or text entry · live-drawn widgets limited (Envelope works) · three font families for live text
+(Titillium Web, Roboto; Nexa untested) · plugin MIDI out is ignored by MPC (generators open their own port) · notes land on 128-sample blocks
 unless a port opts into sample-accurate starts · a plugin crash takes MPC down · Gen1 gives a plugin about 2.9 ms per audio block, shared
 with the whole project. Full list: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md#limitations). What is next: [docs/ROADMAP.md](docs/ROADMAP.md).
 
