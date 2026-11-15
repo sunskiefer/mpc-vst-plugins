@@ -30,7 +30,8 @@ vst.json (paths are relative to the vst.json's folder):
                                                  #   (HAS_LFO_BPM: host tempo as "lfo_bpm"; HAS_TRANSPORT: play/stop as "transport";
                                                  #   HAS_SONG_POS: the engine's song_pos(ppq, bpm, playing, frames) every block, for a MIDI generator)
                                                  #   (HAS_DISPLAY_REV: the DSP changes values by itself; the wrapper polls its "display_rev" and
-                                                 #   refreshes the host; PARAM_TEXT_MAX: readout length, default 24 -- see wrapper/vst2_wrap.c)
+                                                 #   refreshes the host; PARAM_TEXT_MAX: readout length, default 24; STATE_MAX: state chunk bytes, default 8192
+                                                 #   -- see wrapper/vst2_wrap.c and docs/PORTING.md)
       "build": {"root": "..", "sources": ["src/engine.c"], "cflags": ["-Isrc"], "libs": ["-lm"]}
                                                  #   "cflags_arm": [..] -- extra flags for the armhf device build only (not the x86 host test), e.g. ["-mfpu=neon"]
                                                  #   "cflags_aarch64": [..] -- the same for the Gen2 (aarch64) build

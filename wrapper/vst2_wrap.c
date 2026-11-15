@@ -48,6 +48,15 @@
 #if SAMPLE_ACCURATE && defined(PLUG_EFFECT)
 #error "SAMPLE_ACCURATE is for instruments: an effect has no notes to place"
 #endif
+#ifndef STATE_MAX
+#define STATE_MAX 8192 /* the largest state chunk, bytes, NUL included: what effGetChunk can hand the host and the most effSetChunk
+                        * takes (a bigger one is refused whole). Allocated per instance when it is created. A port with a bigger
+                        * "state" sets it through vst.json "defines"; a project saved with a chunk above 8192 loads in an
+                        * older wrapper build as the default state (docs/PORTING.md) */
+#endif
+#if STATE_MAX < 16
+#error "STATE_MAX must be at least 16"
+#endif
 #ifdef WRAP_TRACE   /* poc/inputprobe: the port provides wrap_trace() and logs every raw host call (kind 0 = setParameter, 1 = getParameter) */
 void wrap_trace(int kind, int idx, float value);
 #define TRACE(kind, idx, value) wrap_trace(kind, idx, value)
@@ -152,7 +161,7 @@ typedef struct {
     pthread_t rev_th; volatile int rev_stop; int rev_th_on;   /* the display_rev reporter thread (see rev_scan) */
 #endif
     float open[NPARAMS];     /* popup "open" flags (popup.h): kept here, never sent to the DSP or saved */
-    char chunk[8192];
+    char *chunk;             /* STATE_MAX bytes, allocated with the instance (never on the audio thread) */
     pthread_mutex_t lock;    /* one engine call at a time: see eng_set() */
     int nrpn;                /* HAS_NRPN: the parameter CC 99/98 selected (-1: none), its coarse value from CC 6 */
     int nrpn_msb;
@@ -873,6 +882,7 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
 #endif
         g_api->destroy(w->dsp);
         pthread_mutex_destroy(&w->lock);
+        free(w->chunk);
         free(w);
         return 1;
 #ifdef PLUG_EFFECT
@@ -933,13 +943,14 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
                 !strcmp(p, "receiveVstTimeInfo")) ? 1 : -1;
     case effGetChunk: {
         flush_pend0(e);
-        int len = eng_get(w, "state", w->chunk, sizeof w->chunk);
+        int len = eng_get(w, "state", w->chunk, STATE_MAX);
         if (len <= 0) return 0;
+        w->chunk[STATE_MAX - 1] = 0;   /* an engine that filled the buffer without a NUL */
         *(void **)p = w->chunk;
         return (intptr_t)strlen(w->chunk) + 1;
     }
     case effSetChunk: {
-        if (v <= 0 || (size_t)v > sizeof w->chunk) return 0;
+        if (v <= 0 || (uintmax_t)v > STATE_MAX) return 0;
         memcpy(w->chunk, p, v);
         w->chunk[v - 1] = 0;
         __atomic_store_n(&w->has_pend0, 0, __ATOMIC_RELEASE);   /* a restore sets parameter 0 too */
@@ -961,6 +972,8 @@ __attribute__((visibility("default"))) AEffect *VSTPluginMain(audioMasterCallbac
 #endif
     wrap_t *w = calloc(1, sizeof *w);
     if (!w) return NULL;
+    w->chunk = calloc(1, STATE_MAX);
+    if (!w->chunk) { free(w); return NULL; }
     pthread_mutexattr_t ma;
     pthread_mutexattr_init(&ma);
     pthread_mutexattr_settype(&ma, PTHREAD_MUTEX_RECURSIVE);
@@ -976,7 +989,7 @@ __attribute__((visibility("default"))) AEffect *VSTPluginMain(audioMasterCallbac
 #else
     w->dsp = g_api->create(MODULE_DIR);
 #endif
-    if (!w->dsp) { pthread_mutex_destroy(&w->lock); free(w); return NULL; }
+    if (!w->dsp) { pthread_mutex_destroy(&w->lock); free(w->chunk); free(w); return NULL; }
     for (int i = 0; i < NPARAMS; i++)
         if (PARAMS[i].string_display && !PARAMS[i].no_poll) w->poll_list[w->npoll++] = (short)i;
     w->n_on = w->npoll;

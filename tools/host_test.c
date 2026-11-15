@@ -2,7 +2,7 @@
  * (and its adapter) and the port's generated params.h -- tools/test_port.sh does all that -- and run
  * under ASan. Checks two independent instances, names/display for every param, a set/get round
  * trip, option selection, popup open/close, note -> audio, chunk save/restore, step_of on an option list and, with
- * HAS_TRANSPORT, play/stop/jump-back (poc/steptest). Exit 1 on failure. */
+ * HAS_TRANSPORT, play/stop/jump-back (poc/steptest); the state chunk size limit (STATE_MAX, poc/chunktest). Exit 1 on failure. */
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -271,6 +271,36 @@ static void cc_tests(AEffect *a) {
     }
 #endif
 }
+
+#ifndef STATE_MAX
+#define STATE_MAX 8192   /* wrapper/vst2_wrap.c's default state chunk size */
+#endif
+/* The wrapper takes a chunk of up to STATE_MAX bytes (NUL included) and refuses a bigger one whole, whatever the engine is. */
+static void chunk_bound_tests(AEffect *a) {
+    static char big[STATE_MAX + 2];
+    memset(big, 'x', sizeof big - 1);
+    CHECK(a->d(a, 24, 0, STATE_MAX + 1, big, 0) == 0, "effSetChunk of %d bytes (over STATE_MAX %d) is refused", STATE_MAX + 1, STATE_MAX);
+    CHECK(a->d(a, 24, 0, 0, big, 0) == 0 && a->d(a, 24, 0, -1, big, 0) == 0, "effSetChunk of 0 and negative sizes is refused");
+}
+#ifdef CHUNK_PROBE   /* poc/chunktest: an engine whose "state" is any text, with a STATE_MAX above 8192 */
+static void chunk_tests(AEffect *a, AEffect *b) {
+    static char big[STATE_MAX];
+    for (int i = 0; i < STATE_MAX - 1; i++) big[i] = (char)('a' + i % 26);
+    big[STATE_MAX - 1] = 0;
+    CHECK(STATE_MAX > 8192, "STATE_MAX is raised above the 8192 default (%d)", STATE_MAX);
+    CHECK(a->d(a, 24, 0, STATE_MAX, big, 0) == 1, "effSetChunk of exactly STATE_MAX (%d) bytes is accepted", STATE_MAX);
+    void *ch = 0; intptr_t n = a->d(a, 23, 0, 0, &ch, 0);
+    CHECK(n == STATE_MAX && ch && !memcmp(ch, big, STATE_MAX), "effGetChunk returns all %d bytes (got %ld)", STATE_MAX, (long)n);
+    CHECK(b->d(b, 24, 0, n, ch, 0) == 1, "the full chunk loads on instance b");
+    void *ch2 = 0; intptr_t n2 = b->d(b, 23, 0, 0, &ch2, 0);
+    CHECK(n2 == n && ch2 && !memcmp(ch2, big, STATE_MAX), "instance b saves the same %ld bytes back", (long)n2);
+    static char mid[20000];   /* a chunk past the old 8192 limit but below STATE_MAX */
+    memset(mid, 'm', sizeof mid - 1);
+    CHECK(a->d(a, 24, 0, sizeof mid, mid, 0) == 1, "effSetChunk of %d bytes (over the old 8192 limit) is accepted", (int)sizeof mid);
+    ch = 0; n = a->d(a, 23, 0, 0, &ch, 0);
+    CHECK(n == (intptr_t)sizeof mid && ch && !memcmp(ch, mid, sizeof mid - 1), "and reads back whole (%ld bytes)", (long)n);
+}
+#endif
 
 #ifdef SELFSET_PROBE
 /* poc/selfset (wrapper/engine.h mpc_engine_changed): the engine sets "level" from CC 1 and "shape" from CC 2 by itself and
@@ -650,6 +680,10 @@ int main(void) {
         if (cont >= 0) CHECK(fabsf(b->getP(b, cont) - a->getP(a, cont)) <= ctol, "chunk (%ld bytes) restores %s on instance b", (long)n, PARAMS[cont].key);
         if (pop >= 0) CHECK(!strstr((char *)ch, PARAMS[pop].key), "popup flag not saved in the chunk");
     } else printf("warn no chunk (engine has no \"state\" param)\n");
+    chunk_bound_tests(a);
+#ifdef CHUNK_PROBE
+    chunk_tests(a, b);
+#endif
 
     program_tests(a);
     cc_tests(a);

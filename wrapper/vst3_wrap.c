@@ -67,7 +67,10 @@
 #define DSP_BLOCK 128
 #define ENGINE_RATE 44100.0
 #define MAX_EVENTS 512       /* MIDI messages per host block (notes and controller parameters); more are dropped */
+#if !defined(STATE_MAX) || STATE_MAX < 65536   /* a port's vst.json STATE_MAX (the VST2 chunk size) may raise this, never lower it */
+#undef STATE_MAX
 #define STATE_MAX 65536
+#endif
 #define PROG_ID 0x7FFF0000u  /* NPRESETS: the program-change parameter */
 #define BYPASS_ID 0x7FFF0001u
 #define MIDI_ID 0x40000000u  /* + channel * 130 + controller (0-127 CC, 128 channel pressure, 129 pitch bend) */
