@@ -66,6 +66,14 @@ for the pattern). This applies to every future port, not just ones that hit the 
       `"DISPLAY_REV_NO_UPDATE": 1`: it reports only the moved values, no full `UpdateDisplay` (which closes the popup 10 times a second);
       text readouts then stop refreshing, so draw live numbers as `picture` widgets keyed on the same value (ottmpc: `vst/art/make_art.py`).
       Readouts longer than 24 characters need `"PARAM_TEXT_MAX": <n>` (NOTES.md; `poc/uiprobe` is the example).
+- [ ] Optional: an engine whose `"state"` (get_param/set_param, the project's saved chunk) can pass 8192 bytes sets `"defines": {"STATE_MAX": 65536}`
+      (bytes, NUL included; default 8192, so a port that sets nothing builds exactly as before). The wrapper allocates that much per
+      instance when it is created (never on the audio thread) and uses it for `effGetChunk` and as the `effSetChunk` bound; the
+      engine's `get_param("state", buf, n)` must still stop at `n`. A chunk over the limit is refused whole on load, not cut. **Forward-compat:** a project saved with a chunk above 8192 bytes opens in an
+      older wrapper build (any build without `STATE_MAX`) as the default state, and a downgraded plugin does the same: ship the raise
+      in a version bump and keep chunks modest (tens of KB; larger ones grow every `.xpj` and `.xpl`). The host accepts far more
+      (the vendor SDK's host contract says 128 MB) but that is not verified on a device here. `poc/chunktest` is the test engine
+      (`tools/host_test.c` round-trips a 64 KB chunk through it; every build also checks that one byte past the limit is refused).
 - [ ] Optional: an engine that sets its own parameters from something the host doesn't see (MIDI on an ALSA port of its
       own, say) can instead define `mpc_engine_changed()` (`wrapper/engine.h`) and return each key it changed: the wrapper
       tells the host as it does for a MIDI CC (at most every 1024 frames per control; an option list also gets an

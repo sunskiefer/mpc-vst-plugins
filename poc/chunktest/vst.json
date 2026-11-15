@@ -1,0 +1,10 @@
+{
+  "name": "MPC Chunk Test",
+  "vendor": "sd88me",
+  "uid": "ChkT",
+  "version": 1000,
+  "so": "chunktest.so",
+  "params": "params.json",
+  "defines": {"CHUNK_PROBE": 1, "STATE_MAX": 65536},
+  "build": {"root": "../..", "sources": ["poc/chunktest/engine.c"], "cflags": [], "libs": ["-lm"]}
+}

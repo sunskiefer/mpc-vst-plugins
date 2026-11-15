@@ -67,7 +67,11 @@
 #define DSP_BLOCK 128
 #define ENGINE_RATE 44100.0
 #define MAX_EVENTS 512       /* MIDI messages per host block (notes and controller parameters); more are dropped */
+#if !defined(STATE_MAX) || STATE_MAX < 65536   /* a port's vst.json STATE_MAX (the VST2 chunk size) may raise this, never lower it */
+#undef STATE_MAX
 #define STATE_MAX 65536
+#endif
+#define STATE_SLACK 64       /* room for "mpc-vst3 state\n" (15) and "\n\x01program=..\nbypass=..\n" (< 48) around a full STATE_MAX engine state */
 #define PROG_ID 0x7FFF0000u  /* NPRESETS: the program-change parameter */
 #define BYPASS_ID 0x7FFF0001u
 #define MIDI_ID 0x40000000u  /* + channel * 130 + controller (0-127 CC, 128 channel pressure, 129 pitch bend) */
@@ -115,7 +119,7 @@ typedef struct {
     midi_ev_t ev[MAX_EVENTS];
     int nev;
     int nrpn;                         /* HAS_NRPN: the parameter CC 99/98 selected (-1: none) */
-    char state[STATE_MAX];
+    char state[STATE_MAX + STATE_SLACK];   /* the engine's text (up to STATE_MAX - 1) plus the header and the wrapper's trailer */
 #ifdef VST3_EDITOR
     double open[NPARAMS > 0 ? NPARAMS : 1];      /* the editor's popup flags (screen-only, never the host's) */
     struct { int p; double v; } uiq[UIQ];        /* editor edits the host can't make, for process() to apply */
@@ -517,9 +521,9 @@ static int is_live(int i) {   /* vst.json "live": a value the engine changes by 
 }
 
 static tresult save_state(v3_t *w, IBStream *s) {
-    int len = eng_get(w, "state", w->state, sizeof w->state);
+    int len = eng_get(w, "state", w->state, STATE_MAX);
     if (len > 0) {
-        w->state[sizeof w->state - 1] = 0;
+        w->state[STATE_MAX - 1] = 0;
         if (!stream_write(s, "mpc-vst3 state\n", 15) || !stream_write(s, w->state, (int)strlen(w->state))) return kResultFalse;
     } else {
         if (!stream_write(s, "mpc-vst3 params\n", 16)) return kResultFalse;
