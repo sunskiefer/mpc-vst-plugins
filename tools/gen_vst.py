@@ -151,7 +151,7 @@ def gen_params(cfg, params, out, shown=None):
              "typedef struct { const char *key, *name, *unit; float min, max, def; int nopts; "
              "const char *const *opts; int momentary; int string_display; int int_display; "
              "int step_target; float step_delta; int popup_of; int hold_ms; int dynamic_name; int dynamic_display; "
-             "int qlink_ticks; int no_poll; int nudge_pct; int nudge_gain; int refresh_display; int debounce_ms; } param_t;"]
+             "int qlink_ticks; int no_poll; int nudge_pct; int nudge_gain; int refresh_display; int debounce_ms; int automatable; } param_t;"]
     key_to_index = {p["key"]: i for i, p in enumerate(params)}
     rows = []
     for i, p in enumerate(params):
@@ -211,23 +211,27 @@ def gen_params(cfg, params, out, shown=None):
         # MPC delivers one tap on a drawn button as two presses 30-140 ms apart (the finger going down and lifting; Live III, 2026-10-30), so a
         # momentary param ignores a second press within debounce_ms (default 250) of the last one it acted on; "debounce_ms": 0 turns it off
         debounce = int(p.get("debounce_ms", 250 if p.get("momentary") else 0))
+        # "automatable": false -- effCanBeAutomated answers no, so MPC keeps the param out of its automation lists and lanes (UI plumbing:
+        # a browser, page or prev/next buttons, a readout). MPC caches the answer at load: turning it off later drops lanes saved projects have.
+        auto = int(p.get("automatable", True) is not False)
         if opts:
             lines.append("static const char *const OPTS_%d[] = {%s};" % (i, ", ".join(c_str(o) for o in opts)))
             d = p.get("default", 0)
             if isinstance(d, str):
                 d = opts.index(d) if d in opts else 0
             norm = d / (len(opts) - 1) if len(opts) > 1 else 0
-            rows.append("    {%s, %s, \"\", 0, 0, %s, %d, OPTS_%d, %d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d}," % (
+            rows.append("    {%s, %s, \"\", 0, 0, %s, %d, OPTS_%d, %d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d}," % (
                 c_str(p["key"]), name, fl(norm), len(opts), i, bool(p.get("momentary")), is_str, is_int,
-                step_target, fl(step_delta), popup_of, p.get("hold_ms", 0), dyn, dyn_disp, qticks, no_poll, nudge, ngain, refresh, debounce))
+                step_target, fl(step_delta), popup_of, p.get("hold_ms", 0), dyn, dyn_disp, qticks, no_poll, nudge, ngain, refresh, debounce,
+                auto))
         else:
             lo, hi = p.get("min", 0), p.get("max", 1)
             d = p.get("default", lo)
             norm = (d - lo) / (hi - lo) if hi > lo else 0
-            rows.append("    {%s, %s, %s, %s, %s, %s, 0, 0, %d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d}," % (
+            rows.append("    {%s, %s, %s, %s, %s, %s, 0, 0, %d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d}," % (
                 c_str(p["key"]), name, c_str(p.get("unit", "")), fl(lo), fl(hi), fl(norm),
                 bool(p.get("momentary")), is_str, is_int, step_target, fl(step_delta), popup_of, p.get("hold_ms", 0), dyn, dyn_disp,
-                qticks, no_poll, nudge, ngain, refresh, debounce))
+                qticks, no_poll, nudge, ngain, refresh, debounce, auto))
     lines += ["static const param_t PARAMS[] = {"] + rows + ["};", "#define NPARAMS %d" % len(params),
               "#define PLUG_NAME %s" % c_str(cfg["name"]), "#define PLUG_VENDOR %s" % c_str(cfg["vendor"]),
               "#define PLUG_UID 0x%08x /* '%s' */" % (int.from_bytes(cfg["uid"].encode(), "big"), cfg["uid"]),
