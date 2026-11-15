@@ -35,7 +35,7 @@ MPC OS 2.x skin plan is in [OS2_SKINS.md](OS2_SKINS.md); Gen2 is in [GEN2.md](GE
 - **VST2 only.** MPC OS has no VST3 or LV2 support. (For a desktop DAW, a port can also be built as a VST3 on this machine:
   [docs/DESKTOP_VST3.md](DESKTOP_VST3.md); its window shows the port's MPC skin.)
 - **Setup depends on the firmware.** On MPC OS 3.10.1+ no root is needed: copy the plugin folder (with its `plugin.json`) into
-  `<drive>/VST2 Plugins/` and switch on VST2 Support under Preferences, Enhancements (SDK docs/plugin-folder-format.md:46-58 and
+  `<drive>/VST2 Plugins/` and turn on Enable Enhancements and External Plugin Support under Preferences, Enhancements (SDK docs/plugin-folder-format.md:46-58 and
   docs/faq-and-legal.md:39; the Developer-mode sshd is an option, NOTES.md 2026-10-31). On MPC OS 3.9.1, the Force and the MPC
   Sample (no plugin browser, no `VST2 Plugins` route) setup still needs root SSH to the device, to copy the plugin and add it to
   `MPC.settings`, so those are for modded units. Adding a new plugin there needs one MPC restart; the installers stop and start
@@ -43,7 +43,7 @@ MPC OS 2.x skin plan is in [OS2_SKINS.md](OS2_SKINS.md); Gen2 is in [GEN2.md](GE
 - **No native drop-down picker.** MPC's own menu opens empty for plugins (and can't practically be patched), so option
   lists are drawn by the skin instead: segment buttons or our own pop-up.
 - **Live-drawn widgets are limited.** The stock skins use none, but the SDK documents `Envelope`, `XYPad`, `Meter` and `Plotter`
-  (SDK docs/ui-reference.md:1216-1391). `Envelope` works on hardware (draggable, used in our SDK ports: docs/SDK-PORTING.md:95,109-111).
+  (SDK docs/ui-reference.md:1216-1391). `Envelope` works on hardware (draggable, used in our SDK ports: docs/SDK-PORTING.md sections 3 and 4, "Envelope").
   `XYPad`, `Meter` and `Plotter` are marked "less tested" by the SDK itself (ui-reference.md:1318,1333,1360) and are untested
   here. Everything else is knobs, faders, buttons, text and images. Displays are mostly pre-drawn pictures or filmstrips that follow
   a parameter (a waveform per wave shape, an envelope that follows its knobs: docs/COMMUNITY_SKINS.md), kept still between

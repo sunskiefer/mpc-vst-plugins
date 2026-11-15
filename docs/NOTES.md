@@ -593,7 +593,7 @@ list for these four does not match what's actually on this device. ROADMAP's Env
 resolved as **not available**, same conclusion as the native menu picker.
 *(Note 2026-11-15: superseded. What this entry shows is that no stock skin uses these types, not that MPC cannot draw them. The SDK
 documents Envelope, XYPad, Meter and Plotter (SDK docs/ui-reference.md:1216-1391, the last three marked "less tested" at :1318,1333,1360),
-and Envelope works on hardware in our SDK ports (SDK-PORTING.md:95,109-111). XYPad, Meter and Plotter are untested here.)*
+and Envelope works on hardware in our SDK ports (SDK-PORTING.md sections 3 and 4, "Envelope"). XYPad, Meter and Plotter are untested here.)*
 
 ## KnobOverlay: works for VST2 params (verified on a Force 2026-09-25, Maze Voice)
 Every knob/slider/stepper this repo builds already fires `Show Overlay "knob overlay"` on Double Click and
