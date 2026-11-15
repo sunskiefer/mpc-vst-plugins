@@ -13,5 +13,6 @@
   "summary": "Lets plugins and addins draw their own page on the MPC Sample's screen. Needed by MPC Sample Rack.",
   "screenshot": "https://raw.githubusercontent.com/jacob-sabella/mpc-addin-sample-draw-handler/3db0a761ac2e8ac74d52fef433e576b6c966fee1/docs/screenshots/stompbox-page.gif",
   "asset_pattern": "MPC-Sample-draw-handler-addin-*-mpc-aarch64.zip",
-  "devices": ["mpc-sample"]
+  "devices": ["mpc-sample"],
+  "tip": "https://github.com/sponsors/jacob-sabella"
 }
