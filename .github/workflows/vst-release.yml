@@ -310,6 +310,24 @@ jobs:
           echo "name=$(sed -n 's/.* name="\([^"]*\)".*/\1/p' "$entry")" >> "$GITHUB_OUTPUT"
           echo "bench=$bench" >> "$GITHUB_OUTPUT"
 
+      - name: Advisory check of the SDK zip with Akai's validate.py
+        if: ${{ inputs.sdk_project == '' }}
+        continue-on-error: true
+        run: |
+          # Advisory only (never fails the release, no --strict). Expect: a single-arch release reports the missing file32/file64;
+          # libasound.so.2 is flagged although the MPC has it (fine when the plugin dlopens it, a problem only as DT_NEEDED).
+          sdkzip=$(ls "$GITHUB_WORKSPACE"/dist/*-mpc-sdk.zip 2>/dev/null | head -n1)
+          if [ -z "$sdkzip" ]; then echo "no SDK-format zip in this release: nothing to validate"; exit 0; fi
+          git -C "$MPC_VST" submodule update --init --depth 1 vendor/mpc-plugin-builder-sdk
+          rm -rf "$RUNNER_TEMP/sdkcheck" && mkdir -p "$RUNNER_TEMP/sdkcheck" && unzip -q "$sdkzip" -d "$RUNNER_TEMP/sdkcheck"
+          folder=$(ls -d "$RUNNER_TEMP"/sdkcheck/*/ | head -n1)
+          {
+            echo "### SDK validate.py (advisory) for $(basename "$sdkzip")"
+            echo '```'
+            python3 "$MPC_VST/vendor/mpc-plugin-builder-sdk/tools/validate.py" "${folder%/}" || echo "(validate.py exit code $?: advisory, the release goes on)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Upload zip and skin previews as run artifacts
         uses: actions/upload-artifact@v4
         with:

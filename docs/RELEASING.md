@@ -163,6 +163,8 @@ to be the directory of their `.so` (`wrapper/plugin_dir.h`, the Plugin Manager's
 (a notice, not a failure). The catalog, the Plugin Manager and the installers keep using the per-build zips (`*-mpc-armv7.zip`
 does not match the SDK zip's name). Tests: `tools/test_sdk_zip.py`. The Plugin Manager release has one too (from 1.1.1). The Install page writes these to a stick from the catalog site: after uploading them, set their SHA-256 (and the tag, if it changed) in `catalog/downloads.json` (docs/CATALOG.md).
 
+The wrapper-port release also runs the Akai SDK's `tools/validate.py` (pinned submodule, no `--strict`) on the unzipped `-mpc-sdk.zip` as an advisory step (`continue-on-error`; output in the job summary, 2026-11-15). Expected noise: a single-arch release lacks `file32` or `file64`, and `libasound.so.2` is flagged as not on the MPC although it is there (only a problem as `DT_NEEDED`; `dlopen` is fine).
+
 ## From an Akai SDK build: `tools/sdk_release.py` (2026-11-13, offline)
 `tools/sdk_release.py "<Manufacturer> - VST - <Name>" --version X --id ID --repo owner/name [--license L]` (a folder made by the SDK's
 `tools/build.py`, or its zip) writes the per-build zips the catalog, the Plugin Manager, the installers and the sticks install: one per
