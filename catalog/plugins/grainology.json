@@ -1,0 +1,4 @@
+{ "id": "grainology", "name": "Grainology", "author": "Stephane Schmitz", "repo": "eldontyrellcorp/mpc-plugin-grainology",
+  "kind": "instrument", "style": "synth", "tags": ["granular", "ambient", "drone", "pad", "wavetable"], "license": "MIT",
+  "summary": "A granular synthesizer: two granular parts that play one of eleven sound generators or your own WAV files, a wavetable drone and a wavetable pad, each with a filter and two LFOs, plus a ping-pong delay and a plate reverb. 16 programs, a grain view on the screen. Built with the Akai MPC Plugin SDK; Gen1 and Gen2.",
+  "screenshot": "https://raw.githubusercontent.com/eldontyrellcorp/mpc-plugin-grainology/v1.0.0/screenshots/main_page.png" }
