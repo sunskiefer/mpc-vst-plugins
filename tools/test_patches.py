@@ -207,6 +207,20 @@ class ManifestCheck(unittest.TestCase):
         d["patches"][0]["script"]["url"] = "https://raw.githubusercontent.com/open-mpc/mpc-vst-plugins/" + "a" * 40 + "/../x.sh"
         self.assertTrue(any("escapes" in e for e in self.errors(d)))
 
+    def test_also_installs(self):
+        d = copy.deepcopy(self.doc)
+        ids = [p["id"] for p in d["patches"]]
+        dp, ar = d["patches"][ids.index("drum-pad-layout")], d["patches"][ids.index("addin-restore")]
+        self.assertEqual(dp.get("also_installs"), {"aarch64": ["addin-restore"]})   # the real link: Gen2 keeps the 16-pad patch after a reboot
+        for bad, why in (({"aarch64": ["nosuch"]}, "not another patch"), ({"armv7l": ["addin-restore"]}, "does not support armv7l"),
+                         ({"aarch64": []}, "must map"), ({"mips": ["addin-restore"]}, "does not support"),
+                         ({"aarch64": ["drum-pad-layout"]}, "not another patch")):
+            dp["also_installs"] = bad
+            self.assertTrue(any(why in e for e in self.errors(d)), (bad, self.errors(d)))
+        dp["also_installs"] = {"aarch64": ["addin-restore"]}
+        ar["restarts_mpc"] = True
+        self.assertTrue(any("must not restart MPC" in e for e in self.errors(d)))
+
 
 class SitePublishesManifest(unittest.TestCase):
     def build(self, patches):

@@ -95,7 +95,37 @@ def check(doc, root=ROOT, online=False):
                 errors.append("%s: script is larger than %d bytes" % (where, MAX_SCRIPT))
             elif hashlib.sha256(data).hexdigest() != s["sha256"]:
                 errors.append("%s: downloaded script does not match sha256" % where)
+    errors += check_also_installs(doc["patches"])
     return errors, warnings
+
+
+def check_also_installs(patches):
+    """`also_installs`: {"<arch>": ["<patch id>", ...]}, patches installed with this one on that CPU (the Plugin Manager installs or
+    updates them first, after its own warning). Each must be another listed patch for that CPU that is reversible and does not
+    restart MPC, so it can run while MPC still runs, before the main patch stops it."""
+    errors, by_id = [], {p.get("id"): p for p in patches if isinstance(p, dict)}
+    for p in patches:
+        if not isinstance(p, dict) or "also_installs" not in p:
+            continue
+        where, ai = "patch %r" % p.get("id"), p["also_installs"]
+        archs = str(p.get("supports", {}).get("arch", "")).split(",")
+        if not isinstance(ai, dict) or not ai or not all(isinstance(v, list) and v for v in ai.values()):
+            errors.append("%s: also_installs must map a CPU to a list of patch ids" % where)
+            continue
+        for arch, ids in ai.items():
+            if arch not in archs:
+                errors.append("%s: also_installs names %s, which the patch does not support" % (where, arch))
+            for cid in ids:
+                c = by_id.get(cid)
+                if c is None or cid == p.get("id"):
+                    errors.append("%s: also_installs %r is not another patch in the list" % (where, cid))
+                elif c.get("restarts_mpc") is not False or c.get("reversible") is not True:
+                    errors.append("%s: also_installs %r must not restart MPC and must be reversible" % (where, cid))
+                elif arch not in str(c.get("supports", {}).get("arch", "")).split(","):
+                    errors.append("%s: also_installs %r does not support %s" % (where, cid, arch))
+                elif "also_installs" in c:
+                    errors.append("%s: also_installs %r has its own also_installs (one level only)" % (where, cid))
+    return errors
 
 
 def main():

@@ -2619,3 +2619,18 @@ in apply.sh. Not yet checked on a device. A local zip whose `mpc-plugin.json` ha
 - 3.10.1.8 (`38fdde70994`) `/usr/bin/MPC` md5 `4280be03...` is a different binary from 3.10.0 and from the earlier 3.10.1.6 pre-release (md5 `2f918554...`), so the 3.10.0 patch was refused ("not compatible"). Sites were re-found by pattern (string xref of `DrumSynth:Multi`, the `mov w1,#8` pad counts, the colour loop); `gen2/make_patch_gen2.py` now knows `3.10.1`; script v9.
 - Offline: Unicorn emulation passes (8 names match, others fall through, 16 colour calls); BusyBox script test passes for 3.10.1.
 - Device (Live III, 3.10.1.8 rootfs, no kit): `install --confirmed` made `/data/mpc-drumpad/MPC`, MPC restarted on the patched copy (`/proc/<pid>/exe` md5 = patched), and all five addin preloads (skipback, commander, forcespoof, filebrowser, remote) are mapped. 16 lit pads confirmed by the user on the Live III.
+
+## 2026-11-15: the 16-pad patch survives a reboot on Gen2 through Addin Restore 1.2.0 (offline only)
+- **Why:** on Gen2 the 16-pad patch is a patched copy of MPC in `/data/mpc-drumpad` plus `/run/.../94-mpc-drumpad.conf`; a reboot empties
+  `/run`, so MPC came back stock. Only the mpc310-on-391 stick called `reapply`, and that stick is obsolete with the official 3.10.1.
+- **Addin Restore 1.2.0** (`tools/mpc_patch/addin_restore/`): the library is now open source (`src/addin_restore.c`), rewritten from the
+  unpublished 1.1.0 binary's behaviour (strings and aarch64 disassembly: guard `/run/addin-restore-done`, first `*.so` of each
+  `/data/mpc-addins/<name>` up to 16, MPC's current `LD_PRELOAD` first then the missing ones, `daemon-reload` and `restart acvs` 8 s later
+  from a double-forked child). New: when the 16-pad copy is installed and its drop-in is gone, the child runs the patch's saved
+  `reapply` (it refuses a copy made from another MPC) and the one restart covers both. The `.lua` and signed `.ini` are byte-identical to
+  1.1.0's, so MPC's signature check still passes. Built with Zig 0.13 (aarch64 needs GLIBC 2.17, armv7 2.4, nothing but libc).
+- **Catalog:** `drum-pad-layout` gets `"also_installs": {"aarch64": ["addin-restore"]}` (new key, `patch_check.py` validates it); the
+  Plugin Manager installs or updates Addin Restore before the 16-pad patch on Gen2, after its warning (plugin-manager PR).
+- **Offline:** 12 library cases under ASan/UBSan, the script's status/install/update (of a stand-in and of the real 1.1.0)/uninstall in
+  Docker for both CPUs, 21 manifest tests. **Not yet on a device:** a Live III reboot with both installed (expect one restart, then
+  PATCHED), and a reboot with addins and the 16-pad patch together.

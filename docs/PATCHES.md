@@ -64,6 +64,12 @@ A plugin install is additive (files plus one settings entry). A patch rewrites A
 - `url` is pinned to a commit (never a branch), `https` only, and `sha256` is re-checked after download, as the catalog zips are. The sha256 above is the
   current script; it changes with every rebuild, so the manifest entry is updated in the same commit that rebuilds the script.
 - `supports` is advisory text for the page; the script's own checksum gate is what actually refuses.
+- `also_installs` (optional, 2026-11-15): `{"<arch>": ["<patch id>", ...]}`, patches that go on together with this one on that CPU. The
+  Plugin Manager names them in its APPLY warning, checks each and installs or updates it first (while MPC still runs), and stops if one
+  fails. Each must be another listed patch for that CPU, reversible, with `restarts_mpc: false`, and without its own `also_installs`
+  (`patch_check.py` enforces it). UNDO of the main patch leaves them. Example: `drum-pad-layout` has `{"aarch64": ["addin-restore"]}`,
+  because on Gen2 the 16-pad patch lives in a `/run` drop-in and Addin Restore brings it back after a reboot. The desktop app ignores
+  the key so far.
 - `modifies`, `backup`, `restarts_mpc`, `reversible` are shown before anything runs and must be true statements (a test per patch checks `uninstall`).
 - A `tools/patch_check.py` validates the file (schema, https, 40-hex commit in the URL, sha256 matches the downloaded or local script, every field present) and
   runs in CI next to `catalog_check.py`.

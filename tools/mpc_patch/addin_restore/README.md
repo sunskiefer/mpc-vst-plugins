@@ -18,6 +18,17 @@ Installs a Lua device script on the persistent content drive (`/nvme` on a Live 
 
 The user sees one automatic MPC restart after a reboot. After that, all addins work.
 
+**Since 1.2.0, also the 16-pad drum layout patch on Gen2.** That patch runs a patched copy of MPC (`/data/mpc-drumpad/MPC`) through
+its own `/run` drop-in, `94-mpc-drumpad.conf`, so a reboot switched it off too. When the copy is installed and the drop-in is gone, the
+library runs the patch's saved script with `reapply`, which writes the drop-in only if the copy was made from the MPC this system runs
+(after a firmware update it leaves MPC stock). Both drop-ins share the one restart. The Plugin Manager installs this patch together with
+the 16-pad patch on Gen2 (`also_installs` in `catalog/patches.json`), so no USB stick or SSH is needed.
+
+## Updating
+
+Install over an older version replaces it in place (`status` says `old-patch` until then). The device script (`.lua`) and its signed
+`.ini` are unchanged since 1.0, so the signature MPC checks still holds; only the library changes.
+
 ## Usage
 
 ```sh
@@ -59,6 +70,14 @@ Three files in `<content root>/MPC Documents/Devices/Addin Restore/`:
 | `addin_restore.so`  | Native library (aarch64 or armv7, by device): reads addins, checks LD_PRELOAD, writes drop-in, restarts |
 
 All files are on the persistent content drive. They survive reboots and firmware updates. The system image is not modified.
+
+## Source and build
+
+`src/addin_restore.c` is the library (1.2.0 rewrote the unpublished 1.1.0 library from what it does: same guard, same drop-in, same
+order of `LD_PRELOAD`, same 8 s restart). `build.sh` cross-compiles it with Zig (`python3 -m pip install ziglang==0.13.0`) for aarch64 and
+armv7 against glibc 2.31, checks that the libraries need nothing but libc, and regenerates `addin-restore-patch.sh` from
+`script.template.sh`. Tests: `build.sh test` (12 cases of the library under ASan/UBSan, on the host) and `test_script.sh` (the script's
+status, install, update of 1.1.0 and uninstall, in Docker, for both CPUs).
 
 ## Uninstall
 

@@ -21,7 +21,12 @@ ends with a `STATE` line. Save your project first: install and uninstall restart
    (Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC, Lucky Dip) shows 16 lit red pads.
 3. `uninstall` and check `status` is stock again. Report the `md5sum /proc/$(pidof MPC)/exe` after install (want `0c819376e5a72803ec97c5c8b582f36e`).
 
-## Stick boot calling `reapply` (Gen2, 3.10 kit)
+## Reboot with Addin Restore 1.2.0 (Gen2; replaces the stick test below, 2026-11-15)
+With the drum patch and Addin Restore 1.2.0 installed (both from the Plugin Manager, or `sh addin-restore-patch.sh install`), reboot
+with no stick. Expect one automatic MPC restart a few seconds after boot, then `status` says PATCHED and running, and
+`/tmp/addin-restore.log` has "16-pad drop-in written". Also: with addins installed, they are loaded too after the same single restart.
+
+## Stick boot calling `reapply` (Gen2, 3.10 kit; obsolete since the official 3.10.1)
 With the drum patch installed (`/data/mpc-drumpad/mpc-drum-pad-patch.sh` exists), reboot with the mpc310-on-391 stick in.
 Read `mpc310-result.txt` on the stick: expect a "Restarting MPC with the drum-pad patch" or "already" line, then
 `status` says PATCHED and running. Without the stick the stock MPC runs after a reboot (the drop-in lives in /run).
