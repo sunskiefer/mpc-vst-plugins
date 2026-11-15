@@ -4,7 +4,7 @@
     {
       "id": "drum-pad-layout",
       "title": "16-pad drum layout for selected plugins",
-      "summary": "Machinedrum Module / Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC and Lucky Dip get MPC's drum layout with all 16 pads lit. On Gen2 (Live III) it runs a patched copy of MPC instead of changing the system.",
+      "summary": "Machinedrum Module / Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC and Lucky Dip get MPC's drum layout with all 16 pads lit. On Gen2 (Live III) it runs a patched copy of MPC instead of changing the system; the Plugin Manager then also installs the MPC Add-Ins patch, which brings it back after every reboot.",
       "author": "sd88me",
       "license": "MIT",
       "docs": "tools/mpc_patch/README.md",
@@ -13,6 +13,7 @@
         "sha256": "6cfc33f8c23193595efd360e86beac2e0b379bb68875da6dcb381d492182ce79"
       },
       "supports": {"os": "MPC OS 3.9.1.2 (Force); Gen1 MPC OS 3.10.0; Gen2 (aarch64) MPC OS 3.9.1, 3.10.0 and 3.10.1 (incl. the official release)", "arch": "armv7l,aarch64", "mpc_md5": ["592eebc8e1ce0797dc8c98e7002143b8", "a7ace6a9993df33afeae50571755bbf9", "15a664f6b6ae591c8b78baae8b376f02", "b6cc8e7a398bdf6c3fd8f7176eecd3ee", "4280be032878fc321b7f58a6801cb1ea", "b24b7955d904a5779059287e4793ea0f"]},
+      "also_installs": {"aarch64": ["addin-restore"]},
       "modifies": ["/usr/bin/MPC"],
       "backup": "/sdcard/MPC-backup",
       "restarts_mpc": true,
@@ -55,13 +56,13 @@
     {
       "id": "addin-restore",
       "title": "MPC Add-Ins patch for 3.10: restore addins after a reboot",
-      "summary": "On MPC OS 3.10 (Gen2), addins load through a systemd drop-in in /run (tmpfs) that is lost after every reboot. This patch installs a Lua device script on the persistent content drive that MPC runs at every start. If addins in /data/mpc-addins are not loaded, it writes the /run drop-in and restarts MPC once. The user sees one automatic restart after a reboot; after that, all addins work. Does not modify the system image. Tested on a Live III (MPC OS 3.10, 2026-11-03): survives a full reboot, five addins restored.",
+      "summary": "On MPC OS 3.10 (Gen2), addins load through a systemd drop-in in /run (tmpfs) that is lost after every reboot. This patch installs a Lua device script on the persistent content drive that MPC runs at every start. If addins in /data/mpc-addins are not loaded, it writes the /run drop-in and restarts MPC once. Since 1.2.0 it does the same for the 16-pad drum layout patch on Gen2 (the Plugin Manager installs it with that patch), with the same single restart; Apply updates an installed 1.1.0 in place. The user sees one automatic restart after a reboot; after that, all addins work. Does not modify the system image. 1.1.0 tested on a Live III (MPC OS 3.10, 2026-11-03): survives a full reboot, five addins restored; 1.2.0 offline only so far.",
       "author": "sd88me",
       "license": "MIT",
       "docs": "tools/mpc_patch/addin_restore/README.md",
       "script": {
-        "url": "https://raw.githubusercontent.com/sd88me/mpc-vst-plugins/c5a1a5e42eef0f6b561d14f11f96cf0d16c6fc95/tools/mpc_patch/addin_restore/addin-restore-patch.sh",
-        "sha256": "e412105d511cadae08d97fd13d0ed2c5a18faa8194cbafb7496a5050e434f19b"
+        "url": "https://raw.githubusercontent.com/open-mpc/mpc-vst-plugins/c65e5e62a6e1b7bb775e4cfe41f56651211f702d/tools/mpc_patch/addin_restore/addin-restore-patch.sh",
+        "sha256": "2695b53a30487a00c69f6f7f5796145f6c857d2b16a2c7a50c0b60a17f539bc8"
       },
       "supports": {"os": "MPC OS 3.10 Gen2 (tested on Live III, 2026-11-03)", "arch": "aarch64"},
       "modifies": ["/nvme/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/nvme/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/nvme/MPC Documents/Devices/Addin Restore/addin_restore.so", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.so"],
