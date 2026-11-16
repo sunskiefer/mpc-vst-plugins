@@ -1,0 +1,21 @@
+{
+  "id": "sq8lmpc",
+  "name": "SQ8LMPC",
+  "author": "L'Cronx",
+  "repo": "sunskiefer/SQ8LMPC",
+  "kind": "instrument",
+  "style": "synth",
+  "tags": [
+    "ensoniq",
+    "sq-80",
+    "esq-1",
+    "emulation",
+    "sq8l",
+    "digital-wavetable",
+    "preservation"
+  ],
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "source_available": true,
+  "screenshot": "https://raw.githubusercontent.com/sunskiefer/SQ8LMPC/0.2.0/docs/img/panel.png",
+  "summary": "SQ8L 0.91b (Ensoniq SQ-80 emulation by Siegfried Kullmann, based on sq8l-revival) on the Akai Force: same engine and sound, the SQ8L panel on one screen, 128 factory sounds, your own banks with SAVE, drop-in banks. Bring your own SQ-80 wave ROM (not included). Unofficial, free, non-commercial."
+}
