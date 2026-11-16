@@ -33,6 +33,8 @@ Design: `docs/CATALOG.md`. Formats: `docs/CATALOG_SPEC.md`.
 3. CI checks the entry and your latest release. Once merged, new releases appear automatically (nightly, or
    run the "Catalog build" workflow).
 
+Reviewers check new entries against [docs/CATALOG_REVIEW.md](../docs/CATALOG_REVIEW.md); reading it first saves a round trip.
+
 ## Many plugins from one repo: a collection
 If your repo publishes several plugins (each with its own release zip and `asset_pattern`), group them so the catalog shows one card
 instead of one per plugin. **More than 5 entries from one repo by the same `author` without a collection fail the registry check (CI).** Entries
