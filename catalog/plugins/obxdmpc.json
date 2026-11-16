@@ -12,7 +12,8 @@
     "subtractive"
   ],
   "license": "GPL-3.0-only",
-  "summary": "OB-Xd, the Oberheim OB-X emulation: two oscillators with sync and cross-mod, a 12/24 dB filter, voice variation; 128 presets.",
+  "summary": "OB-Xd, the Oberheim OB-X emulation: two oscillators with sync and cross-mod, a 12/24 dB filter, voice variation; 517 patches in 10 banks with a browser page, and your own .fxb banks. Also a VST3 for Mac and Windows and an Audio Unit for Mac.",
   "screenshot": "https://raw.githubusercontent.com/3dthc/OB-XD-MPC/c564dfd0c0966d92b29365819d754b8cf75bc616/docs/screenshots/obxd.png",
-  "asset_pattern": "*-mpc-armv7.zip"
+  "asset_pattern": "*-mpc-armv7.zip",
+  "tip": "https://ko-fi.com/3dthc"
 }
