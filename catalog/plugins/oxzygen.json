@@ -16,7 +16,8 @@
     "lo-fi"
   ],
   "license": "MIT",
-  "summary": "A dark, cinematic instrument: choirs, sung doos, flutes, reeds, brass, atmospheric strings, bells, Juno-style synths, wind and textures from CC0 recordings, in two layered slots with filter, lo-fi, delay, reverb and sub. 96 presets; a CRT crystal-ball orb reacts as you play. Gen1 (MPC OS 3.x, plus an OS 2.x zip) and Gen2.",
+  "summary": "A dark, cinematic instrument: choirs, winds, brass, strings, bells, piano, e-piano, harp, mallets, synths and textures from CC0 recordings, in two layered slots with filter, lo-fi, tempo-synced delay and motion, reverb and sub. 200 presets with a browser page; a CRT orb reacts as you play. Also a VST3 for Mac and Windows and an Audio Unit for Mac.",
   "asset_pattern": "OxZygen-*-mpc-armv7.zip",
-  "screenshot": "https://raw.githubusercontent.com/3dthc/OxZygen/b7640ca5971ef1371742bb2fad4ffc74a534b2a2/docs/img/player.png"
+  "screenshot": "https://raw.githubusercontent.com/3dthc/OxZygen/b7640ca5971ef1371742bb2fad4ffc74a534b2a2/docs/img/player.png",
+  "tip": "https://ko-fi.com/3dthc"
 }

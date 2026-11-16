@@ -15,5 +15,6 @@
   "license": "MIT",
   "summary": "An editor and librarian for the Novation MiniNova as a native plugin, with its own MPC screen skin: every control maps to a MiniNova CC/NRPN, controls follow the synth, banks A-C and imported .syx files live on the SD card. Also a SysEx librarian for any other synth. With nova-audio loaded, the MiniNova plays on the plugin's own track.",
   "screenshot": "https://raw.githubusercontent.com/3dthc/nova-editor/main/nova-editor-main.png",
-  "asset_pattern": "Nova-Editor-*-mpc-armv7.zip"
+  "asset_pattern": "Nova-Editor-*-mpc-armv7.zip",
+  "tip": "https://ko-fi.com/3dthc"
 }

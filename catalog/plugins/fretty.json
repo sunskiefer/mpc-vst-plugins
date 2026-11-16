@@ -5,7 +5,8 @@
   "repo": "3dthc/fretty-mpc",
   "kind": "instrument",
   "license": "MIT",
-  "summary": "A guitar instrument for Akai MPC OS standalone devices (native VST2), featuring refined selector typography, 110 presets, and a synth layer.",
+  "summary": "A guitar instrument with an animated fretboard: acoustic, electric, bass, harp, violin, zither and folk sounds with a synth layer, chorus and distortion. 110 presets with a browser page by category. Also a VST3 for Mac and Windows and an Audio Unit for Mac.",
   "screenshot": "https://raw.githubusercontent.com/3dthc/fretty-mpc/main/docs/images/play_sunburst.png",
-  "asset_pattern": "*-mpc-armv7.zip"
+  "asset_pattern": "*-mpc-armv7.zip",
+  "tip": "https://ko-fi.com/3dthc"
 }
