@@ -3,5 +3,5 @@
   "license": "MIT",
   "summary": "Stereo analog VU meters plus an EBU R 128 loudness tab: integrated, short-term and momentary LUFS, true peak and gain reduction. Optional AUTO loudness steers towards a target (-23 to -9 LUFS) and an optional true-peak limiter holds a ceiling. Selectable calibration, clip lamps, phase meter. With processing off the audio passes through bit-exact.",
   "asset_pattern": "LUFS-VU-[0-9]*-mpc-armv7.zip",
-  "screenshot": "https://raw.githubusercontent.com/drj-io/SlowOps.MPC.LufsVu/v1.0.0/docs/images/mpc-meter.png",
+  "screenshot": "https://raw.githubusercontent.com/drj-io/SlowOps.MPC.LufsVu/v1.0.0/docs/images/mpc-lufs.png",
   "min_os": "3.10.1" }
