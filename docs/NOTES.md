@@ -2675,4 +2675,4 @@ A community report says the CV jacks are fed by the ALSA rawmidi port `Private` 
 `CvPortAndData`, `Private`, `snd_rawmidi_write` and `hw:%d,%d,%u`, which fits (offline). **Not measured on a device.** Details, open questions and a draft
 recipe in `docs/CV_OUTPUTS.md`.
 - Live III (device, OS 3.10.1, read-only, same day): `Private` is `hw:0,0,1` on card 0 (MPC's own card; `Public`, `Private`, `DIN-A`, `DIN-B`), held open by MPC with
-  ~640 KB out / ~175 KB in, so it is a busy link on this model with no CV jacks. Find it by name; not written to.
+  ~640 KB out / ~175 KB in, so it is a busy link (the Live III has 4 stereo TRS CV/Gate outputs, so CV may share it). Find it by name; not written to.

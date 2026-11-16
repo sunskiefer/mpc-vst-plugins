@@ -42,17 +42,17 @@ Strings in `/usr/bin/MPC` of the stock images in `~/fwcmp` (Gen1 and Force build
 layout. No disassembly done yet.
 
 ## Live III check [D, 2026-11-16, Live III, MPC OS 3.10.1, read-only]
-The Live III has no CV jacks, so this only shows what the port is on a device without them.
+CORRECTION (user, same day): the Live III **does** have CV: 4 stereo 1/8" TRS CV/Gate outputs on the rear panel (= 8 channels, which fits the report's 16 slots with 8 unreachable on the hardware tried). My first reading ("no jacks") was wrong.
 - `amidi -l`: card 0 is MPC's own USB-audio card ("MPC LIVE III") and carries four rawmidi ports: `hw:0,0,0 Public`, **`hw:0,0,1 Private`**,
   `hw:0,0,2 DIN-A`, `hw:0,0,3 DIN-B`. So `Private` is **not** `hw:1,0,1` here: the card number depends on enumeration order (a USB
   keyboard took card 1). Look the port up by name, never hard-code `hw:1,0,1`.
 - `/proc/asound/card0/midi0`: MPC (the `MPC` process) holds all four outputs and inputs open. `Private` had **642,678 bytes sent and 174,912 received**
-  after a day of uptime, while DIN-A/B were at 0. On this model it is a busy two-way link (most likely the panel/controller
-  protocol), not a CV port. We did **not** write to it (could disturb LEDs/controls) or read it (would steal MPC's input).
-- So the port name is shared across models; on a model with CV jacks the CV slots are probably carried on the same `Private` port next to
-  that traffic (unconfirmed). That makes the **MPC-already-writes-here conflict (question 4) certain**, not a risk: a plugin's CCs would be interleaved with MPC's own bytes
+  after a day of uptime, while DIN-A/B were at 0. On this model it is a busy two-way link; that traffic may be the panel/controller
+  protocol plus the CV data (unknown which). We did **not** write to it (could disturb LEDs/controls) or read it (would steal MPC's input).
+- The CV slots are probably carried on this same `Private` port next to that traffic (unconfirmed). That makes the **MPC-already-writes-here conflict (question 4) certain**, not a risk: a plugin's CCs would be interleaved with MPC's own bytes
   on one stream, and the messages in the report on channel 16 (`BF`) must not collide with what MPC sends.
-- Need: an MPC X (or other model with jacks) to see the real traffic. A safe way there: `strace -f -e trace=write -p <MPC pid>` filtered on the fd of
+- The Live III is itself a valid test device. The device has no strace/gdb/tcpdump (BusyBox, kernel 6.18 rt), so logging MPC's own bytes needs a static aarch64 strace copied over, or an LD_PRELOAD shim on `snd_rawmidi_write`. Measuring a voltage needs a meter or scope on a rear jack.
+- Old plan, kept for other models: A safe way there: `strace -f -e trace=write -p <MPC pid>` filtered on the fd of
   `/dev/snd/midiC*D0`, with a CV track playing, to log the exact bytes MPC itself sends (no writes from us).
 
 ## Open questions (what a plugin author needs before relying on it)
