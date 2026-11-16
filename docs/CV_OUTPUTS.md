@@ -55,6 +55,21 @@ CORRECTION (user, same day): the Live III **does** have CV: 4 stereo 1/8" TRS CV
 - Old plan, kept for other models: A safe way there: `strace -f -e trace=write -p <MPC pid>` filtered on the fd of
   `/dev/snd/midiC*D0`, with a CV track playing, to log the exact bytes MPC itself sends (no writes from us).
 
+## Static analysis of the stock aarch64 `MPC` [F, 2026-11-16, offline, OS 3.10.1 Live III build, md5 `b24b7955...`]
+Binary pulled from the device to a scratch dir (Akai's file, never committed). Method that stays under ~1 GB of RAM (a naive capstone pass over the
+69 MB `.text` got OOM-killed): find the PLT stub for an import from `.rela.plt` + `.plt`, then match `bl` by bit pattern over the `.text` words, and
+disassemble only small windows (capstone needs `skipdata` or it stops at the first data word; do not name a script `dis.py`, it shadows the stdlib).
+- `snd_rawmidi_write` has 12 call sites, `snd_rawmidi_open` 3, `snd_rawmidi_drain` 1, in two clusters (`0x26df5ec..0x26e2180`, `0x2700050..0x2700f08`).
+  The `0x2700...` cluster is a **generic buffered rawmidi writer**: a 0x200-byte buffer at +0x38, a pending count at +0x238, a mutex,
+  and a retry loop (0x33 tries) on EAGAIN (-11) and ENODEV (-19); error text goes to a logger. It knows nothing about CV.
+- So the CV encoding (`BF 00 hi BF 01 lo`, slot numbering) is in the **callers** of that writer (the `CvPort` / `CVPortsConnector` code, RTTI strings are
+  present but static symbols are stripped, so no names). Not found yet. A scan for `mov w,#0xbf` gave 23 hits, the ones inspected are parameter ids, not status bytes
+  (the status is probably built as `0xB0 | channel`).
+- Also seen in strings: CV program types and modulation (`CvLfo1..4CurveProvider`, `CvRamp1..2CurveProvider`, `CvProgramModulation::*`, `DrumCvProgramMapping`), and
+  UI JSON `/usr/share/Akai/SME0/Resources/Pages/Program Edit/CV/CV GUI Panels.json`. MPC computes LFO/ramp curves itself and keeps the jacks fed
+  continuously, which makes the overwrite question (open question 4) the one that decides if a plugin can use the port next to CV tracks.
+- Easiest way to get the exact bytes: log the writes at runtime (see below), not more static work.
+
 ## Open questions (what a plugin author needs before relying on it)
 1. Which models? Jacks exist on the MPC X (and the Key? Live? check). Does `Private` appear on devices without CV, and what does it do there?
 2. Slot to jack map, and the CC numbering for slots 1..15. Test by writing each pair and reading the jack.
