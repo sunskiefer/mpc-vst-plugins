@@ -2668,3 +2668,9 @@ of main, `.so` md5 `8778086c...`, put on the device; one MPC restart to load it)
 - CHECK with the patch on: `patched` (was "unsupported"). UNDO on screen: `uninstall (detached): exit 0, now stock`, exe md5 `b24b7955...`, `94-mpc-drumpad.conf` and `/data/mpc-drumpad` gone, Addin Restore stayed.
 - **Open (UX):** the "Restarting MPC…" and result messages are on the status line of the main page, which you do not see while on PATCHES. Show them on the PATCHES page.
 - Not re-tested: the double-tap guard on a device (offline test only), Gen1/Force.
+
+## 2026-11-16: CV outputs through the internal `Private` rawmidi port (community lead, offline only)
+A community report says the CV jacks are fed by the ALSA rawmidi port `Private` (usually `hw:1,0,1`): 16 slots, each two CCs on channel 16
+(`BF 00 xx BF 01 yy`) forming a 14-bit value, 0x7F/0x7F = 5 V. `/usr/bin/MPC` in the stock Gen1 and Force images contains `CvPort`,
+`CvPortAndData`, `Private`, `snd_rawmidi_write` and `hw:%d,%d,%u`, which fits (offline). **Not measured on a device.** Details, open questions and a draft
+recipe in `docs/CV_OUTPUTS.md`.
