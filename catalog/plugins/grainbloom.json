@@ -1,0 +1,5 @@
+{ "id": "grainbloom", "name": "Grainbloom", "author": "Lightlike", "repo": "lightlikemusic/grainbloom",
+  "kind": "effect", "style": "granular", "tags": ["granular", "ambient", "looper", "stutter", "shimmer", "reverb", "tempo-sync", "freeze"],
+  "license": "MIT",
+  "screenshot": "https://raw.githubusercontent.com/lightlikemusic/grainbloom/v1.0.0/docs/screenshot.png",
+  "summary": "Granular texture and micro-loop effect. Seven modes (Collage, Cloud, Stutter, Shimmer, Shatter, Arpeggio, Cascade) slice, scatter and pitch the recent past into rhythmic loops or ambient washes, with tempo sync, freeze, feedback and a lush plate/hall reverb. Grain, Scatter, Space and Mix macros on a touch skin." }
