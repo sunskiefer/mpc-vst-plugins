@@ -1,6 +1,6 @@
 # Driving the MPC CV outputs from a plugin
 
-Status (2026-11-16): **lead from the community, partly corroborated offline, not yet measured on a device by us.**
+Status (2026-11-16): **encoding confirmed on a Live III by logging MPC's own writes (`[D]`); our own writes and the voltage at the jack not yet tested.**
 Every claim below is tagged `[C]` community report, `[F]` seen in stock firmware strings (offline), `[D]` verified on a device
 (none yet). Fill in the `[D]` rows and date them when someone measures.
 
@@ -55,6 +55,19 @@ CORRECTION (user, same day): the Live III **does** have CV: 4 stereo 1/8" TRS CV
 - Old plan, kept for other models: A safe way there: `strace -f -e trace=write -p <MPC pid>` filtered on the fd of
   `/dev/snd/midiC*D0`, with a CV track playing, to log the exact bytes MPC itself sends (no writes from us).
 
+## Device capture of MPC's own CV writes [D, 2026-11-16, Live III, MPC OS 3.10.1]
+Method: a static aarch64 `strace` 6.10 (built in `alpine` arm64 under Docker, copied to the device's `/tmp`, removed afterwards) attached read-only to the running `MPC`
+for 4 s with `-f -e trace=write` while one CV track played an LFO-like sweep. No writes were made by us.
+- 1,021 writes to the MIDI fd that is the `Private` output (its `/proc/asound/card0/midi0` Tx counter grows with it) in 4 s, about **250 updates per second** per active slot.
+- 1,008 of them are exactly **6 bytes: `BF 00 hi  BF 01 lo`**: CC 0 then CC 1 on channel 16, 7 bits each. Value = `hi<<7 | lo`, range seen **0..16382**.
+  The coarse byte sweeps smoothly and the fine byte looks noisy, so **CC 0 = MSB, CC 1 = LSB** (confirmed, was open question 3).
+- Only the CC pair `0/1` appeared, because only one CV track was playing: that is slot 0. **Slots 1..15 and their CC numbers were not observed** (guess: CC `2n`/`2n+1`).
+- 13 writes were 9 bytes: `B0 35 01|03` (channel 1, CC 53, value 1 or 3, alternating) followed by a `BF 00 7F BF 01 xx` pair. CC 53 on channel 1 is unexplained (a gate or mode flag?). Not
+  documented by anyone; do not send it.
+- Because MPC refreshes the active slot ~250 times a second, **a plugin writing to a slot that MPC is also driving would be overwritten within 4 ms.** Slots with no CV
+  track assigned were not written by MPC in this capture, so those are probably free for a plugin (unverified).
+- One 12-byte write on another fd was an Akai SysEx (`F0 47 00 58 52 ... F7`); not CV.
+
 ## Static analysis of the stock aarch64 `MPC` [F, 2026-11-16, offline, OS 3.10.1 Live III build, md5 `b24b7955...`]
 Binary pulled from the device to a scratch dir (Akai's file, never committed). Method that stays under ~1 GB of RAM (a naive capstone pass over the
 69 MB `.text` got OOM-killed): find the PLT stub for an import from `.rela.plt` + `.plt`, then match `bl` by bit pattern over the `.text` words, and
@@ -68,12 +81,12 @@ disassemble only small windows (capstone needs `skipdata` or it stops at the fir
 - Also seen in strings: CV program types and modulation (`CvLfo1..4CurveProvider`, `CvRamp1..2CurveProvider`, `CvProgramModulation::*`, `DrumCvProgramMapping`), and
   UI JSON `/usr/share/Akai/SME0/Resources/Pages/Program Edit/CV/CV GUI Panels.json`. MPC computes LFO/ramp curves itself and keeps the jacks fed
   continuously, which makes the overwrite question (open question 4) the one that decides if a plugin can use the port next to CV tracks.
-- Easiest way to get the exact bytes: log the writes at runtime (see below), not more static work.
+- The exact bytes were then obtained by logging at runtime (section above).
 
 ## Open questions (what a plugin author needs before relying on it)
 1. Which models? Jacks exist on the MPC X (and the Key? Live? check). Does `Private` appear on devices without CV, and what does it do there?
 2. Slot to jack map, and the CC numbering for slots 1..15. Test by writing each pair and reading the jack.
-3. MSB/LSB order, and the voltage curve (linear 0..5 V? offset or bipolar ranges as set in MPC's CV config?).
+3. ~~MSB/LSB order~~ answered above. Still open: the voltage curve (linear 0..5 V? offset or bipolar ranges as set in MPC's CV config?), measured at the jack.
 4. **Conflict with MPC:** MPC itself writes to this port for CV tracks and Q-Link CV. Two writers: does the last one win, does MPC refresh
    continuously (overwriting a plugin), and is the port opened exclusively? `snd_rawmidi_open` by a second process may succeed (ALSA
    hw rawmidi allows several writers) but this must be tested while an MPC CV track is playing.

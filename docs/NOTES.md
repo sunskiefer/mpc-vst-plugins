@@ -2676,3 +2676,4 @@ A community report says the CV jacks are fed by the ALSA rawmidi port `Private` 
 recipe in `docs/CV_OUTPUTS.md`.
 - Live III (device, OS 3.10.1, read-only, same day): `Private` is `hw:0,0,1` on card 0 (MPC's own card; `Public`, `Private`, `DIN-A`, `DIN-B`), held open by MPC with
   ~640 KB out / ~175 KB in, so it is a busy link (the Live III has 4 stereo TRS CV/Gate outputs, so CV may share it). Find it by name; not written to.
+- **Device capture (Live III, OS 3.10.1, same day):** a read-only static `strace` of MPC while a CV track played shows 6-byte writes `BF 00 hi BF 01 lo` (14-bit, CC0 = MSB, CC1 = LSB, 0..16382) to the `Private` output at ~250/s for the active slot; slots 1..15 and the CC numbers not yet observed. Plugin writes to a slot MPC is driving would be overwritten. `docs/CV_OUTPUTS.md`.
