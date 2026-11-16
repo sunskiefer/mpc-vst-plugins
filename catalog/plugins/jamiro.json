@@ -1,0 +1,16 @@
+{
+  "id": "jamiro",
+  "name": "Jamiro",
+  "author": "Yann",
+  "repo": "Yan-1977/jamiro-mpc",
+  "kind": "instrument",
+  "license": "MIT",
+  "summary": "Novation X-Station-style polysynth (KS engine): 8 voices, 3 oscillators with sync, FM and ring mod, multimode filter, 2 envelopes, 2 LFOs, arpeggiator and effects. Loads your own X-Station/KS .syx banks from Content/Banks. Independent project, not affiliated with Novation.",
+  "style": "synth",
+  "tags": [
+    "virtual-analog",
+    "polysynth",
+    "arpeggiator",
+    "x-station"
+  ]
+}
