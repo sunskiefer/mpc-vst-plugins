@@ -1,0 +1,19 @@
+{
+  "id": "mpcairlink",
+  "name": "MPC AirLink",
+  "author": "sttm",
+  "repo": "sttm/mpcairlink",
+  "kind": "instrument",
+  "license": "MIT AND BSD-3-Clause AND Apache-2.0 AND LGPL-2.1-or-later AND Bitstream-Vera",
+  "summary": "Receive VBAN or classic AirPlay audio on an MPC plugin track. Automatic source selection, jitter buffer, gain and stereo meters. ARMv7 and AArch64; Key 61 / OS 3.10.1 tested.",
+  "style": "utility",
+  "tags": [
+    "network",
+    "audio",
+    "vban",
+    "airplay"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/sttm/mpcairlink/v1.0.0/docs/ui-preview.png",
+  "asset_pattern": "*-mpc-armv7.zip",
+  "min_os": "3.10.1"
+}
