@@ -1,0 +1,14 @@
+{
+  "id": "eq-artist-dots",
+  "name": "EQ Artist Dots",
+  "author": "Slow Ops Music",
+  "repo": "drj-io/SlowOps.MPC.EQ.Artist",
+  "kind": "effect",
+  "license": "MIT",
+  "summary": "8-band EQ you edit two ways over a live spectrum: drag colour-coded band nodes, or paint the curve with a finger and it becomes real bands. Bell, shelves, 6 to 48 dB/oct cuts and notch, with zero-latency filters that keep their analog shape near 20 kHz, undo/redo, and a pre/post analyser.",
+  "style": "eq",
+  "tags": ["eq", "parametric-eq", "analyzer", "mixing", "touch"],
+  "asset_pattern": "EQ-Artist-Dots-[0-9]*-mpc-armv7.zip",
+  "min_os": "3.10.1",
+  "screenshot": "https://raw.githubusercontent.com/drj-io/SlowOps.MPC.EQ.Artist/v1.0.0/docs/images/para-page.png"
+}
