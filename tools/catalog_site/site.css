@@ -96,7 +96,7 @@ a { color: inherit; }
 .card.big .shot img { height: auto; object-fit: contain; }
 body.modal-open { overflow: hidden; }
 .card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px 12px; flex-wrap: wrap; }
-.card header > div:first-child { flex: 1 1 8em; min-width: 0; overflow-wrap: anywhere; }
+.card header > div:first-child { flex: 1 1 100%; min-width: 0; overflow-wrap: anywhere; }
 .card h2 { font: 700 26px/1.05 var(--display); text-transform: uppercase; letter-spacing: .02em; margin: 0; }
 .card h2 a.open { color: inherit; text-decoration: none; }
 .card h2 a.open:hover { color: var(--accent); }
@@ -120,8 +120,9 @@ body.modal-open { overflow: hidden; }
 .btn-l small { display: block; margin-top: 5px; font: 500 11px/1.2 var(--body, system-ui, sans-serif); letter-spacing: .02em; text-transform: none; opacity: .85; }
 .tag.compat { opacity: .4; border-style: dashed; font-weight: 500; }
 .tag.compat.on { opacity: 1; border-style: solid; font-weight: 700; color: var(--lcd-fg); background: var(--lcd-bg); border-color: var(--lcd-bg); }
-.verbox { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: 0 1 auto; max-width: 100%; margin-left: auto; }
-.compatrow { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; }
+.metarow { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; }
+.metarow .ver { margin-left: auto; }
+.compatrow { display: flex; gap: 4px; justify-content: flex-start; flex-wrap: wrap; }
 .compatrow .tag { padding: 4px 6px; font-size: 10px; }
 .dlmenu { position: relative; display: flex; }
 .dlmenu > summary { list-style: none; cursor: pointer; flex: 1; display: flex; align-items: center; }

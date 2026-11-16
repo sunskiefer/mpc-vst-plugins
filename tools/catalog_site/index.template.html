@@ -528,9 +528,8 @@ function card(p, big) {
     : '<a class="shot" href="p/' + encodeURIComponent(p.id) + '.html" data-open="' + esc(p.id) + '" title="Open ' + esc(p.name) + '">' + img + '</a>';
   var crumb = col ? '<nav class="crumb" aria-label="Breadcrumb">Part of <a href="p/c/' + encodeURIComponent(col.id) + '.html" data-coll="' + esc(col.id) + '">' + esc(col.title) + '</a></nav>' : '';
   var head = '<article class="card' + (by ? " by" : "") + (big ? " big" : "") + '" data-tier="' + tierOf(p) + '">' + shot + crumb + '<header><div><h2' + (big ? ' id="modal-title">' + esc(p.name)
-    : '><a class="open" href="p/' + encodeURIComponent(p.id) + '.html" data-open="' + esc(p.id) + '">' + esc(p.name) + '</a>') + '</h2><div class="by">by ' + esc(p.author) + '</div></div>' +
-    '<div class="verbox">' + (v ? '<span class="ver" title="Latest ' + (by ? "tag" : esc(v.channel) + " release") + '">v' + esc(v.version) + (v.channel === "beta" ? " beta" : "") + '</span>' : '<span class="ver">' + (by ? "no tag" : "no release") + '</span>') +
-    (!by && v ? compatRow(v, p.kind === "addin") : "") + '</div></header>' +
+    : '><a class="open" href="p/' + encodeURIComponent(p.id) + '.html" data-open="' + esc(p.id) + '">' + esc(p.name) + '</a>') + '</h2><div class="by">by ' + esc(p.author) + '</div></div></header>' +
+    '<div class="metarow">' + (!by && v ? compatRow(v, p.kind === "addin") : "") + (v ? '<span class="ver" title="Latest ' + (by ? "tag" : esc(v.channel) + " release") + '">v' + esc(v.version) + (v.channel === "beta" ? " beta" : "") + '</span>' : '<span class="ver">' + (by ? "no tag" : "no release") + '</span>') + '</div>' +
     plugBar(p, big) +
     '<div class="tags">' + tags.join("") + '</div><p>' + esc(p.summary) + '</p>' + hooksLine(p) + (big && window.signalsDetail ? signalsDetail(p) : '');
   if (by) {
