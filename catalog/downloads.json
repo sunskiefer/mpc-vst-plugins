@@ -3,17 +3,17 @@
   "files": [
     {
       "id": "pm-gen1",
-      "file": "OpenMPC-Plugin-Manager-1.1.2-Gen1.zip",
-      "version": "1.1.2",
-      "url": "https://github.com/open-mpc/plugin-manager/releases/download/plugin-manager-g2-v1.1.2/OpenMPC-Plugin-Manager-1.1.2-Gen1.zip",
-      "sha256": "35bc950cd7bc4ed0260e7ecdc25e4584bd59374ca31ffa11c1db384429a766ca"
+      "file": "OpenMPC-Plugin-Manager-1.3.0-Gen1.zip",
+      "version": "1.3.0",
+      "url": "https://github.com/open-mpc/plugin-manager/releases/download/plugin-manager-g2-v1.3.0/OpenMPC-Plugin-Manager-1.3.0-Gen1.zip",
+      "sha256": "96b287516cabf763cba83bed613918c7e431ffa0de7b650474021e64db50a1fe"
     },
     {
       "id": "pm-gen2",
-      "file": "OpenMPC-Plugin-Manager-1.1.2-Gen2.zip",
-      "version": "1.1.2",
-      "url": "https://github.com/open-mpc/plugin-manager/releases/download/plugin-manager-g2-v1.1.2/OpenMPC-Plugin-Manager-1.1.2-Gen2.zip",
-      "sha256": "755a9ff8c6cc0e30bb80cb15a2d657289070ff3b5b706ec3f8c7e100270a7cd0"
+      "file": "OpenMPC-Plugin-Manager-1.3.0-Gen2.zip",
+      "version": "1.3.0",
+      "url": "https://github.com/open-mpc/plugin-manager/releases/download/plugin-manager-g2-v1.3.0/OpenMPC-Plugin-Manager-1.3.0-Gen2.zip",
+      "sha256": "c9c7091264c414061d47ccf9a4cc63055d62b2e26545683de4f0a433c7ad49a5"
     },
     {
       "id": "pm-stick",
