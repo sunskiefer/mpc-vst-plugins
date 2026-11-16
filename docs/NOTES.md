@@ -2674,3 +2674,5 @@ A community report says the CV jacks are fed by the ALSA rawmidi port `Private` 
 (`BF 00 xx BF 01 yy`) forming a 14-bit value, 0x7F/0x7F = 5 V. `/usr/bin/MPC` in the stock Gen1 and Force images contains `CvPort`,
 `CvPortAndData`, `Private`, `snd_rawmidi_write` and `hw:%d,%d,%u`, which fits (offline). **Not measured on a device.** Details, open questions and a draft
 recipe in `docs/CV_OUTPUTS.md`.
+- Live III (device, OS 3.10.1, read-only, same day): `Private` is `hw:0,0,1` on card 0 (MPC's own card; `Public`, `Private`, `DIN-A`, `DIN-B`), held open by MPC with
+  ~640 KB out / ~175 KB in, so it is a busy link on this model with no CV jacks. Find it by name; not written to.

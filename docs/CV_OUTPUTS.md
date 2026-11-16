@@ -41,6 +41,20 @@ Strings in `/usr/bin/MPC` of the stock images in `~/fwcmp` (Gen1 and Force build
 `hw:%d,%d,%u`, `hw:%d,%d`. This fits the claim (MPC finds the rawmidi card by name and writes to it) but does not decode the message
 layout. No disassembly done yet.
 
+## Live III check [D, 2026-11-16, Live III, MPC OS 3.10.1, read-only]
+The Live III has no CV jacks, so this only shows what the port is on a device without them.
+- `amidi -l`: card 0 is MPC's own USB-audio card ("MPC LIVE III") and carries four rawmidi ports: `hw:0,0,0 Public`, **`hw:0,0,1 Private`**,
+  `hw:0,0,2 DIN-A`, `hw:0,0,3 DIN-B`. So `Private` is **not** `hw:1,0,1` here: the card number depends on enumeration order (a USB
+  keyboard took card 1). Look the port up by name, never hard-code `hw:1,0,1`.
+- `/proc/asound/card0/midi0`: MPC (the `MPC` process) holds all four outputs and inputs open. `Private` had **642,678 bytes sent and 174,912 received**
+  after a day of uptime, while DIN-A/B were at 0. On this model it is a busy two-way link (most likely the panel/controller
+  protocol), not a CV port. We did **not** write to it (could disturb LEDs/controls) or read it (would steal MPC's input).
+- So the port name is shared across models; on a model with CV jacks the CV slots are probably carried on the same `Private` port next to
+  that traffic (unconfirmed). That makes the **MPC-already-writes-here conflict (question 4) certain**, not a risk: a plugin's CCs would be interleaved with MPC's own bytes
+  on one stream, and the messages in the report on channel 16 (`BF`) must not collide with what MPC sends.
+- Need: an MPC X (or other model with jacks) to see the real traffic. A safe way there: `strace -f -e trace=write -p <MPC pid>` filtered on the fd of
+  `/dev/snd/midiC*D0`, with a CV track playing, to log the exact bytes MPC itself sends (no writes from us).
+
 ## Open questions (what a plugin author needs before relying on it)
 1. Which models? Jacks exist on the MPC X (and the Key? Live? check). Does `Private` appear on devices without CV, and what does it do there?
 2. Slot to jack map, and the CC numbering for slots 1..15. Test by writing each pair and reading the jack.
