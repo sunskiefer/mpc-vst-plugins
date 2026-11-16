@@ -176,4 +176,3 @@ The catalog, its site and the installer app are live (see Done). Still open, in 
 - [ ] **A second owner** for the open-mpc org (People → role Owner), listed in MAINTAINERS.md.
 - [ ] **POLICY.md decisions:** the three DECIDE items (wording about Akai, the delisting deadline, how the rules change).
 
-
