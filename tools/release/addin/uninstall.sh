@@ -30,6 +30,7 @@ if [ $YES = 0 ]; then
 fi
 preload_remove "$SVC" "$SO"
 boot_reload_remove "$SVC"
+launcher_remove "$SO"
 mockba_hook_remove "$SO"
 svc daemon-reload
 if [ $RESTART = 1 ]; then svc restart "$SVC"; fi

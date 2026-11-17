@@ -4,6 +4,22 @@ Origin: mpc-forums thread "Proof of Concept: Custom Standalone Plugins"
 (viewtopic.php?f=48&t=220981, Sep 2026). Verified on a Force (MPC OS, with MockbaMod) 2026-09-23; paths below are
 from the Force and may differ on MPC Live/One/X/Key (e.g. `Force Documents` vs `MPC Documents`).
 
+## 2026-11-17: addins are not loaded on Hakai, whose launcher sets LD_PRELOAD itself (user report; fixed offline only)
+- First reported in jacob-sabella/mpc-addin-usb-audio#4 (2026-10, MPC One, HAKAI 3.9.1, then 3.10; device, by the reporter)
+  and again in jacob-sabella/mpc-addin-remote#7 (HAKAI 3.10): the addin installs, `install.sh` warns that MPC came up
+  without it, and MPC never loads it. Hakai's `/usr/bin/az01-launch-MPC` sets its own `LD_PRELOAD` on four lines, one per
+  branch (`export LD_PRELOAD="/usr/lib/hakai_driver.so /usr/lib/customBufferSizeMPC.so $CURSOR_SO"`, lines 39/43/49/53 on
+  both versions), replacing the list from the `90-mpc-addins.conf` drop-in. Both reporters worked around it by hand: the
+  first with `sed -i 's|\$CURSOR_SO"|$CURSOR_SO <so>"|'` on the launcher (still loaded after a reboot), the second with a
+  copy of the launcher run through an `ExecStart=` drop-in. The addin READMEs pointed at this installer for a fix; no issue
+  was filed here.
+- The addin installer now also edits the launcher's own `LD_PRELOAD` assignments when it has any (docs/ADDINS.md, Hakai),
+  the way the button-remap patch already does (2026-10-05). It does not copy the launcher, so a Hakai update can't leave
+  MPC starting from a stale copy; instead the update drops the edit, and you install the addin again.
+- Tested offline only (`tools/test_addin.sh` case 19, in bash and BusyBox 1.36.1 with its applets): not yet run on a Hakai
+  device. The test launcher follows the line shape usb-audio#4 read on the device; on those lines the edit gives the same
+  result as that reporter's `sed`, which ran on HAKAI 3.9.1 and 3.10.
+
 ## 2026-11-13: option values whose labels start with a digit ("1/16", "201") are read by name (offline only)
 The wrappers read an engine's option answer with a leading `atoi()`, so `"1/16"` became option 1: the host read back the wrong
 option and the control snapped back to its old value (mpc-vst-tape-echo SYNC/REVERB, MPC Live II, MPC OS 3.9.1.2, reported

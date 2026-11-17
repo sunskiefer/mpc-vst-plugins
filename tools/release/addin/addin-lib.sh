@@ -388,6 +388,69 @@ mockba_hook_remove() {   # so
     rm -f "$a/run_$ADDIN_ID.sh"; mockba_unarm "$1"
 }
 
+# Hakai's launcher. On Hakai the script MPC's service runs, /usr/bin/az01-launch-MPC, sets LD_PRELOAD itself (its own
+# libraries, then $CURSOR_SO) and so replaces the service's list: the drop-in above never reaches MPC
+# (jacob-sabella/mpc-addin-usb-audio#4 and mpc-addin-remote#7, HAKAI 3.9.1 and 3.10). Stock firmware has the same file without an LD_PRELOAD line, and is left
+# alone. Where the launcher sets it, the first assignment on each line also gets the addin's .so at the end of its value (a quoted
+# list gains " <so>", an unquoted one ":<so>"); uninstall takes out exactly that. A backup of the launcher is kept from
+# before the first edit (<launcher>.bak-mpc-addins), the edit is staged and renamed, and the root is remounted
+# writable around it. A Hakai update replaces the launcher: install the addin again afterwards (check_loaded warns).
+LAUNCHER="$SYSTEMD_ROOT/usr/bin/az01-launch-MPC"
+# An LD_PRELOAD assignment outside a comment, matched the way launcher_edit matches it (so FOO_LD_PRELOAD= is not one).
+launcher_sets_preload() {
+    [ -f "$LAUNCHER" ] && awk '!/^[[:space:]]*#/ && /(^|[[:space:];&|])(export[[:space:]]+)?LD_PRELOAD=/ { f = 1 } END { exit !f }' "$LAUNCHER"
+}
+# The launcher with the .so added to ("add") or taken out of ("remove") each LD_PRELOAD assignment, on stdout. Exits 3,
+# printing the line on stderr, when an assignment has a shape it cannot edit (an unclosed quote).
+launcher_edit() {   # mode so file
+    awk -v mode="$1" -v so="$2" '
+    function lit(s, a, b,   i, out) {   # s with every literal a replaced by b
+        out = ""
+        while ((i = index(s, a)) > 0) { out = out substr(s, 1, i - 1) b; s = substr(s, i + length(a)) }
+        return out s
+    }
+    /^[[:space:]]*#/ { print; next }
+    mode == "remove" { if (index($0, so)) { $0 = lit($0, " " so, ""); $0 = lit($0, ":" so, ""); $0 = lit($0, so, "") } print; next }
+    !match($0, /(^|[[:space:];&|])(export[[:space:]]+)?LD_PRELOAD=/) || index($0, so) { print; next }
+    {
+        p = RSTART + RLENGTH; pre = substr($0, 1, p - 1); rest = substr($0, p); q = substr(rest, 1, 1)
+        if (q == "\"" || q == "\047") {
+            e = index(substr(rest, 2), q)
+            if (!e) { print "cannot edit: " $0 > "/dev/stderr"; bad = 1; print; next }
+            val = substr(rest, 2, e - 1)
+            print pre q val (val == "" ? "" : " ") so q substr(rest, e + 2); next
+        }
+        if (match(rest, /[[:space:];&|]/)) { val = substr(rest, 1, RSTART - 1); post = substr(rest, RSTART) }
+        else { val = rest; post = "" }
+        print pre val (val == "" ? "" : ":") so post
+    }
+    END { if (bad) exit 3 }' "$3"
+}
+launcher_write() {   # mode so: edit the launcher in place (staged, renamed); fails without touching it
+    was_ro=0; root_ro && was_ro=1
+    if [ $was_ro = 1 ] && ! remount_root rw; then echo "warning: / could not be made writable, so $LAUNCHER was not edited" >&2; return 1; fi
+    r=0; f=$(readlink -f "$LAUNCHER" 2>/dev/null) || f=""; [ -n "$f" ] || f=$LAUNCHER   # a symlink: edit what it points to
+    if [ "$1" = add ] && [ ! -f "$f.bak-mpc-addins" ]; then cp -p "$f" "$f.bak-mpc-addins" || r=1; fi
+    if [ $r = 0 ] && cp -p "$f" "$f.new" && launcher_edit "$1" "$2" "$f" > "$f.new" && mv "$f.new" "$f"; then :
+    else r=1; rm -f "$f.new"; fi
+    sync
+    [ $was_ro = 0 ] || remount_root ro || echo "warning: / is still writable; it is read-only again after a reboot" >&2
+    return $r
+}
+launcher_add() {   # so
+    launcher_sets_preload || return 0
+    if launcher_write add "$1" && grep -qF "$1" "$LAUNCHER"; then
+        echo "  $LAUNCHER sets LD_PRELOAD itself (Hakai): it gains $1 too"
+    else
+        echo "warning: $LAUNCHER sets LD_PRELOAD itself and could not be edited: MPC starts without the addin. Add $1 to its LD_PRELOAD by hand (docs/ADDINS.md, Hakai)" >&2
+    fi
+}
+launcher_remove() {   # so
+    [ -f "$LAUNCHER" ] && grep -qF "$1" "$LAUNCHER" || return 0
+    launcher_write remove "$1" && ! grep -qF "$1" "$LAUNCHER" ||
+        echo "warning: $LAUNCHER still lists $1: take it out of its LD_PRELOAD by hand (docs/ADDINS.md, Hakai)" >&2
+}
+
 # After a restart: is the library in the environment of the MPC that came up? A mod's launcher can replace LD_PRELOAD
 # (see above), and then the addin is installed but silently not loaded. Waits for MPC for up to 40 s.
 check_loaded() {   # so
@@ -403,7 +466,7 @@ check_loaded() {   # so
     if [ -n "$pid" ] && tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | grep '^LD_PRELOAD=' | grep -qF "$1"; then
         echo "  checked: MPC loaded $(basename "$1")"
     else
-        echo "warning: MPC is running without $(basename "$1"): a launcher on this device replaces LD_PRELOAD. See docs/ADDINS.md (MockbaMod and other launchers)." >&2
+        echo "warning: MPC is running without $(basename "$1"): a launcher on this device replaces LD_PRELOAD. See docs/ADDINS.md (MockbaMod, Hakai and other launchers)." >&2
     fi
 }
 

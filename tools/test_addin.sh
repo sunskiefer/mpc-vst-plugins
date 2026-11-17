@@ -319,4 +319,70 @@ run a install.sh
 [ -x "$T/addins/a/tool" ] && [ -x "$T/addins/a/run.sh" ] && [ ! -x "$T/addins/a/a.dat" ] && ok "tools without the bit installed executable, data not" \
     || bad "modes: $(ls -l "$T/addins/a" | tr '\n' ' ')"
 
+# 19. Hakai: /usr/bin/az01-launch-MPC sets LD_PRELOAD itself, replacing the service's list (mpc-addin-usb-audio#4, device:
+# HAKAI 3.9.1 and 3.10 on an MPC One, four `export LD_PRELOAD="... $CURSOR_SO"` lines in branches; mpc-addin-remote#7).
+# The launcher's own assignments gain the addin as well; the stock launcher (no LD_PRELOAD line) is never touched.
+L="$T/root/usr/bin/az01-launch-MPC"
+hakai() {   # shaped like Hakai's: quoted lists ending in $CURSOR_SO (one indented in a branch), plus an inline unquoted one
+    mkdir -p "$T/root/usr/bin"
+    cat > "$L" <<'EOF'
+#!/bin/sh
+# LD_PRELOAD=/commented/out.so
+CURSOR_SO=/usr/lib/libforce_cursor.so
+export LD_PRELOAD="/usr/lib/hakai_driver.so /usr/lib/customBufferSizeMPC.so $CURSOR_SO"
+if [ -n "$X" ]; then
+    export LD_PRELOAD="/usr/lib/hakai_driver.so $CURSOR_SO"
+    LD_PRELOAD=/usr/lib/hakai_driver.so:$CURSOR_SO exec /usr/bin/MPC "$@"
+fi
+exec /usr/bin/MPC "$@"
+EOF
+    chmod 755 "$L"
+}
+preload_seen() {   # what MPC would get from the launcher: its exec lines print LD_PRELOAD instead ($1: X set or not)
+    sed 's|exec /usr/bin/MPC "\$@"|printenv LD_PRELOAD; exit|' "$L" > "$T/launch-probe"; X="$1" sh "$T/launch-probe" 2>/dev/null
+}
+fresh; unit 'Restart=always'; hakai; cp "$L" "$T/launcher-orig"
+run a install.sh; run b install.sh
+[ "$(preload_seen '')" = "/usr/lib/hakai_driver.so /usr/lib/customBufferSizeMPC.so /usr/lib/libforce_cursor.so $A $B" ] \
+  && ok "Hakai: the launcher's quoted list gains both addins" || bad "Hakai quoted: $(preload_seen '')"
+[ "$(preload_seen 1)" = "/usr/lib/hakai_driver.so:/usr/lib/libforce_cursor.so:$A:$B" ] \
+  && ok "Hakai: an inline unquoted assignment gains them too" || bad "Hakai inline: $(preload_seen 1)"
+grep -qx '# LD_PRELOAD=/commented/out.so' "$L" && [ -x "$L" ] && cmp -s "$L.bak-mpc-addins" "$T/launcher-orig" \
+  && ok "Hakai: comments left alone, still executable, backup from before the first edit" || bad "Hakai: comment/mode/backup"
+grep -q "sets LD_PRELOAD itself (Hakai)" "$T/out" && grep -qx "Environment=LD_PRELOAD=$A:$B" "$DROP" \
+  && ok "Hakai: the install says so; the drop-in is still written" || bad "Hakai summary: $(cat "$T/out")"
+run a install.sh -n
+[ "$(grep -o "$A" "$L" | wc -l)" = 3 ] && ok "Hakai: installing again adds nothing" || bad "Hakai idempotent: $(cat "$L")"
+run a uninstall.sh
+[ "$(preload_seen '')" = "/usr/lib/hakai_driver.so /usr/lib/customBufferSizeMPC.so /usr/lib/libforce_cursor.so $B" ] \
+  && [ "$(preload_seen 1)" = "/usr/lib/hakai_driver.so:/usr/lib/libforce_cursor.so:$B" ] \
+  && ok "Hakai: uninstalling one leaves the other" || bad "Hakai uninstall a: $(cat "$L")"
+run b uninstall.sh
+cmp -s "$L" "$T/launcher-orig" && ok "Hakai: the last uninstall gives back the original launcher" || bad "Hakai restore: $(diff "$T/launcher-orig" "$L")"
+# the stock launcher (a Force: the same file, no LD_PRELOAD line) is not touched
+fresh; unit 'Environment=LD_PRELOAD=/usr/lib/x.so'; mkdir -p "$T/root/usr/bin"; printf '#!/bin/sh\nexec /usr/bin/MPC "$@"\n' > "$L"; cp "$L" "$T/launcher-orig"
+run a install.sh
+cmp -s "$L" "$T/launcher-orig" && [ ! -e "$L.bak-mpc-addins" ] && ! grep -q Hakai "$T/out" && ok "stock launcher left alone" || bad "stock launcher edited"
+# a read-only root: remounted around the edit; a remount that is refused leaves the launcher as it was, with a warning
+printf '/dev/root / ext4 ro,relatime 0 0\n' > "$T/mounts-ro"; export ADDIN_MOUNTS="$T/mounts-ro"
+fresh; unit 'Restart=always'; hakai; run a install.sh
+grep -qF "$A" "$L" && grep -q "remount,rw" "$T/log" && [ "$(tail -n 1 "$T/log")" != "mount -o remount,rw /" ] \
+  && ok "Hakai: a read-only root is remounted for the edit, and back" || bad "Hakai ro: $(cat "$T/log")"
+fresh; unit 'Restart=always'; hakai; cp "$L" "$T/launcher-orig"; ADDIN_REMOUNT_FAILS=1 run a install.sh
+cmp -s "$L" "$T/launcher-orig" && grep -q "could not be edited" "$T/out" && ok "Hakai: no remount, launcher untouched, warned" || bad "Hakai no remount: $(cat "$T/out")"
+export ADDIN_MOUNTS="$T/mounts-plain"
+# a launcher that is a symlink: the file it points to is edited, the link stays
+fresh; unit 'Restart=always'; hakai; mv "$L" "$T/root/usr/bin/hakai-launch"; ln -s hakai-launch "$L"; run a install.sh
+[ -L "$L" ] && grep -qF "$A" "$T/root/usr/bin/hakai-launch" && [ -f "$T/root/usr/bin/hakai-launch.bak-mpc-addins" ] \
+  && ok "Hakai: a symlinked launcher keeps its link; the target is edited" || bad "Hakai symlink: $(ls -l "$T/root/usr/bin")"
+# a name that only ends in LD_PRELOAD is not an assignment: no summary line, no backup, no rewrite, no warning
+fresh; unit 'Restart=always'; mkdir -p "$T/root/usr/bin"; printf '#!/bin/sh\nFOO_LD_PRELOAD=/x.so\nexec /usr/bin/MPC\n' > "$L"; cp "$L" "$T/launcher-orig"
+run a install.sh
+cmp -s "$L" "$T/launcher-orig" && [ ! -e "$L.bak-mpc-addins" ] && ! grep -q "Hakai\|could not be edited" "$T/out" \
+  && ok "Hakai: FOO_LD_PRELOAD= is not taken for an assignment" || bad "Hakai FOO_LD_PRELOAD: $(cat "$T/out")"
+# a shape it cannot edit (an unclosed quote): nothing is changed, with a warning
+fresh; unit 'Restart=always'; mkdir -p "$T/root/usr/bin"; printf '#!/bin/sh\nexport LD_PRELOAD="/usr/lib/x.so \\\n /usr/lib/y.so"\nexec /usr/bin/MPC\n' > "$L"; cp "$L" "$T/launcher-orig"
+run a install.sh
+cmp -s "$L" "$T/launcher-orig" && [ ! -e "$L.new" ] && grep -q "could not be edited" "$T/out" && ok "Hakai: an assignment it cannot parse leaves the launcher alone" || bad "Hakai odd shape: $(cat "$L"; cat "$T/out")"
+
 [ $fails = 0 ] && echo "installer: all passed" || { echo "installer: $fails FAILED"; exit 1; }
