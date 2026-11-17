@@ -34,6 +34,17 @@ Design: `docs/CATALOG.md`. Formats: `docs/CATALOG_SPEC.md`.
    run the "Catalog build" workflow).
 
 Reviewers check new entries against [docs/CATALOG_REVIEW.md](../docs/CATALOG_REVIEW.md); reading it first saves a round trip.
+These are the points reviewers most often send back:
+- **Name and id:** `author` is the name you want shown (it's public). Don't reuse another author's plugin name or `id`,
+  and don't put "OpenMPC" in the name.
+- **Summary:** it describes the plugin, with no credit lines and plain ASCII punctuation. It says up front if the plugin
+  restarts MPC, needs root, writes outside its folder or works only on some MPC OS versions. It claims only the testing
+  you did.
+- **Screenshot:** it comes from your own repo, and the file exists at the pinned tag.
+- **The PR:** fill in the template, with the `catalog_check.py --catalog` output and the zip's SHA-256. Open it from a
+  branch, with one PR per entry and nothing unrelated in the diff.
+- **Other people's material:** no ROMs, firmware, samples or other copyrighted content (such as MIDI files of real songs).
+  No tools in your repo that fetch a manufacturer's ROM from an unlicensed source.
 
 ## Many plugins from one repo: a collection
 If your repo publishes several plugins (each with its own release zip and `asset_pattern`), group them so the catalog shows one card
