@@ -14,5 +14,6 @@
   "license": "MIT",
   "summary": "The Airwindows Dynamics collection: all 35 compressors, gates and dynamics tools in one plugin, each with its own panel, Q-Link badges and built-in manual.",
   "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-airwindows/6196324ee776860ce4d3cc46dbd90e331f3ba53d/docs/img/dynamics.png",
-  "asset_pattern": "AW-Dynamics-*-mpc-armv7.zip"
+  "asset_pattern": "AW-Dynamics-*-mpc-armv7.zip",
+  "tip": "https://ko-fi.com/sd88me"
 }
