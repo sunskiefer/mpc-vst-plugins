@@ -1,0 +1,5 @@
+{ "id": "reverbicon-224", "name": "Reverbicon 224", "author": "sd88me", "repo": "sd88me/mpc-vst-reverbicon224",
+  "kind": "effect", "style": "reverb", "tags": ["lexicon", "emulation", "reverb"], "license": "AGPL-3.0-only", "source_available": true,
+  "summary": "A Lexicon 224 running its own v4.4 firmware on an emulated machine (8080, DSP, converters and analog boards): six programs, the original sliders and LED readout. Needs your own ROMs.",
+  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-reverbicon224/7d68c952f5133e80f50fb256e0e088232cd761e0/docs/img/reverbicon224.png",
+  "tip": "https://ko-fi.com/sd88me" }

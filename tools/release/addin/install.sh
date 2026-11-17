@@ -46,6 +46,7 @@ echo "Installing $ADDIN_NAME${ADDIN_VERSION:+ $ADDIN_VERSION}:"
 echo "  $DIR/"
 if edits_in_place "$SVC" "$UNIT"; then echo "  LD_PRELOAD in $UNIT gains $ADDIN_SO (a backup is kept)"
 else echo "  $(ours "$SVC") sets LD_PRELOAD: ${UNIT:+the list from $UNIT, then }the addins"; fi
+if launcher_sets_preload; then echo "  $LAUNCHER sets LD_PRELOAD itself (Hakai): its list gains $ADDIN_SO too (a backup is kept)"; fi
 if [ $RESTART = 1 ]; then echo "  then MPC restarts: save your project first"; fi
 if [ $YES = 0 ]; then
     printf "Continue? [y/N] "; read -r ok
@@ -66,6 +67,7 @@ if [ "$(cd "$DIR" && pwd)" != "$(pwd)" ]; then   # not when reinstalling from th
 fi
 preload_add "$SVC" "$UNIT" "$SO"
 boot_reload_add "$SVC"
+launcher_add "$SO"
 mockba_hook_add "$SO"
 svc daemon-reload
 sync

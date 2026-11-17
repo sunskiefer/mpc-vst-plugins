@@ -42,7 +42,7 @@ class T(unittest.TestCase):
         es = {e["id"]: e for e in sd.entries(os.path.join(sd.ROOT, "catalog", "downloads.json"))}
         pin = json.load(open(os.path.join(sd.ROOT, "tools", "desktop", "g2stick-pin.json")))
         self.assertEqual(es["pm-stick"]["sha256"], pin["sha256"])
-        self.assertEqual(set(es), {"pm-gen1", "pm-gen2", "pm-stick"})
+        self.assertEqual(set(es), {"pm-gen1", "pm-gen2", "pm-sdk", "pm-stick"})
 
 
 if __name__ == "__main__":

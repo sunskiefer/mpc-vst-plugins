@@ -12,7 +12,8 @@
     "mixing"
   ],
   "license": "MIT",
-  "summary": "The 5-band version of Shapey EQ, made for touch: every band has its own lane under a taller curve, so any dot drags directly. Any band can be a bell, shelf, cut, notch or band pass. Live analyzer, zero latency.",
+  "summary": "The 5-band version of Shapey EQ, made for touch: every band has its own lane under a taller curve, so any dot drags directly. Any band can be a bell, shelf, cut, notch or band pass. Live analyzer, zero latency. Also a VST3 for Mac and Windows and an Audio Unit for Mac.",
   "screenshot": "https://raw.githubusercontent.com/3dthc/Shapey-MPC/ddbf9bbc9f66f2af0802070b38bb3d113140131c/docs/shapey-5-band-eq.png",
-  "asset_pattern": "Shapey-5-Band-EQ-*-mpc-armv7.zip"
+  "asset_pattern": "Shapey-5-Band-EQ-*-mpc-armv7.zip",
+  "tip": "https://ko-fi.com/3dthc"
 }

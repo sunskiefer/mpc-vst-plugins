@@ -52,13 +52,14 @@ def zip_folder(path):
 
 
 def update_pins(root, version, sums):
-    """Move the pins and links to VERSION; sums = {"pm-gen1": sha, "pm-gen2": sha, "stick": sha}. Returns the files changed."""
+    """Move the pins and links to VERSION; sums = {"pm-gen1": sha, "pm-gen2": sha, "pm-sdk": sha (optional), "stick": sha}. Returns the files changed."""
     changed = []
     p = os.path.join(root, "catalog", "downloads.json")
     d = json.load(open(p))
     for f in d["files"]:
-        if f.get("id") in ("pm-gen1", "pm-gen2"):
+        if f.get("id") in ("pm-gen1", "pm-gen2", "pm-sdk") and f["id"] in sums:
             for k in ("file", "url"):
+                f[k] = re.sub(r"(Plugin-Manager-G2-)%s(-mpc-sdk)" % SEMVER, r"\g<1>" + version + r"\2", f[k])
                 f[k] = re.sub(r"(OpenMPC-Plugin-Manager-)%s" % SEMVER, r"\g<1>" + version, f[k])
                 f[k] = re.sub(r"(plugin-manager-g2-v)%s" % SEMVER, r"\g<1>" + version, f[k])
                 f[k] = f[k].replace("/%s/releases/download/plugin-manager-g2-v" % REPO, "/%s/releases/download/plugin-manager-g2-v" % PM_REPO)
@@ -151,6 +152,9 @@ def main():
 
     sums = {k: sha256(os.path.join(work, n)) for k, n in fz.items()}
     sums["stick"] = sha256(stick)
+    sdkzip = os.path.join(work, "Plugin-Manager-G2-%s-mpc-sdk.zip" % v)   # the single SDK-format zip (MPC OS 3.10.1+): the Install page offers it first
+    if os.path.exists(sdkzip):
+        sums["pm-sdk"] = sha256(sdkzip)
 
     # 4. publish
     if a.publish:
