@@ -5,7 +5,12 @@ Design: `docs/CATALOG.md`. Formats: `docs/CATALOG_SPEC.md`.
 
 ## Add your plugin
 1. Make a release zip with `tools/release.py` (or the `vst-release.yml` workflow) with `--repo owner/name --license <SPDX>`,
-   and check it: `tools/catalog_check.py <zip> --catalog`. Publish it as a GitHub release on your repo. If it needs something
+   and check it: `tools/catalog_check.py <zip> --catalog`. Publish it as a GitHub release on your repo. (A plain Akai SDK
+   folder zip, with `plugin.json`, `version.xml`, `VST/` and `Plugin Skins/`, is not a release zip. Either use `release.py`,
+   or attach it as `<Name>-<version>-mpc-sdk.zip` and leave `asset_pattern` out: the catalog converts it, see
+   `docs/CATALOG.md`. The conversion suits a simple plugin; one that needs `--requires` / `--depends` / `--conflicts`,
+   or is Gen2-only, must publish per-CPU zips, and `vst-release.yml` with `sdk_project` does that from an SDK project on
+   every release.) If it needs something
    else (your own ROMs, a network connection, another plugin in the same project), say so in one line with `--requires`: the
    site shows it as "Needs" and the installers print it before installing. If it needs another catalog plugin (an Out that plays
    its host plugin's outputs), declare it with `--depends percolator>=2.0.0` (or `--depends tr-mpc=same` for the same version; repeat

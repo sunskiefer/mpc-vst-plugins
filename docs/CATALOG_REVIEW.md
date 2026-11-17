@@ -52,7 +52,8 @@ Run it in order: the first items are mechanical and catch most problems.
 6. **`tip`:** a plain link to the author's own Ko-fi, Patreon, GitHub Sponsors or similar page.
 7. **PR description:** the PR template is filled in. That means "What and why", plus the `catalog_check.py --catalog`
    output and SHA-256 for each zip, the testing status, and ticked boxes only where the notes back them up (#520, #535,
-   #536, #543). If the description is empty, ask what the PR is for before reviewing it (#408).
+   #536, #543). If the description is empty, or free text that skips the template (no checks, no SHA-256), ask for the
+   template to be filled in as a smaller point; don't skip it because the entry itself looks fine (#408, #990).
 
 ### B. Who and what (tier 2)
 8. **`repo` and `author`:** the repo exists and is public, and the PR author owns it, belongs to its organisation, or is
@@ -63,6 +64,16 @@ Run it in order: the first items are mechanical and catch most problems.
    `*-mpc-aarch64.zip`), built with `release.py` (it carries `mpc-plugin.json`). The scheduled catalog build validates it
    after merge; a release that fails shows as an issue on this repo, so a missing release just means the card stays empty.
    A build-yourself entry has no release by design (`catalog/README.md`, "If your plugin can't publish a zip").
+   For a new entry, also run what CI runs: `python3 tools/catalog_build.py --require-portable <id>`.
+   **If it fails on a zip that unpacks to `plugin.json`, `version.xml`, `VST/` and `Plugin Skins/`**, that is Akai's SDK
+   one-folder format, not a missing-`release.py` mistake. Offer both fixes: rebuild per-CPU zips with `tools/release.py`
+   (or `vst-release.yml` with `sdk_project`), **or** keep the SDK zip, name the asset `*-mpc-sdk.zip` and remove
+   `asset_pattern` from the entry, and the catalog converts it itself (`docs/CATALOG.md`, "Releases with only an Akai SDK
+   zip"; needs a 32-bit binary in `plugin.json`). Which to suggest: the conversion is the least work for a simple first
+   listing, but it takes no `--requires` / `--depends` / `--conflicts` (`tools/sdk_release.py` has none) and refuses a
+   Gen2-only plugin, so those need per-CPU zips. For an author who will keep releasing, point them at `vst-release.yml`
+   with `sdk_project`, which publishes the per-CPU zips on every run. A literal
+   `asset_pattern` (no `*`) is also worth a note: a rename or a new version silently matches nothing.
 10. **`id` and `name`:** the `id` is lower case, stable and not already used. It can never change after merge. Neither the
     `id` nor the `name` may take another author's plugin. A second port of the same plugin gets a distinct name and `id`
     (e.g. "OB-Xd by 3dthc"), or the existing author agrees to hand over their entry (#448, #453, #463). The `name` doesn't
@@ -78,6 +89,9 @@ Run it in order: the first items are mechanical and catch most problems.
 13. **Nobody else's firmware, ROMs or samples in the release.** An emulator that needs the user's own ROM must say so in
     the summary and ship none. `docs/CATALOG.md` principle 7 covers firmware-compiled ports (build-yourself, discontinued
     products only).
+    - **Look inside the release zip, not just the repo:** list it (`python3 -I -c "import zipfile..."`, never extract and run)
+      and check the skin folder for Akai's stock skin JSON or PNGs, and for bundled third-party "framework files" that need
+      crediting (item 14).
     - **Other copyrighted content:** also not allowed, e.g. MIDI files of real songs (#549).
     - **No ROM-extraction tools:** the plugin repo must not ship or promote a tool that pulls a manufacturer's ROM from an
       unlicensed source (#938).
