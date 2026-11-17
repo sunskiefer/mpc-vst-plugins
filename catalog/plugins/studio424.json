@@ -1,0 +1,5 @@
+{ "id": "studio424", "name": "STUDIO424", "author": "Lightlike", "repo": "lightlikemusic/studio424",
+  "kind": "effect", "style": "mixing", "tags": ["channel-strip", "console", "eq", "saturation", "lo-fi", "mixing"],
+  "license": "MIT",
+  "screenshot": "https://raw.githubusercontent.com/lightlikemusic/studio424/v1.0.0/docs/screenshot.png",
+  "summary": "Brings the warm, slightly rough sound of an old cassette four-track mixer to your MPC. Push it for crunch, or leave it clean for a little colour." }
