@@ -5,8 +5,13 @@
   "repo": "zay2001-beatsbylonza/GPP-Link",
   "kind": "effect",
   "style": "utility",
-  "tags": ["utility", "files", "network", "player"],
+  "tags": [
+    "utility",
+    "files",
+    "network",
+    "player"
+  ],
   "license": "MIT",
-  "summary": "Send beats over Wi-Fi between your MPC or Force and the Beats folder on your Mac, and to Get Producers Paid, with a cassette deck to preview beats before you send. Needs the free GPP Link hub running on the Mac.",
+  "summary": "Send beats over Wi-Fi between your MPC or Force and a folder on your computer (macOS or Windows hub included), with a cassette deck to preview them. Opens a local-network HTTP hub with no password: home or studio networks only.",
   "screenshot": "https://raw.githubusercontent.com/zay2001-beatsbylonza/GPP-Link/v1.0.0/docs/screenshot.png"
 }
