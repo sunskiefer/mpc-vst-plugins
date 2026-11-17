@@ -47,7 +47,9 @@ Run it in order: the first items are mechanical and catch most problems.
    after merge; a release that fails shows as an issue on this repo, so a missing release just means the card stays empty.
    A build-yourself entry has no release by design (`catalog/README.md`, "If your plugin can't publish a zip").
 9. **`id`:** lower case, stable, not already used. It can never change after merge.
-10. **`kind`, `style`, `tags`** match what the plugin is.
+10. **`kind`, `style`, `tags`** match what the plugin is. If `min_os` is set it is `"3.10.1"` (CI enforces the value) and
+    the plugin really needs MPC OS 3.10.1 or later: its README or `tested.json` says so. It only hides the card on older
+    OS versions (`docs/CATALOG.md`), so a reviewer may approve it; ask the author if nothing supports it.
 
 ### C. Licence and contents (tier 2)
 11. **Open source:** the repo has a licence file and it matches `license` (an SPDX id). For GPL and LGPL plugins the
@@ -69,7 +71,7 @@ mention `@open-mpc/maintainers` with one line on why. Hand over when:
   name, skin or screenshot that may carry a brand.
 - **Risky calls:** the plugin opens network sockets or runs programs, or the entry adds or changes `flags_reviewed`.
   Only a maintainer sets `flags_reviewed`.
-- **Trust fields:** `featured`, `tier`, `depends`, `conflicts`, `devices`, `min_os`, `retire`, or a new collection.
+- **Trust fields:** `featured`, `tier`, `depends`, `conflicts`, `devices`, `retire`, or a new collection. (`min_os` is not one: it is an author opt-out, checked in item 10.)
 - **Ownership doubt:** the PR author isn't clearly the repo owner, or an entry changes `repo` or `author`.
 - **A yank or a delisting request**, a security report, or a complaint from another author or company.
 
