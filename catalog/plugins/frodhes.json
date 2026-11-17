@@ -17,6 +17,6 @@
   ],
   "license": "GPL-3.0-only",
   "summary": "A physically modelled electric piano, vibraphone and marimba, with no samples: 16 voices, 57 presets, drive, chorus, phaser, tremolo, wah, delay, reverb, EQ and a compressor.",
-  "screenshot": "https://raw.githubusercontent.com/leonardoMirabal/frodhes/v0.9.12/docs/manual/img/mpc/mpc-catalog.png",
+  "screenshot": "https://raw.githubusercontent.com/leonardoMirabal/frodhes/main/docs/manual/img/mpc/mpc-catalog.png",
   "asset_pattern": "*-mpc-armv7.zip"
 }
