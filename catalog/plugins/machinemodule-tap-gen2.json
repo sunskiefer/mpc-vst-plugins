@@ -3,4 +3,5 @@
   "depends": ["machinemodule-gen2=same"],
   "summary": "Puts any Machinemodule tracks, and its reverb and delay sends, on their own MPC return or FX track, so MPC's mixer and effects can process them. Needs Machinemodule in the same project. Gen2 (aarch64) only.",
   "asset_pattern": "Machinemodule-Tap-*-mpc-aarch64.zip",
-  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-machinedrum/main/docs/img/machinemodule-tap-gen2.png" }
+  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-machinedrum/main/docs/img/machinemodule-tap-gen2.png",
+  "tip": "https://ko-fi.com/sd88me" }

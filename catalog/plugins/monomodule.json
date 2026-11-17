@@ -15,4 +15,5 @@
     { "id": "monomodule-one", "name": "Monomodule One", "kind": "instrument", "uid": "MnmO" },
     { "id": "monomodule-fx", "name": "Monomodule FX", "kind": "effect", "uid": "MnmF" }
   ],
-  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-monomodule/main/docs/img/monomodule.png" }
+  "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-monomodule/main/docs/img/monomodule.png",
+  "tip": "https://ko-fi.com/sd88me" }
