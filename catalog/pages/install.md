@@ -31,8 +31,8 @@ Prefer a zip for your own generation only? These hold the same plugin:
 
 | Your MPC | Download |
 |---|---|
-| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, and the Force | `OpenMPC-Plugin-Manager-1.3.2-Gen1.zip` |
-| **Second generation**: MPC Live III, One G2, Key G2, XL | `OpenMPC-Plugin-Manager-1.3.2-Gen2.zip` |
+| **First generation**: MPC Live, Live II, One, X, Key 61, Key 37, and the Force | `OpenMPC-Plugin-Manager-1.3.4-Gen1.zip` |
+| **Second generation**: MPC Live III, One G2, Key G2, XL | `OpenMPC-Plugin-Manager-1.3.4-Gen2.zip` |
 
 Unzip it. You get one folder, **`OpenMPC - VST - Plugin Manager`**.
 
