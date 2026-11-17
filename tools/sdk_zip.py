@@ -16,7 +16,7 @@ it; VST/ is a convention), and our plugins find their own folder as the director
 Manager's themes), so a .so in VST/ would look for its presets, ROMs and skins in VST/.
 
 This writes that zip, whose only top-level entry is the folder. Every other file must be the same in both builds (else the
-plugin needs per-build files and stays per-build: the tool says which files and stops). mpc-plugin.json (our manifest, which the
+plugin needs per-build files and stays per-build: the tool says which files and stops). The exception is PER_BUILD_DIRS: folders named for the one build that ships them (bgserver/ Gen2, bgserver-gen1/ Gen1), kept as they are. mpc-plugin.json (our manifest, which the
 Plugin Manager reads to recognise an installed plugin) is kept, with "arch": "universal" and each build's max_glibc under "builds".
 plugin-meta.xml (the MPC OS 3.9.1 plugin-list entry, which names the .so as it was) is left out: the SDK zip is for MPC OS
 3.10.1 and later; 3.9.1 installs the per-build zips. A Gen1-only or Gen2-only release gives a folder with just that binary. Modes and dates are kept. Standard library only.
@@ -29,6 +29,10 @@ import sys
 import zipfile
 
 ARCH = {"armv7": ("file32", "arm32"), "aarch64": ("file64", "arm64")}
+# Folders that exist in one build only, each named for the build that ships it (the Plugin Manager's background server payload:
+# bgserver/ is the Gen2 daemon + signed launcher, bgserver-gen1/ the Gen1 daemon). They are kept in the SDK folder as they are; the plugin
+# reads the one for its own CPU. Any other file that differs between the builds still stops the tool.
+PER_BUILD_DIRS = {"bgserver": "aarch64", "bgserver-gen1": "armv7"}
 SKIP = {"plugin.json", "mpc-plugin.json", "plugin-meta.xml"}   # plugin-meta.xml: MPC OS 3.9.1 registration, naming the old .so name
 
 
@@ -73,8 +77,12 @@ def sdk_zip(out, zips):
     sos = {a: r[3][ARCH[a][0]] for a, r in by_arch.items()}
     slug = os.path.splitext(os.path.basename(sorted(sos.values())[0]))[0]
     common = None
+    own_dir = lambda k: k.split("/")[0] in PER_BUILD_DIRS and "/" in k
     for a, r in by_arch.items():
-        rest = {k: i for k, i in r[1].items() if k not in SKIP and k != sos[a]}
+        rest = {k: i for k, i in r[1].items() if k not in SKIP and k != sos[a] and not own_dir(k)}
+        for k in r[1]:   # a per-build folder in the wrong build is a mistake, not something to merge
+            if own_dir(k) and PER_BUILD_DIRS[k.split("/")[0]] != a:
+                raise SystemExit("%s has %s, which belongs to the %s build" % (a, k.split("/")[0] + "/", PER_BUILD_DIRS[k.split("/")[0]]))
         if common is None:
             common = (r, rest)
             continue
@@ -110,6 +118,10 @@ def sdk_zip(out, zips):
             put(pj[ARCH[a][0]], r[2].read(r[1][sos[a]]), r[1][sos[a]])
         for k in sorted(rest0):
             put(k, r0[2].read(r0[1][k]), r0[1][k])
+        for a, r in sorted(by_arch.items()):   # the per-build folders, from the build they belong to
+            for k in sorted(r[1]):
+                if own_dir(k) and PER_BUILD_DIRS[k.split("/")[0]] == a:
+                    put(k, r[2].read(r[1][k]), r[1][k])
     return folder, sorted(by_arch)
 
 

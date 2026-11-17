@@ -50,6 +50,22 @@ class T(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "bin/helper"):
             sdk_zip.sdk_zip(self.out, [release(self.d, "armv7", {"bin/helper": "a"}), release(self.d, "aarch64")])
 
+    def test_per_build_folders_are_kept(self):   # the Plugin Manager's background server: bgserver/ is Gen2's, bgserver-gen1/ is Gen1's
+        sdk_zip.sdk_zip(self.out, [release(self.d, "armv7", {"bgserver-gen1/openmpc-pm-daemon": "arm"}),
+                                   release(self.d, "aarch64", {"bgserver/openmpc-pm-daemon": "a64", "bgserver/openmpc_pm_launch.so": "l"})])
+        z = zipfile.ZipFile(self.out)
+        self.assertEqual(z.read(F + "/bgserver-gen1/openmpc-pm-daemon"), b"arm")
+        self.assertEqual((z.read(F + "/bgserver/openmpc-pm-daemon"), z.read(F + "/bgserver/openmpc_pm_launch.so")), (b"a64", b"l"))
+        self.assertIn(F + "/Plugin Skins/TUI.json", z.namelist())
+
+    def test_per_build_folder_in_the_wrong_build_stops(self):
+        with self.assertRaisesRegex(SystemExit, "belongs to the aarch64 build"):
+            sdk_zip.sdk_zip(self.out, [release(self.d, "armv7", {"bgserver/openmpc-pm-daemon": "x"}), release(self.d, "aarch64")])
+
+    def test_other_files_still_stop_next_to_per_build_folders(self):
+        with self.assertRaisesRegex(SystemExit, "Presets/x"):
+            sdk_zip.sdk_zip(self.out, [release(self.d, "armv7", {"bgserver-gen1/d": "a", "Presets/x": "a"}), release(self.d, "aarch64", {"bgserver/d": "b", "Presets/x": "b"})])
+
     def test_refuses_mismatched_plugin_json(self):
         with self.assertRaisesRegex(SystemExit, "plugin.json differs"):
             sdk_zip.sdk_zip(self.out, [release(self.d, "armv7"), release(self.d, "aarch64", pj_extra={"version": "2"})])
