@@ -13,11 +13,12 @@ params ──auto──► layout.conf ──to-svg──► layout.svg ──(I
 | Step | Command | Use it when |
 |---|---|---|
 | Auto-layout | `tools/studio.py auto params.json -o layout.conf` | You want a working first page in seconds |
+| Panel import | `tools/panel_import.py panel.png -o OUT [--params params.json] [--labels]` | You have a picture of a hardware panel: `OUT/layout.conf` puts it on the page as art with a knob on each round control found (`OUT/overlay.png` shows what was found; needs `"art": "html"`) |
 | Browser editor | double-click `SkinStudio.command` / `.bat` / `.sh`, or `tools/studio.py serve [layout.conf \| vst.json]` | You want to lay out, restyle and check it by hand |
 | To SVG | `tools/studio.py to-svg layout.conf -o layout.svg --params params.json` | You want to rearrange it visually |
 | From SVG | `tools/studio.py from-svg layout.svg -o layout.conf` | You've edited the SVG |
 | Build skin | the port's gen script (`shadow_skin.write_skin(...)`) | Always last |
-| Preview | `tools/studio.py preview "<skin>/Plugin Skins" -o page_%d.png` | Before deploying anything (a page with popups also gets `page_N_open.png`, and one with mode panels a `page_N_mode<p>-<i>.png` per other option) |
+| Preview | `tools/studio.py preview "<skin>/Plugin Skins" -o page_%d.png` | Before deploying anything (a page with popups also gets `page_N_open.png`, and one with mode panels a `page_N_mode<p>-<i>.png` per other option). `--params params.json` shows every control at its default (knob position, value text, selected segment), `--set key=value` (repeatable) at another value, `--touch` outlines the touch boxes in red. `SKIN_PREVIEW=<dir>` on a `gen_vst.py` run writes the same pictures after every build |
 
 The tools need Python 3; the skin build and preview also need Pillow (the ports run them in a
 `python:3.11-slim` container). The browser renderer (below) runs in its own image, `mpc-vst-html-art`.
