@@ -1,0 +1,18 @@
+{
+  "id": "vulcan-rotary",
+  "name": "Vulcan Rotary",
+  "author": "Lumina Aerospace LLC",
+  "repo": "Luminous-Works/mpc-vst-vulcan-rotary",
+  "kind": "effect",
+  "license": "MIT",
+  "summary": "Six-barrel rotary gate and stutter: the barrels spool up from rest, rates in real gun rounds per minute (2,500 / 4,000 / 6,000 / 7,200).",
+  "style": "glitch",
+  "tags": [
+    "gate",
+    "stutter",
+    "rotary",
+    "rhythm",
+    "scatter"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/Luminous-Works/mpc-vst-vulcan-rotary/v1.0.0/docs/screenshots/vulcan-rotary.png"
+}
