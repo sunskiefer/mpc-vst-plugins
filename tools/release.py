@@ -111,7 +111,13 @@ for spec in a.extra:
     extras.append(dest)
 meta = re.sub(r'(\s)file="[^"]*"', lambda m: '%sfile="%%payload-path%%/%s/%s"' % (m.group(1), skin_name, so_path), entry, count=1)
 open(os.path.join(pdir, "plugin-meta.xml"), "w", newline="\n").write(meta + "\n")
-shutil.copy2(os.path.join(HERE, "release", "plugin_list.awk"), root)
+# plugin_list.awk runs on the device, so it has to ship with LF line endings: with CRLF the device awk stops at
+# the first line of code ("Unexpected token"), and a Windows checkout (core.autocrlf) has CRLF in tools/release/.
+# Every other text file here is written with an explicit LF; this one was copied, so normalise it here too.
+with open(os.path.join(HERE, "release", "plugin_list.awk"), newline=None) as f:
+    awk_program = f.read()
+open(os.path.join(root, "plugin_list.awk"), "w", newline="\n").write(awk_program)
+
 
 for d in a.user_data:
     if not re.fullmatch(r"[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*", d) or ".." in d.split("/"):
