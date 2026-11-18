@@ -112,6 +112,20 @@ class Base(unittest.TestCase):
         return out
 
 
+class DeviceTextTest(Base):
+    """The shell scripts and the awk program run on the device, whose sh and awk stop at a CR ("Unexpected token")."""
+    def test_shipped_scripts_and_awk_are_lf(self):
+        z = self.build()
+        with zipfile.ZipFile(z) as zf:
+            want = ("/install.sh", "/uninstall.sh", "/plugin_list.awk", "/SHA256SUMS", "/MODES")
+            names = [n for n in zf.namelist() if n.endswith(want)]
+            self.assertEqual(len(names), len(want), names)
+            for n in names:
+                data = zf.read(n)
+                self.assertEqual(data.count(b"\r"), 0, "%s ships CR line endings" % n)
+                self.assertTrue(data.endswith(b"\n"), n)
+
+
 class RiskyCallsTest(Base):
     def test_risky_imports_are_flagged_not_rejected(self):
         z = self.build(imports=("memcpy", "sinf", "socket", "connect", "system", "dlopen"))

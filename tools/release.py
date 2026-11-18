@@ -347,6 +347,15 @@ for p in walk(root):
         sums.append("%s  %s" % (hashlib.sha256(open(p, "rb").read()).hexdigest(), zip_rel(p, root)))
 open(os.path.join(root, "SHA256SUMS"), "w", newline="\n").write("\n".join(sums) + "\n")
 
+# The device reads these with sh, awk and sha256sum, and each stops at a CR ("Unexpected token" at the first line of
+# code): a CRLF plugin_list.awk shipped once and the plugin never got registered. Everything above writes LF, so this
+# only fires when a future edit copies a file in instead; fail here rather than in the installer on the device.
+for f in ("install.sh", "uninstall.sh", "plugin_list.awk", "SHA256SUMS", "MODES"):
+    with open(os.path.join(root, f), "rb") as fh:
+        cr = fh.read().count(b"\r")
+    if cr:
+        raise SystemExit("%s has %d CR (Windows) line endings; it runs on the device, which needs LF" % (f, cr))
+
 os.makedirs(a.out, exist_ok=True)
 zpath = os.path.join(a.out, "%s-mpc-%s.zip" % (top, "aarch64" if manifest["arch"] == "aarch64" else "armv7"))   # -mpc-armv7.zip (Gen1) or -mpc-aarch64.zip (Gen2)
 with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:

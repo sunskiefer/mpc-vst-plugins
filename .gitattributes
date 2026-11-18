@@ -4,3 +4,4 @@
 *.sh text eol=lf
 # the on-device patch script and its sources must keep LF
 tools/mpc_patch/* text eol=lf
+tools/release/* text eol=lf
