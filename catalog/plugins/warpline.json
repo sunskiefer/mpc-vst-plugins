@@ -1,0 +1,5 @@
+{ "id": "warpline", "name": "Warpline", "author": "CLVRKE",
+  "repo": "CLVRK3/warpline-mpc", "kind": "instrument", "license": "GPL-3.0-or-later",
+  "summary": "Wavetable synth for standalone MPC built on the open-source Vital engine: plays .vital patches, 300 factory patches with type filter, velocity, six touchscreen pages.",
+  "style": "synth", "tags": ["wavetable", "vital"],
+  "screenshot": "https://raw.githubusercontent.com/CLVRK3/warpline-mpc/v1.0.0/docs/screenshots/warpline.png" }
