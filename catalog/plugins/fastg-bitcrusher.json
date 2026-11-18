@@ -1,0 +1,20 @@
+
+{
+  "id": "fastg-bitcrusher",
+  "name": "FAST G BITCRUSHER – VICTORY EDITION",
+  "author": "FAST G STUDIOS",
+  "repo": "fastgbeats-cmd/FASTG-BITCRUSHER",
+  "kind": "effect",
+  "style": "bitcrusher",
+  "tags": [
+    "bitcrusher",
+    "lofi",
+    "distortion",
+    "vintage"
+  ],
+  "license": "MIT",
+  "summary": "Free vintage bitcrusher audio effect for Akai MPC.",
+  "asset_pattern": "*-mpc-armv7.zip",
+  "min_os": "3.10.1",
+  "screenshot": "https://raw.githubusercontent.com/fastgbeats-cmd/FASTG-BITCRUSHER/f4ae3501af90416a649019968b4e9bca5f04acdc/NAHLED.png"
+}
