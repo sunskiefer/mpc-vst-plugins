@@ -1,0 +1,14 @@
+{
+  "id": "mpseejay",
+  "name": "mpSEEJAY",
+  "author": "noahsoconnor",
+  "repo": "noahsoconnor/mpseejay",
+  "kind": "instrument",
+  "license": "MIT",
+  "summary": "Two DJ decks for an external DJ mixer: one plugin per deck, each on its own output. Waveforms, tempo and beat-grid detection, sync, pitch fader, jog and nudge, cue, hot cues, loops and rolls, a track browser, and the 16 pads mirrored on screen and lit on the MPC. WAV and MP3. Tested on an MPC Live II, MPC OS 3.10.1.",
+  "style": "player",
+  "tags": ["dj", "player", "decks", "sync"],
+  "min_os": "3.10.1",
+  "screenshot": "https://raw.githubusercontent.com/noahsoconnor/mpseejay/v1.0.0/docs/screenshot.png",
+  "asset_pattern": "*-mpc-armv7.zip"
+}
