@@ -2320,11 +2320,31 @@ class InstallerTest(Base):
             zf.extractall(pkg)
         self.top = os.path.join(pkg, os.listdir(pkg)[0])
         os.makedirs(self.synths)
-        os.symlink(os.path.join(self.synths, self.SKIN), os.path.join(self.synths, old))
-        r = self.run_script("install.sh")
+        retired = os.path.join(self.synths, old)
+        os.makedirs(retired)
+        open(os.path.join(retired, "mpc-plugin.json"), "w").write('{"id": "test-synth"}')
+
+        # GitHub's Linux runner is case-sensitive, so emulate the device's
+        # case-insensitive volume by making stat report the same identity for
+        # the retired and new paths.  The installer must then keep the retired
+        # path instead of deleting the new install it resolves to on the device.
+        fake_bin = os.path.join(self.tmp, "fake-bin")
+        os.makedirs(fake_bin)
+        fake_stat = os.path.join(fake_bin, "stat")
+        open(fake_stat, "w").write("#!/bin/sh\nprintf '123:456\\n'\n")
+        os.chmod(fake_stat, 0o755)
+        old_test_path = os.environ.get("INSTALLER_TEST_PATH")
+        os.environ["INSTALLER_TEST_PATH"] = fake_bin + os.pathsep + os.environ.get("PATH", "")
+        try:
+            r = self.run_script("install.sh")
+        finally:
+            if old_test_path is None:
+                os.environ.pop("INSTALLER_TEST_PATH", None)
+            else:
+                os.environ["INSTALLER_TEST_PATH"] = old_test_path
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(os.path.exists(os.path.join(self.synths, self.SKIN)))
-        self.assertTrue(os.path.islink(os.path.join(self.synths, old)))
+        self.assertTrue(os.path.isdir(retired))
         self.assertIn("resolves to the new plugin folder", r.stdout)
 
     def test_asset_name_keeps_the_zip_names_after_a_rename(self):
