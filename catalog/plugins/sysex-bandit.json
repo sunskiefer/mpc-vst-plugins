@@ -2,6 +2,6 @@
   "kind": "instrument", "license": "MIT",
   "summary": "Send and receive MIDI System Exclusive from a track: pick or hand-edit a .syx message, aim it at one output device, listen on one input and save what arrives. Makes no sound.",
   "style": "utility", "tags": ["midi", "sysex", "utility"],
-  "screenshot": "https://raw.githubusercontent.com/dreamstaticsounds/sysex-bandit/v1.0.0/docs/img/sysex-bandit-send.jpg",
+  "screenshot": "https://raw.githubusercontent.com/dreamstaticsounds/sysex-bandit/main/docs/img/sysex-bandit-send.png",
   "asset_pattern": "*-mpc-armv7.zip",
   "tip": "https://www.patreon.com/dreamstatic" }
