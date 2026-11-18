@@ -129,7 +129,8 @@ screen shows. If you are comfortable in a terminal and on 2.x, the output of thi
 - `tools/mpc310_on_391/`: a USB stick that runs the MPC 3.10 app on an MPC Live III that stays on MPC OS 3.9.1 (which
   keeps the USB-script route developers use for SSH). Built on your computer from Akai's two official Gen2 update
   images; nothing from Akai is in the repo. See [its README](../tools/mpc310_on_391/README.md).
-- `tools/skin_check.py`: checks a built skin for overlapping touch areas, controls off the screen, Q-Links on hidden
+- `tools/skin_check.py`: checks a built skin for overlapping touch areas, names running into names or knobs, art text
+  under knobs, controls off the screen, Q-Links on hidden
   parameters and switches missing options; `gen_vst.py` runs it after every build.
 - `tools/studio.py` + `tools/skin_template.svg`: the skin studio. Auto-layout from a port's
   parameters, a browser editor (`studio.py serve`, `tools/studio_web/`, started by the `SkinStudio.*` launchers), an
