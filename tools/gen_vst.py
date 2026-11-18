@@ -4,6 +4,8 @@
     gen_vst.py <port>/vst.json            -> <port>/build/params.h, skin/<vendor> - VST - <name>/, pluginlist-entry.xml
     gen_vst.py <port>/vst.json --shell    print the build settings as shell variables (for build_port.sh)
     gen_vst.py <port>/vst.json --params-h only <port>/build/params.h (no skin; for tools/test_port.sh)
+    SKIN_PREVIEW=<dir> gen_vst.py ...     also write <dir>/page_N.png: every page at the parameter defaults
+                                          (tools/studio.py preview; SKIN_PREVIEW_TOUCH=1 outlines the touch boxes)
 
 vst.json (paths are relative to the vst.json's folder):
     {
@@ -480,6 +482,14 @@ def main():
     if cfg.get("skin_post"):   # the port's own TUI.json touch-ups; a non-zero exit fails the build
         import subprocess
         subprocess.run([sys.executable, os.path.join(here, cfg["skin_post"]), skin], cwd=here, check=True)
+    if os.environ.get("SKIN_PREVIEW"):   # offline pictures of every page at the parameter defaults (tools/studio.py preview)
+        import studio
+        pv = os.path.abspath(os.environ["SKIN_PREVIEW"])
+        os.makedirs(pv, exist_ok=True)
+        for out, name in studio.preview(skin if os.path.exists(os.path.join(skin, "TUI.json")) else os.path.join(skin, "Plugin Skins"),
+                                        os.path.join(pv, "page_%d.png"), plist=plist,
+                                        touch=os.environ.get("SKIN_PREVIEW_TOUCH") == "1"):
+            print("preview:", out, name)
     if cfg.get("tile"):   # the browser tile only does something with a preset to open: ship a Default one with it
         import xpl
         print("tile:", xpl.write_tile(os.path.join(here, cfg["tile"]), skin))
