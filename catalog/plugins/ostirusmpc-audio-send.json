@@ -1,0 +1,18 @@
+{
+  "id": "ostirusmpc-audio-send",
+  "name": "OsTirusMPC Audio Send",
+  "author": "Pryonix",
+  "repo": "dnkkit/OsTirusMPC",
+  "kind": "effect",
+  "license": "GPL-3.0-only",
+  "summary": "Optional companion effect for OsTirusMPC on Gen2 MPC standalone. Routes audio from any track or individual pad to the OsTirusMPC virtual audio input.",
+  "style": "utility",
+  "tags": [
+    "utility",
+    "audio-routing"
+  ],
+  "asset_pattern": "OsTirusMPC-Audio-Send-*-mpc-aarch64.zip",
+  "homepage": "https://github.com/dnkkit/OsTirusMPC",
+  "min_os": "3.10.1",
+  "collection": "ostirusmpc"
+}

@@ -5,11 +5,12 @@
   "repo": "dnkkit/OsTirusMPC",
   "kind": "instrument",
   "license": "GPL-3.0-only",
-  "summary": "Virus TI Snow firmware emulation for ARM64 MPC standalone. Eight touch pages, Q-Link maps, USER A-D banks, and direct Single-patch SysEx/MIDI file exchange. Requires the user's own compatible firmware; none is included.",
+  "summary": "Virus TI Snow hardware emulation for Gen2 MPC standalone, running the user's own compatible firmware. Eight touch pages, Q-Link maps, USER A-D banks, and Single-patch SysEx/MIDI file exchange. No firmware is included.",
   "style": "synth",
   "tags": ["synth", "virtual-analog", "emulation"],
-  "asset_pattern": "*-mpc-aarch64.zip",
+  "asset_pattern": "OsTirusMPC-[0-9]*-mpc-aarch64.zip",
   "homepage": "https://github.com/dnkkit/OsTirusMPC",
   "min_os": "3.10.1",
-  "screenshot": "https://raw.githubusercontent.com/dnkkit/OsTirusMPC/4312af0feddf8f0d2fc69963d2b08c4585243ead/MAIN-1.0.png"
+  "screenshot": "https://raw.githubusercontent.com/dnkkit/OsTirusMPC/4312af0feddf8f0d2fc69963d2b08c4585243ead/MAIN-1.0.png",
+  "collection": "ostirusmpc"
 }

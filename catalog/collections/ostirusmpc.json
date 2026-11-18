@@ -1,0 +1,8 @@
+{
+  "id": "ostirusmpc",
+  "title": "OsTirusMPC",
+  "author": "Pryonix",
+  "repo": "dnkkit/OsTirusMPC",
+  "summary": "Virus TI Snow hardware emulation for Gen2 MPC standalone. Includes an Audio Send companion effect that routes audio into the synthesizer's input, reproducing the original hardware's audio input behavior. Requires the user's own compatible firmware; none is included.",
+  "screenshot": "https://raw.githubusercontent.com/dnkkit/OsTirusMPC/4312af0feddf8f0d2fc69963d2b08c4585243ead/MAIN-1.0.png"
+}
