@@ -33,7 +33,7 @@ def stub(mu, addr, fn):
     mu.hook_add(UC_HOOK_CODE, lambda u, a, s, ud: fn(u), begin=addr, end=addr)
 
 
-names = ["Machinedrum Module", "Machinemodule", "6W6", "8W8", "CW-78", "9W9", "TR-MPC", "Lucky Dip"]
+names = ["Machinedrum Module", "Machinemodule", "6W6", "8W8", "CW-78", "9W9", "8X8", "9X9", "TR-MPC", "Lucky Dip"]
 cases = names + ["DrumSynth:Multi", "Sampler", "", "6W", "6W66", "Machinedrum", "Lucky Dipx", "lucky dip"]
 fails = 0
 for c in cases:

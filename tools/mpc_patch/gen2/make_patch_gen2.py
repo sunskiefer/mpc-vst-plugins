@@ -13,7 +13,7 @@ import argparse, hashlib, os, struct, sys
 import keystone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NAMES = ["Machinedrum Module", "Machinemodule", "6W6", "8W8", "CW-78", "9W9", "TR-MPC", "Lucky Dip"]
+NAMES = ["Machinedrum Module", "Machinemodule", "6W6", "8W8", "CW-78", "9W9", "8X8", "9X9", "TR-MPC", "Lucky Dip"]
 MOV8, MOV16 = bytes.fromhex("01018052"), bytes.fromhex("01028052")   # mov w1,#8 / mov w1,#16
 
 BUILDS = {

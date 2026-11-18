@@ -18,7 +18,7 @@ ends with a `STATE` line. Save your project first: install and uninstall restart
 1. Put `disable-310` at the root of the mpc310-on-391 stick and boot with it (or remove `/run/.../95-mpc310.conf` and
    `systemctl restart acvs`). Check: `status` says `Gen2 3.9.1`.
 2. `sh mpc-drum-pad-patch.sh install`, type PATCH. Expect "patched OK", MPC restarts, and a plugin from the table
-   (Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC, Lucky Dip) shows 16 lit red pads.
+   (Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, 8X8, 9X9, TR-MPC, Lucky Dip) shows 16 lit red pads.
 3. `uninstall` and check `status` is stock again. Report the `md5sum /proc/$(pidof MPC)/exe` after install (want `0c819376e5a72803ec97c5c8b582f36e`).
 
 ## Reboot with Addin Restore 1.2.0 (Gen2; replaces the stick test below, 2026-11-15)

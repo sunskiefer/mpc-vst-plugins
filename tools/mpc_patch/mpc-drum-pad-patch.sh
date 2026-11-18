@@ -20,7 +20,7 @@
 # drum layout 16 pads instead of 8, and (c) lights all 16 pads (red). Pad n then sends MIDI note n-1. Akai's DrumSynth Multi
 # keeps its layout but also shows 16 lit pads. Nothing else changes.
 #
-# Plugins in the table (8): Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC, Lucky Dip
+# Plugins in the table (10): Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, 8X8, 9X9, TR-MPC, Lucky Dip
 #
 # WARNINGS
 #  - It modifies the factory MPC OS. Do it only if you are comfortable with that; you use it at your own risk.
@@ -34,13 +34,14 @@
 #  - Nothing of Akai's is in this file: only the changed bytes and checksums. The device uses its own copy.
 #  - Not affiliated with Akai Professional / inMusic.
 #
-# Version 9. Source and plugin-name table: see the README of the repository this came from.
+# Version 10. Source and plugin-name table: see the README of the repository this came from.
 set -u
 STOCK_MD5=592eebc8e1ce0797dc8c98e7002143b8
-PATCHED_MD5=7cf96599ec61b1079688f253f3b65b9f
+PATCHED_MD5=3cc45deef91cd23efd563bbc3fbeac99
 V1_MD5=10a7d0bb4e5fb66ffaa6b2c6a001eef2     # the earlier Machinedrum-only patch (mpc-vst-machinedrum release/mpc_patch)
 V2_MD5=730c959f317ea405c472f273342bc235     # this patch with the name table of 2026-10-01 (it still said "TR-Kit")
 V3_MD5=f899e581cba179a831212083f9a55ae0     # this patch with the name table of 2026-10-02 (before Machinemodule and Lucky Dip)
+V4_MD5=7cf96599ec61b1079688f253f3b65b9f     # this patch up to script version 9 (before 8X8 and 9X9)
 BK=${MPC_PATCH_BACKUP:-/sdcard/MPC-backup}
 REG=$BK/orig-regions.txt
 FULL=$BK/MPC-3.9.1.2.orig
@@ -51,7 +52,7 @@ PATCH_DATA='2494954 002090e500c09fe50cf08fe0cc695e02
 4a7b330 00c09fe50cf08fe04476df01
 2494bb4 00c09fe50cf08fe040dd3d04
 6872900 0040a0e3040095e50410a0e128209fe51cc09fe50cc08fe03cff2fe1014084e2100054e3f6ffff1a040095e504c09fe50cf08fe04c05bffba822c2fb00007f00
-6872980 04402de564108fe20040d1e5000054e30f00000a0230a0e10140d3e401c0d1e40c0054e10400001a000054e3f9ffff1a04409de40100a0e31eff2fe100005ce3f0ffff0a01c0d1e400005ce3fcffff1aecffffea04409de408109fe501108fe004c09fe50cf08fe07cfd23fe00600bfa4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d3738003957390054522d4d5043004c75636b79204469700000000000
+6872980 04402de564108fe20040d1e5000054e30f00000a0230a0e10140d3e401c0d1e40c0054e10400001a000054e3f9ffff1a04409de40100a0e31eff2fe100005ce3f0ffff0a01c0d1e400005ce3fcffff1aecffffea04409de408109fe501108fe004c09fe50cf08fe07cfd23fe00600bfa4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d37380039573900385838003958390054522d4d5043004c75636b79204469700000000000
 18ff260 10
 18ffbd8 10
 18ffc84 10
@@ -61,9 +62,10 @@ PATCH_DATA='2494954 002090e500c09fe50cf08fe0cc695e02
 
 # MPC Gen1 (Live / One / X / Key; armv7 like the Force, same in-place method): MPC OS 3.10.0. Picked by the checksum of the MPC found.
 STOCK_G1_310=b6cc8e7a398bdf6c3fd8f7176eecd3ee
-PATCHED_G1_310=496c22afe2f57f5c583072a02d754f07
+PATCHED_G1_310=a4a33a117c62dee2b650266654ee3fdd
+OLD_G1_310=496c22afe2f57f5c583072a02d754f07   # Gen1 3.10.0 with this patch up to script version 9 (before 8X8 and 9X9)
 PATCH_DATA_G1_310='6c7c730 0040a0e3040095e50410a0e17f28a0e31cc09fe50cc08fe03cff2fe1014084e2100054e3f6ffff1a040095e504c09fe50cf08fe0549ea8fb04c0bdfb
-6c7c76c 04402de564108fe20040d1e5000054e30f00000a0230a0e10140d3e401c0d1e40c0054e10400001a000054e3f9ffff1a04409de40100a0e31eff2fe100005ce3f0ffff0a01c0d1e400005ce3fcffff1aecffffea04409de408109fe501108fe004c09fe50cf08fe0f0560cfe3cf2ccf94d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d3738003957390054522d4d5043004c75636b79204469700000
+6c7c76c 04402de564108fe20040d1e5000054e30f00000a0230a0e10140d3e401c0d1e40c0054e10400001a000054e3f9ffff1a04409de40100a0e31eff2fe100005ce3f0ffff0a01c0d1e400005ce3fcffff1aecffffea04409de408109fe501108fe004c09fe50cf08fe0f0560cfe3cf2ccf94d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d37380039573900385838003958390054522d4d5043004c75636b79204469700000
 28584e4 00c09fe50cf08fe07c424204
 28584e0 002090e5
 2858740 00c09fe50cf08fe0e43f4204
@@ -75,7 +77,7 @@ PATCH_DATA_G1_310='6c7c730 0040a0e3040095e50410a0e17f28a0e31cc09fe50cc08fe03cff2
 11958a8 10'
 pick_build() {   # $1 = md5 of /usr/bin/MPC: switch the globals to the Gen1 build when it is one (else the Force's 3.9.1.2 stay)
     case "$1" in
-        "$STOCK_G1_310"|"$PATCHED_G1_310") STOCK_MD5=$STOCK_G1_310; PATCHED_MD5=$PATCHED_G1_310; PATCH_DATA=$PATCH_DATA_G1_310
+        "$STOCK_G1_310"|"$PATCHED_G1_310"|"$OLD_G1_310") STOCK_MD5=$STOCK_G1_310; PATCHED_MD5=$PATCHED_G1_310; PATCH_DATA=$PATCH_DATA_G1_310
             FULL=$BK/MPC-3.10.0-Gen1.orig; BUILD="Gen1 MPC OS 3.10.0" ;;
     esac
 }
@@ -88,7 +90,7 @@ usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 if [ -n "$TEST" ]; then F=$TEST; else F=$MNT/usr/bin/MPC; fi
 
 state_of() {   # md5 -> word
-    case "$1" in "$STOCK_MD5") echo stock ;; "$PATCHED_MD5") echo patched ;; "$V1_MD5"|"$V2_MD5"|"$V3_MD5") echo old-patch ;; *) echo unknown ;; esac
+    case "$1" in "$STOCK_MD5") echo stock ;; "$PATCHED_MD5") echo patched ;; "$V1_MD5"|"$V2_MD5"|"$V3_MD5"|"$V4_MD5"|"$OLD_G1_310") echo old-patch ;; *) echo unknown ;; esac
 }
 
 need_root_device() {
@@ -158,7 +160,7 @@ cmd_status() {
     echo "MPC checksum: $cur"
     case "$st" in
         stock) echo "State: stock $BUILD, not patched." ;;
-        patched) echo "State: PATCHED (plugin names: Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC, Lucky Dip)." ;;
+        patched) echo "State: PATCHED (plugin names: Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, 8X8, 9X9, TR-MPC, Lucky Dip)." ;;
         old-patch) echo "State: patched with an earlier version of this patch (Machinedrum-only, or an older name table); 'install' upgrades it." ;;
         *) echo "State: not a build this script supports (MPC OS 3.9.1.2 on a Force; Gen1 MPC OS 3.10.0), or a build this script did not make. 'install' will not touch it."
            [ -f "$FULL" ] && echo "       A full backup from an earlier install is in $BK: 'uninstall' can put the stock program back from it (it checks the backup first)." ;;
@@ -182,7 +184,7 @@ cmd_install() {   # $1: --confirmed skips the typed question; a caller that show
     cat <<EOF
 
  This modifies the FACTORY MPC OS (/usr/bin/MPC) on this device, for $BUILD only.
-  - Plugins that get the 16-pad drum layout: Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC, Lucky Dip
+  - Plugins that get the 16-pad drum layout: Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, 8X8, 9X9, TR-MPC, Lucky Dip
   - MPC will be stopped and started again: save your project first.
   - A firmware update replaces the file and removes the patch.
   - The full original MPC (about 115 MB) and the original bytes are saved to $BK first.
@@ -270,13 +272,13 @@ STOCK_G2_391=a7ace6a9993df33afeae50571755bbf9
 STOCK_G2_310=15a664f6b6ae591c8b78baae8b376f02
 STOCK_G2_3101=4280be032878fc321b7f58a6801cb1ea
 STOCK_G2_3101R=b24b7955d904a5779059287e4793ea0f
-PATCHED_G2_391=0c819376e5a72803ec97c5c8b582f36e
-PATCHED_G2_310=b6a49a4f20055cf0aa937e55acd9856f
-PATCHED_G2_3101=c139fc3525ea3e111726db2368999cfa
-PATCHED_G2_3101R=f9f37837756ee71f064a1dfe292d0ca0
+PATCHED_G2_391=99af0bedbb774b1a0e8ba908a79b6b81
+PATCHED_G2_310=0f97df53b91441f85a3e33d26c6dab4b
+PATCHED_G2_3101=66018ab405e6d6f85355077ed0ce657d
+PATCHED_G2_3101R=b4283ece99a3450944567764d37a95b9
 PATCH_DATA_G2_391='4b3b908 f51300f915028052800640f9a1060051e20fa052a41e7597b506007161ffff54800640f963d27517
 4b3b930 020040f9a10a00f021f03c9124004039a4010034e30302aa64144038251440389f00056b8100005484ffff3520008052c0035fd6c5feff3425144038e5ffff35f3ffff17e101009021e03a91314d1317
-4c92f3c 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d3738003957390054522d4d5043004c75636b79204469700000
+4c92f3c 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d37380039573900385838003958390054522d4d5043004c75636b79204469700000
 28b00a4 232e8a14
 28b00a8 1f2003d51f2003d5
 28b0290 9e2d8a14
@@ -288,7 +290,7 @@ PATCH_DATA_G2_391='4b3b908 f51300f915028052800640f9a1060051e20fa052a41e7597b5060
 1e44eac 01028052'
 PATCH_DATA_G2_310='79a71a0 f51300f915028052800640f9a1060051e20fa052d6fec496b506007161ffff54800640f9f597c916
 79a71c8 020040f9010000902160089124004039a4010034e30302aa64144038251440389f00056b8100005484ffff3520008052c0035fd6c5feff3425144038e5ffff35f3ffff1741a1feb021e00391736e5a16
-79a7218 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d3738003957390054522d4d5043004c75636b79204469700000
+79a7218 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d37380039573900385838003958390054522d4d5043004c75636b79204469700000
 2c0cf84 91683615
 2c0cf88 1f2003d51f2003d5
 2c0d170 0c683615
@@ -300,7 +302,7 @@ PATCH_DATA_G2_310='79a71a0 f51300f915028052800640f9a1060051e20fa052d6fec496b5060
 179733c 01028052'
 PATCH_DATA_G2_3101='7b10070 f51300f915028052800640f9a1060051e20fa052b279c096b506007161ffff54800640f9d112c516
 7b10098 020040f90100009021a0039124004039a4010034e30302aa64144038251440389f00056b8100005484ffff3520008052c0035fd6c5feff3425144038e5ffff35f3ffff17619ffe9021600791072b5516
-7b100e8 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d3738003957390054522d4d5043004c75636b79204469700000
+7b100e8 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d37380039573900385838003958390054522d4d5043004c75636b79204469700000
 2c549c4 b5ed3a15
 2c549c8 1f2003d51f2003d5
 2c54bb0 30ed3a15
@@ -312,7 +314,7 @@ PATCH_DATA_G2_3101='7b10070 f51300f915028052800640f9a1060051e20fa052b279c096b506
 17b417c 01028052'
 PATCH_DATA_G2_3101R='7b100f0 f51300f915028052800640f9a1060051e20fa0529279c096b506007161ffff54800640f9b112c516
 7b10118 020040f90100009021a0059124004039a4010034e30302aa64144038251440389f00056b8100005484ffff3520008052c0035fd6c5feff3425144038e5ffff35f3ffff17619ffe9021600791e72a5516
-7b10168 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d3738003957390054522d4d5043004c75636b79204469700000
+7b10168 4d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d37380039573900385838003958390054522d4d5043004c75636b79204469700000
 2c549c4 d5ed3a15
 2c549c8 1f2003d51f2003d5
 2c54bb0 50ed3a15
@@ -370,7 +372,7 @@ g2_cmd_status() {
     if [ -z "$G2_ID" ]; then
         st=unsupported; sup=0; echo "State: not a Gen2 build this script knows (MPC OS 3.9.1, 3.10.0 or 3.10.1). 'install' will not touch it."
     elif [ -f "$G2_DROPIN" ] && [ "$(g2_running_md5)" = "$G2_PATCHED" ]; then
-        st=patched; sup=1; echo "State: PATCHED and running (Gen2 $G2_ID; plugin names: Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC, Lucky Dip)."
+        st=patched; sup=1; echo "State: PATCHED and running (Gen2 $G2_ID; plugin names: Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, 8X8, 9X9, TR-MPC, Lucky Dip)."
     else
         st=stock; sup=1
         if [ $prepared = 1 ]; then echo "State: Gen2 $G2_ID, not active. A patched copy is prepared in $G2: 'reapply' (or 'install') switches it on."
@@ -386,7 +388,7 @@ g2_cmd_install() {
     cat <<EOF
 
  This switches this Gen2 device to a PATCHED COPY of MPC OS $G2_ID's program, for the plugins that get the 16-pad drum layout:
-  Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC, Lucky Dip
+  Machinedrum Module, Machinemodule, 6W6, 8W8, CW-78, 9W9, 8X8, 9X9, TR-MPC, Lucky Dip
   - $SRC and the read-only system are not changed. The copy goes to $G2 (about 130 MB), and a drop-in in /run points MPC at it.
   - MPC will be stopped and started again: save your project first.
   - A reboot puts the stock MPC back until 'reapply' runs again (an autorun stick can do that); a new firmware or kit needs a new patch.

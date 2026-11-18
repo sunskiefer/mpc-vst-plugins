@@ -27,7 +27,7 @@ def stub(mu, addr, fn):
 eq = None
 w = struct.unpack_from("<I", data, B["helper"] + 12)[0]    # patched: nop; real b-target comes from the stock via the patch's matcher
 fails = 0
-cases = ["Machinedrum Module", "Machinemodule", "6W6", "8W8", "CW-78", "9W9", "TR-MPC", "Lucky Dip",
+cases = ["Machinedrum Module", "Machinemodule", "6W6", "8W8", "CW-78", "9W9", "8X8", "9X9", "TR-MPC", "Lucky Dip",
          "DrumSynth:Multi", "Sampler", "", "6W", "6W66", "Machinedrum", "Lucky Dipx", "lucky dip"]
 want = {c: (1 if c in cases[:8] else 0xEE) for c in cases}
 # find String::operator== (the fallback target) from the matcher's last instruction: scan the cave for the final b

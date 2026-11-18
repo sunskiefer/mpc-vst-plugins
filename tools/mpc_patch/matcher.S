@@ -45,6 +45,8 @@ table:
         .asciz "8W8"
         .asciz "CW-78"
         .asciz "9W9"
+        .asciz "8X8"
+        .asciz "9X9"
         .asciz "TR-MPC"
         .asciz "Lucky Dip"
         .byte 0
