@@ -1,0 +1,18 @@
+{
+  "id": "scatterloom",
+  "name": "Scatterloom",
+  "author": "Elsewave",
+  "repo": "shhQuiet/ScatterloomMPC",
+  "kind": "effect",
+  "license": "MIT AND GPL-3.0-only",
+  "summary": "Captures audio grains and weaves them into Euclidean rhythms with Markov-based grain selection.",
+  "style": "sampler",
+  "tags": [
+    "granular",
+    "sequencer",
+    "euclidean"
+  ],
+  "tip": "https://ko-fi.com/elsewavedsp",
+  "min_os": "3.10.1",
+  "screenshot": "https://raw.githubusercontent.com/shhQuiet/ScatterloomMPC/b222a69cb86ec125c0b3226d1c90d2132cd8c4bf/docs/screenshots/scatterloom-main.png"
+}
