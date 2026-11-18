@@ -41,6 +41,7 @@ PATCHED_MD5=@@PATCHED_MD5@@
 V1_MD5=10a7d0bb4e5fb66ffaa6b2c6a001eef2     # the earlier Machinedrum-only patch (mpc-vst-machinedrum release/mpc_patch)
 V2_MD5=730c959f317ea405c472f273342bc235     # this patch with the name table of 2026-10-01 (it still said "TR-Kit")
 V3_MD5=f899e581cba179a831212083f9a55ae0     # this patch with the name table of 2026-10-02 (before Machinemodule and Lucky Dip)
+V4_MD5=7cf96599ec61b1079688f253f3b65b9f     # this patch up to script version 9 (before 8X8 and 9X9)
 BK=${MPC_PATCH_BACKUP:-/sdcard/MPC-backup}
 REG=$BK/orig-regions.txt
 FULL=$BK/MPC-3.9.1.2.orig
@@ -52,10 +53,11 @@ PATCH_DATA='@@PATCH@@'
 # MPC Gen1 (Live / One / X / Key; armv7 like the Force, same in-place method): MPC OS 3.10.0. Picked by the checksum of the MPC found.
 STOCK_G1_310=@@STOCK_G1_310@@
 PATCHED_G1_310=@@PATCHED_G1_310@@
+OLD_G1_310=496c22afe2f57f5c583072a02d754f07   # Gen1 3.10.0 with this patch up to script version 9 (before 8X8 and 9X9)
 PATCH_DATA_G1_310='@@PATCH_G1_310@@'
 pick_build() {   # $1 = md5 of /usr/bin/MPC: switch the globals to the Gen1 build when it is one (else the Force's 3.9.1.2 stay)
     case "$1" in
-        "$STOCK_G1_310"|"$PATCHED_G1_310") STOCK_MD5=$STOCK_G1_310; PATCHED_MD5=$PATCHED_G1_310; PATCH_DATA=$PATCH_DATA_G1_310
+        "$STOCK_G1_310"|"$PATCHED_G1_310"|"$OLD_G1_310") STOCK_MD5=$STOCK_G1_310; PATCHED_MD5=$PATCHED_G1_310; PATCH_DATA=$PATCH_DATA_G1_310
             FULL=$BK/MPC-3.10.0-Gen1.orig; BUILD="Gen1 MPC OS 3.10.0" ;;
     esac
 }
@@ -68,7 +70,7 @@ usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 if [ -n "$TEST" ]; then F=$TEST; else F=$MNT/usr/bin/MPC; fi
 
 state_of() {   # md5 -> word
-    case "$1" in "$STOCK_MD5") echo stock ;; "$PATCHED_MD5") echo patched ;; "$V1_MD5"|"$V2_MD5"|"$V3_MD5") echo old-patch ;; *) echo unknown ;; esac
+    case "$1" in "$STOCK_MD5") echo stock ;; "$PATCHED_MD5") echo patched ;; "$V1_MD5"|"$V2_MD5"|"$V3_MD5"|"$V4_MD5"|"$OLD_G1_310") echo old-patch ;; *) echo unknown ;; esac
 }
 
 need_root_device() {

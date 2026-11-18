@@ -41,6 +41,7 @@ PATCHED_MD5=3cc45deef91cd23efd563bbc3fbeac99
 V1_MD5=10a7d0bb4e5fb66ffaa6b2c6a001eef2     # the earlier Machinedrum-only patch (mpc-vst-machinedrum release/mpc_patch)
 V2_MD5=730c959f317ea405c472f273342bc235     # this patch with the name table of 2026-10-01 (it still said "TR-Kit")
 V3_MD5=f899e581cba179a831212083f9a55ae0     # this patch with the name table of 2026-10-02 (before Machinemodule and Lucky Dip)
+V4_MD5=7cf96599ec61b1079688f253f3b65b9f     # this patch up to script version 9 (before 8X8 and 9X9)
 BK=${MPC_PATCH_BACKUP:-/sdcard/MPC-backup}
 REG=$BK/orig-regions.txt
 FULL=$BK/MPC-3.9.1.2.orig
@@ -62,6 +63,7 @@ PATCH_DATA='2494954 002090e500c09fe50cf08fe0cc695e02
 # MPC Gen1 (Live / One / X / Key; armv7 like the Force, same in-place method): MPC OS 3.10.0. Picked by the checksum of the MPC found.
 STOCK_G1_310=b6cc8e7a398bdf6c3fd8f7176eecd3ee
 PATCHED_G1_310=a4a33a117c62dee2b650266654ee3fdd
+OLD_G1_310=496c22afe2f57f5c583072a02d754f07   # Gen1 3.10.0 with this patch up to script version 9 (before 8X8 and 9X9)
 PATCH_DATA_G1_310='6c7c730 0040a0e3040095e50410a0e17f28a0e31cc09fe50cc08fe03cff2fe1014084e2100054e3f6ffff1a040095e504c09fe50cf08fe0549ea8fb04c0bdfb
 6c7c76c 04402de564108fe20040d1e5000054e30f00000a0230a0e10140d3e401c0d1e40c0054e10400001a000054e3f9ffff1a04409de40100a0e31eff2fe100005ce3f0ffff0a01c0d1e400005ce3fcffff1aecffffea04409de408109fe501108fe004c09fe50cf08fe0f0560cfe3cf2ccf94d616368696e656472756d204d6f64756c65004d616368696e656d6f64756c6500365736003857380043572d37380039573900385838003958390054522d4d5043004c75636b79204469700000
 28584e4 00c09fe50cf08fe07c424204
@@ -75,7 +77,7 @@ PATCH_DATA_G1_310='6c7c730 0040a0e3040095e50410a0e17f28a0e31cc09fe50cc08fe03cff2
 11958a8 10'
 pick_build() {   # $1 = md5 of /usr/bin/MPC: switch the globals to the Gen1 build when it is one (else the Force's 3.9.1.2 stay)
     case "$1" in
-        "$STOCK_G1_310"|"$PATCHED_G1_310") STOCK_MD5=$STOCK_G1_310; PATCHED_MD5=$PATCHED_G1_310; PATCH_DATA=$PATCH_DATA_G1_310
+        "$STOCK_G1_310"|"$PATCHED_G1_310"|"$OLD_G1_310") STOCK_MD5=$STOCK_G1_310; PATCHED_MD5=$PATCHED_G1_310; PATCH_DATA=$PATCH_DATA_G1_310
             FULL=$BK/MPC-3.10.0-Gen1.orig; BUILD="Gen1 MPC OS 3.10.0" ;;
     esac
 }
@@ -88,7 +90,7 @@ usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 if [ -n "$TEST" ]; then F=$TEST; else F=$MNT/usr/bin/MPC; fi
 
 state_of() {   # md5 -> word
-    case "$1" in "$STOCK_MD5") echo stock ;; "$PATCHED_MD5") echo patched ;; "$V1_MD5"|"$V2_MD5"|"$V3_MD5") echo old-patch ;; *) echo unknown ;; esac
+    case "$1" in "$STOCK_MD5") echo stock ;; "$PATCHED_MD5") echo patched ;; "$V1_MD5"|"$V2_MD5"|"$V3_MD5"|"$V4_MD5"|"$OLD_G1_310") echo old-patch ;; *) echo unknown ;; esac
 }
 
 need_root_device() {
