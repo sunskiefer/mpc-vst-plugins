@@ -1,0 +1,20 @@
+{
+  "id": "noxed-acidline",
+  "name": "Acidline",
+  "author": "NOXED",
+  "repo": "molgino/noxed-mpc-plugins",
+  "kind": "instrument",
+  "license": "MIT",
+  "summary": "Monophonic acid bass synth with accent, slide, a transport-synced 16-step pitch/time sequencer and an optional Open303 sound model. Includes six presets.",
+  "style": "synth",
+  "tags": [
+    "synth",
+    "acid",
+    "sequencer"
+  ],
+  "asset_pattern": "noxed-acidline-*-mpc-armv7.zip",
+  "screenshot": "https://raw.githubusercontent.com/molgino/noxed-mpc-plugins/40832b26596b1c0228eb97e0dc81c257547a2d1a/docs/screenshots/acidline-sequencer.png",
+  "tip": "https://ko-fi.com/noxend",
+  "min_os": "3.10.1",
+  "collection": "noxed-mpc-plugins"
+}
