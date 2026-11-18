@@ -1,0 +1,19 @@
+{
+  "id": "piamb",
+  "name": "πAMB",
+  "author": "Timo",
+  "repo": "timomacquis/piAMB-MPC",
+  "kind": "instrument",
+  "license": "MPL-2.0",
+  "summary": "A generative ambient garden after Music for Airports: pad, bells on tape loops, bass and a soft pulse on one slowly drifting chord. Port of AMB-1 by Charles Vestal (charlesvestal/fm1-amb).",
+  "source_available": true,
+  "tags": [
+    "generative",
+    "ambient",
+    "synth",
+    "port"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/timomacquis/piAMB-MPC/v0.1.0/docs/images/garden-force.png",
+  "homepage": "https://github.com/timomacquis/piAMB-MPC",
+  "style": "synth"
+}
