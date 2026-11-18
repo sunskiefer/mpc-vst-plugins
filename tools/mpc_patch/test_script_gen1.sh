@@ -3,7 +3,7 @@
 # MPC.g1 (the stock Gen1 3.10.0 MPC). Run:  docker run --rm -v <fixtures>:/t busybox:1.36 sh /t/test_script_gen1.sh
 S=/t/mpc-drum-pad-patch.sh
 STOCK=b6cc8e7a398bdf6c3fd8f7176eecd3ee
-PATCHED=496c22afe2f57f5c583072a02d754f07
+PATCHED=a4a33a117c62dee2b650266654ee3fdd
 fail=0
 check() { if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1 (got '$2', want '$3')"; fail=1; fi; }
 md5() { md5sum "$1" | cut -d' ' -f1; }

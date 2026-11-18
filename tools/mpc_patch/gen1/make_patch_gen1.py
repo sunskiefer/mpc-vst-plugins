@@ -13,7 +13,7 @@ import argparse, hashlib, os, struct, sys
 import keystone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NAMES = ["Machinedrum Module", "Machinemodule", "6W6", "8W8", "CW-78", "9W9", "TR-MPC", "Lucky Dip"]
+NAMES = ["Machinedrum Module", "Machinemodule", "6W6", "8W8", "CW-78", "9W9", "8X8", "9X9", "TR-MPC", "Lucky Dip"]
 MOVNE8 = bytes.fromhex("0810a013")
 B = dict(
     md5="b6cc8e7a398bdf6c3fd8f7176eecd3ee",

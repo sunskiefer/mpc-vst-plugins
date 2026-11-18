@@ -4,7 +4,7 @@
     {
       "id": "drum-pad-layout",
       "title": "16-pad drum layout for selected plugins",
-      "summary": "Machinedrum Module / Machinemodule, 6W6, 8W8, CW-78, 9W9, TR-MPC and Lucky Dip get MPC's drum layout with all 16 pads lit. On Gen2 (Live III) it runs a patched copy of MPC instead of changing the system; the Plugin Manager then also installs the MPC Add-Ins patch, which brings it back after every reboot.",
+      "summary": "Machinedrum Module / Machinemodule, 6W6, 8W8, CW-78, 9W9, 8X8, 9X9, TR-MPC and Lucky Dip get MPC's drum layout with all 16 pads lit. On Gen2 (Live III) it runs a patched copy of MPC instead of changing the system; the Plugin Manager then also installs the MPC Add-Ins patch, which brings it back after every reboot.",
       "author": "sd88me",
       "license": "MIT",
       "docs": "tools/mpc_patch/README.md",

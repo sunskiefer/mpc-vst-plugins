@@ -2722,3 +2722,14 @@ recipe in `docs/CV_OUTPUTS.md`.
 - Live III (device, OS 3.10.1, read-only, same day): `Private` is `hw:0,0,1` on card 0 (MPC's own card; `Public`, `Private`, `DIN-A`, `DIN-B`), held open by MPC with
   ~640 KB out / ~175 KB in, so it is a busy link (the Live III has 4 stereo TRS CV/Gate outputs, so CV may share it). Find it by name; not written to.
 - **Device capture (Live III, OS 3.10.1, same day):** a read-only static `strace` of MPC while a CV track played shows 6-byte writes `BF 00 hi BF 01 lo` (14-bit, CC0 = MSB, CC1 = LSB, 0..16382) to the `Private` output at ~250/s for the active slot; slots 1..15 and the CC numbers not yet observed. Plugin writes to a slot MPC is driving would be overwritten. `docs/CV_OUTPUTS.md`.
+
+## 2026-11-18: drum-pad patch adds 8X8 and 9X9 (offline)
+
+8X8 and 9X9 (sd88me's Gen2 circuit-solved 808 and 909, from mpc-vst-TR-MPC) are in the drum-pad patch's name table (10 names;
+script version 10), rebuilt for every supported MPC: Force 3.9.1.2, Gen1 3.10.0 and Gen2 3.9.1 / 3.10.0 / 3.10.1.8 / 3.10.1. Gen2
+3.9.1's cave fills its gap exactly (0x4b3b908-0x4b3b980; its table has its own zero run, checked). Tests, offline: the armv7 matcher
+under qemu, `test_gen1_emu.py` and `test_gen2_emu.py` under Unicorn for all five (8X8 / 9X9 match, the others unchanged), and the
+Gen1 and Gen2 script tests in BusyBox (14 and 89 checks, all four Gen2 builds). The Force script test was not run (its fixture,
+an MPC with the old Machinedrum-only patch, was not at hand). The template had lost the "run from inside MPC" fix that was made in
+the generated script on 2026-11-15; it is back in `script.template.sh`, so a regenerated script keeps it. Not on a device yet;
+`catalog/patches.json` still pins the previous script (its URL and sha256 move to this commit once it is on main).
