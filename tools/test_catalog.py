@@ -2311,6 +2311,22 @@ class InstallerTest(Base):
         self.assertEqual(self.run_script("install.sh").returncode, 0)                           # and a second run is fine
         self.assertEqual(len(self.entries()), 2)
 
+    def test_case_only_retire_name_never_removes_the_new_folder(self):
+        """A case-insensitive device volume can resolve the retired name to NEW."""
+        old = "Acme - VST - test synth"
+        z = self.build(extra=("--retire", old))
+        pkg = os.path.join(self.tmp, "pkg-case-only")
+        with zipfile.ZipFile(z) as zf:
+            zf.extractall(pkg)
+        self.top = os.path.join(pkg, os.listdir(pkg)[0])
+        os.makedirs(self.synths)
+        os.symlink(os.path.join(self.synths, self.SKIN), os.path.join(self.synths, old))
+        r = self.run_script("install.sh")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(os.path.exists(os.path.join(self.synths, self.SKIN)))
+        self.assertTrue(os.path.islink(os.path.join(self.synths, old)))
+        self.assertIn("resolves to the new plugin folder", r.stdout)
+
     def test_asset_name_keeps_the_zip_names_after_a_rename(self):
         """release.py --asset-name: the zips keep their old file-name stem (the folder and plugin name are the new ones)."""
         self.build(extra=("--asset-name", "Old-Name"))   # build() returns the default name; the zip is under the given stem
