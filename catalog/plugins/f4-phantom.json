@@ -1,0 +1,18 @@
+{
+  "id": "f4-phantom",
+  "name": "F4 Phantom",
+  "author": "Lumina Aerospace LLC",
+  "repo": "Luminous-Works/mpc-vst-f4-phantom",
+  "kind": "instrument",
+  "license": "MIT",
+  "summary": "8-voice subtractive synth: two oscillators plus sub, SVF filter, drift, stereo chorus and a six-barrel rotary gate. 14 sounds.",
+  "style": "synth",
+  "tags": [
+    "subtractive",
+    "polyphonic",
+    "analog",
+    "chorus",
+    "rotary"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/Luminous-Works/mpc-vst-f4-phantom/v1.1.0/docs/screenshots/f4-phantom.png"
+}
