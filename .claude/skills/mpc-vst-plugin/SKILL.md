@@ -136,8 +136,11 @@ look -- yellow chassis, red buttons, dark knobs -- see mpc-vst/docs/NOTES.md). N
 from: pick theme colours on purpose instead of leaving the default.
 
 `gen_vst.py` runs `tools/skin_check.py` on every built skin: `warning: skin:` lines name overlapping touch boxes (TOUCH:
-narrow with `bw=` or move), boxes past 1280x628 (EDGE) and Q-Links on parameters the page doesn't show (QLINK). Fix them.
-Check offline before deploying: composite TUI.json + PNGs into a preview image (`tools/studio.py preview`)
+narrow with `bw=` or move), boxes past 1280x628 (EDGE), Q-Links on parameters the page doesn't show (QLINK), names running into other names or
+knobs (TEXT) and art text under a knob's body (INK). Fix them.
+Check offline before deploying: composite TUI.json + PNGs into a preview image (`tools/studio.py preview`; `--params`
+shows the defaults, `SKIN_PREVIEW=<dir>` on gen_vst.py writes it every build). From a hardware panel photo,
+`tools/panel_import.py` writes a first layout with a knob on each control it finds
 and look at it -- and if the app has a real screenshot/mockup (its `docs/*.png`, or its own shadow
 page's look), compare against *that*, not just "does this look like a plausible skin". Skin-only changes
 need no restart.

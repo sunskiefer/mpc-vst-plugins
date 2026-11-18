@@ -492,11 +492,60 @@ def tab_components(tab, defs):
     return page["componentsData"]
 
 
-def preview(skin_dir, out_pattern, frame=40):
+def comp_param(c):
+    """The parameter index a component's "Data" handle is bound to, or None."""
+    for m in c.get("handle remapping", {}).get("map", []):
+        mm = re.match(r"Parameter (\d+)$", str(m.get("value", "")))
+        if m.get("key") == "Data" and mm:
+            return int(mm.group(1))
+    return None
+
+
+def param_values(plist, sets=None):
+    """{index: (normalised 0..1, option index or None, text)} for a port's parameter list (tools/params.py),
+    each at its default unless `sets` ({key, name or index: value}) gives one. An option parameter takes an option
+    index or the option's name; a ranged one a value in its min..max."""
+    sets = dict(sets or {})
+    out = {}
+    for i, p in enumerate(plist):
+        raw = None
+        for k in (p.get("key"), p.get("name"), str(i), i):
+            if k is not None and k in sets:
+                raw = sets.pop(k)
+                break
+        opts = p.get("options")
+        if opts:
+            v = p.get("default", 0) if raw is None else raw
+            if isinstance(v, str) and not v.lstrip("-").isdigit():
+                if v not in opts:
+                    raise SystemExit("%s has no option %r (%s)" % (p.get("key"), v, ", ".join(map(str, opts))))
+                v = opts.index(v)
+            o = max(0, min(len(opts) - 1, int(v)))
+            out[i] = (o / max(1, len(opts) - 1), o, str(opts[o]))
+        else:
+            lo, hi = float(p.get("min", 0)), float(p.get("max", 1))
+            v = float(p.get("default", lo) if raw is None else raw)
+            v = max(min(lo, hi), min(max(lo, hi), v))
+            n = (v - lo) / (hi - lo) if hi != lo else 0.0
+            txt = ("%d" % round(v)) if p.get("display") == "int" or float(v).is_integer() else ("%.2f" % v)
+            if p.get("display") == "string":   # text the engine sends at run time: unknown offline
+                txt = None
+            out[i] = (n, None, txt if txt is None or not p.get("unit") else (txt + " " + p["unit"]).strip())
+    if sets:
+        raise SystemExit("no such parameter: %s" % ", ".join(map(str, sets)))
+    return out
+
+
+def preview(skin_dir, out_pattern, frame=40, plist=None, sets=None, touch=False):
     """Composite a built skin into PNGs (what MPC should draw), one per page with every option parameter
     at its first option, plus "<page>_open" with the page's popups open and "<page>_mode<p>-<i>" for each
-    other option of a parameter that switches controls (when=). Needs Pillow."""
+    other option of a parameter that switches controls (when=). Needs Pillow.
+    With `plist` (the port's parameter list) every control shows its parameter's default -- or the value `sets`
+    gives it (see param_values) -- knobs at that position, value labels with its text, when= modes from its option.
+    `touch` outlines every touch box in red (what skin_check's TOUCH/EDGE findings are about)."""
     from PIL import Image, ImageDraw, ImageFont
+    vals = param_values(plist, sets) if plist is not None else {}
+    base_state = {i: v[1] for i, v in vals.items() if v[1] is not None}
     t = json.load(open(os.path.join(skin_dir, "TUI.json")))["pageData"]
     defs = {d["key"]: d["value"] for d in t["componentDefinitions"]["localComponentDefinitions"]}
     xywh = lambda b: [int(float(v)) for v in b["bounds"].split()]
@@ -515,6 +564,7 @@ def preview(skin_dir, out_pattern, frame=40):
             for i in range(1, n_):
                 pages.append(("%s_mode%d-%d%s" % (base, p, i, ext), tab, {p: i}, " (parameter %d = option %d)" % (p, i)))
     for out, tab, state, note in pages:
+        state = {**base_state, **state}
         im = Image.new("RGB", (W, H), (0, 0, 0))
         dr = ImageDraw.Draw(im)
         for c in tab_components(tab, defs):
@@ -526,6 +576,9 @@ def preview(skin_dir, out_pattern, frame=40):
                 img = Image.open(os.path.join(skin_dir, cd["data"]["image"])).convert("RGBA")
                 im.paste(img, (x, y), img)
                 continue
+            pv = vals.get(comp_param(c))
+            if touch and defs[cd["type"]].get("actions"):
+                dr.rectangle([x, y, x + w - 1, y + h - 1], outline=(230, 60, 60))
             for s in defs[cd["type"]]["componentsData"]:
                 sd = s["componentData"]
                 sx, sy, sw, sh = xywh(s["bounds"])
@@ -539,11 +592,15 @@ def preview(skin_dir, out_pattern, frame=40):
                     n = max(1, int(sd["data"].get("numFrames") or shadow_skin.FRAMES))
                     n_img = n + 1 if st.size[1] == (n + 1) * st.size[0] else n   # knobs: 128 square frames, numFrames 127
                     fw, fh = st.size[0], st.size[1] // n_img
-                    k = min(n_img - 1, round(frame * (n_img - 1) / (shadow_skin.FRAMES - 1)))
+                    pos = pv[0] if pv else frame / (shadow_skin.FRAMES - 1)
+                    k = min(n_img - 1, round(pos * (n_img - 1)))
                     fr = st.crop((0, k * fh, fw, (k + 1) * fh))
                     im.paste(fr, (x + sx, y + sy), fr)
                 elif sd["type"] == "Button":
                     img = sd["data"]["offImage"]
+                    n_b = sd["data"].get("numButtonsInGroup", 1)
+                    if pv and pv[1] is not None and n_b > 1 and sd["data"].get("buttonId") == pv[1]:
+                        img = sd["data"].get("onImage") or img   # the selected option of a segment group
                     if img:
                         img = Image.open(os.path.join(skin_dir, img)).convert("RGBA")
                         im.paste(img, (x + sx, y + sy), img)
@@ -576,8 +633,8 @@ def preview(skin_dir, out_pattern, frame=40):
                     # offline (not pixel-identical to Titillium Web -- see docs/NOTES.md).
                     # "Value" labels show a live number unavailable at preview time, so stay an
                     # outline placeholder.
-                    if sd["data"].get("type") == "Name":
-                        text = cd.get("name", "")
+                    if sd["data"].get("type") == "Name" or (pv and pv[2] is not None and sd["data"].get("type") == "Value"):
+                        text = cd.get("name", "") if sd["data"].get("type") == "Name" else pv[2]
                         ts = sd["data"]["textStyle"]
                         colour = ts["colour"]
                         rgb = tuple(int(colour[i:i + 2], 16) for i in (2, 4, 6)) if len(colour) >= 8 else (200, 200, 200)
@@ -608,6 +665,10 @@ def main():
     s.add_argument("--params", help="the port's parameter file, to fill in omitted option lists")
     f = sub.add_parser("from-svg"); f.add_argument("svg"); f.add_argument("-o", required=True)
     p = sub.add_parser("preview"); p.add_argument("skin"); p.add_argument("-o", required=True)
+    p.add_argument("--params", help="the port's parameter file: controls show its defaults and value text")
+    p.add_argument("--set", action="append", default=[], metavar="KEY=VALUE",
+                   help="a parameter's value (key, name or index; option name or index for option parameters); repeatable")
+    p.add_argument("--touch", action="store_true", help="outline every touch box in red")
     w = sub.add_parser("serve", help="edit a layout in the browser (tools/studio_web.py)")
     w.add_argument("conf", nargs="?", help="a layout.conf or a port's vst.json (default: choose in the browser)")
     w.add_argument("--params", help="the port's parameter file (found from vst.json when not given)")
@@ -625,7 +686,11 @@ def main():
     elif args.cmd == "from-svg":
         open(args.o, "w").write(from_svg(args.svg, args.o))
     else:
-        for out, name in preview(args.skin, args.o):
+        plist = load_params(args.params)[0] if args.params else None
+        sets = dict(kv.split("=", 1) for kv in args.set)
+        if sets and plist is None:
+            ap.error("--set needs --params")
+        for out, name in preview(args.skin, args.o, plist=plist, sets=sets, touch=args.touch):
             print(out, name)
     print("wrote", args.o)
 

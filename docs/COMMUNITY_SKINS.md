@@ -103,4 +103,18 @@ Wrapper and gen_vst: `"programs"` / `"presets"` (MPC's PRESET menu; lists and lo
 engine-call mutex, MIDI CC 20-35 to the first page's Q-Links and NRPN to any parameter: **all done 2026-10-07**
 (the mutex and MIDI control offline only). Not taken: option `values`/`send`.
 
+## KutilXXL (`sunskiefer/BUSTEDXXL`, read 2026-11-18, offline)
+
+A patchable groovebox of Bastl-style modules whose pages are re-flowed from photos of the hardware panels. It vendors
+this repo and patches the built skin afterwards (`post_skin.py`, i.e. our `skin_post`). Ideas reimplemented here (no
+code copied; his repo is GPL-3.0-or-later):
+
+- **Previews at a chosen state** (his `preview.py`): `studio.py preview --params/--set/--touch`, and `SKIN_PREVIEW=` on
+  `gen_vst.py`. **Done 2026-11-18 (offline).**
+- **Label ink under knobs** (his `ink_check.py`): `skin_check.py` INK. **Done 2026-11-18 (offline).**
+- **Text running into text or knobs** (his `check_overlap.py`): `skin_check.py` TEXT, names measured in Titillium.
+  **Done 2026-11-18 (offline).**
+- **Controls found in panel photos** (his `geometry.py` + `editor_sprites.py`): `tools/panel_import.py`, also in Skin
+  Studio 2 as *Import panel picture*. **Done 2026-11-18 (offline).**
+
 Docs and skill: the techniques above (done in the skill's "Design techniques"), Design QA + TESTING.md templates.

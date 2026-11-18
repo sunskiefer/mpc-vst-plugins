@@ -1,0 +1,27 @@
+# Offline tests of the skin tools: skin_check (TEXT/INK), studio.py preview values, panel_import's circle finder.
+name: Skin tools
+
+on:
+  pull_request:
+    paths: ['tools/skin_check.py', 'tools/studio.py', 'tools/panel_import.py', 'tools/test_skin_tools.py', 'tools/html_art/fonts/**',
+            '.github/workflows/skin-tools.yml']
+  push:
+    branches: [main]
+    paths: ['tools/skin_check.py', 'tools/studio.py', 'tools/panel_import.py', 'tools/test_skin_tools.py', 'tools/html_art/fonts/**',
+            '.github/workflows/skin-tools.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Pillow
+        run: python3 -m pip install --quiet pillow
+      - name: Skin tools tests
+        run: python3 tools/test_skin_tools.py
