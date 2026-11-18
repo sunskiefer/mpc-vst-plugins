@@ -27,7 +27,8 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from catalog_check import ADDIN_FILE, ADDIN_SCRIPTS, ID, SEMVER, addin_manifest_problems, max_glibc, parse_addin_manifest  # noqa: E402
+from catalog_check import (ADDIN_FILE, ADDIN_SCRIPTS, ID, SEMVER, addin_manifest_problems, device_text_problems, max_glibc,  # noqa: E402
+                           parse_addin_manifest)
 import deps  # noqa: E402
 
 
@@ -134,7 +135,7 @@ See `SHA256SUMS`. Made with [mpc-vst-plugins](https://github.com/open-mpc/mpc-vs
            requires=("- %s\n" % a.requires) if a.requires else "",
            conf_md=("\nSettings are in `/data/mpc-addins/%s/%s`; an upgrade keeps your edits.\n" % (aid, conf)) if conf else "",
            done_md=("\n" + done + "\n") if done else "")
-    open(os.path.join(root, "INSTALL.md"), "w").write(install_md)
+    open(os.path.join(root, "INSTALL.md"), "w", newline="\n").write(install_md)
 
     manifest = {
         "schema": 1, "id": aid, "name": name, "version": a.version, "kind": "addin", "layout": "addin",
@@ -144,11 +145,20 @@ See `SHA256SUMS`. Made with [mpc-vst-plugins](https://github.com/open-mpc/mpc-vs
         **({"depends": a.depends} if a.depends is not None else {}), **({"conflicts": a.conflicts} if a.conflicts is not None else {}),
         "source_repo": a.repo, "license": a.license, "cpu": None,
     }
-    open(os.path.join(root, "mpc-plugin.json"), "w").write(json.dumps(manifest, indent=2) + "\n")
+    open(os.path.join(root, "mpc-plugin.json"), "w", newline="\n").write(json.dumps(manifest, indent=2) + "\n")
 
     names = sorted(os.listdir(root))
-    open(os.path.join(root, "SHA256SUMS"), "w").write("".join(
+    open(os.path.join(root, "SHA256SUMS"), "w", newline="\n").write("".join(
         "%s  %s\n" % (hashlib.sha256(open(os.path.join(root, f), "rb").read()).hexdigest(), f) for f in names))
+
+    # A Windows build wrote these with CRLF: sha256sum on the device then looks for "<name>\r" and the installer
+    # stops at "files damaged", and a CR in mpc-plugin.json makes the arch there "aarch64\r". Always LF, no BOM.
+    for f in ADDIN_SCRIPTS + ("addin.manifest", "SHA256SUMS"):
+        with open(os.path.join(root, f), "rb") as fh:
+            problem = device_text_problems(f, fh.read())
+        if problem:
+            raise SystemExit(problem)
+
     os.makedirs(a.out, exist_ok=True)
     zpath = os.path.join(a.out, "%s-mpc-%s.zip" % (top, "aarch64" if arch == "aarch64" else "armv7"))
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:

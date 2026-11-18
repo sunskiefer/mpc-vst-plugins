@@ -27,11 +27,37 @@ import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from user_files import user_files_problems  # noqa: E402
-from catalog_check import max_glibc  # noqa: E402
+from catalog_check import device_text, device_text_problems, max_glibc  # noqa: E402
 import skin_compat  # noqa: E402
 import deps  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def walk(top):
+    """Every file and symlink under top (symlinks, including ones to directories, are not followed)."""
+    for d, dirs, files in os.walk(top):
+        dirs.sort()
+        for f in sorted(files + [x for x in dirs if os.path.islink(os.path.join(d, x))]):
+            yield os.path.join(d, f)
+
+
+def zip_rel(path, start):
+    """A path inside the zip, SHA256SUMS and MODES: always with "/" (os.path.relpath gives backslashes on Windows)."""
+    return os.path.relpath(path, start).replace(os.sep, "/")
+
+
+def device_script(path):
+    """A file the device runs with sh or awk (so it has to be LF, without a BOM): by its name, or by its shebang."""
+    if path.lower().endswith((".sh", ".awk", ".bash")):
+        return True
+    with open(path, "rb") as f:
+        head = f.readline(128)
+    if not head.startswith(b"#!"):
+        return False
+    return any(os.path.basename(w).decode("ascii", "replace") in ("sh", "ash", "bash", "dash", "awk", "gawk", "mawk")
+               for w in head[2:].split())
+
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("--so", required=True)
@@ -101,22 +127,37 @@ os.makedirs(os.path.dirname(os.path.join(pdir, so_path)), exist_ok=True)
 shutil.copy2(a.so, os.path.join(pdir, so_path))
 extras = []
 for spec in a.extra:
-    src, dest = spec.split(":", 1)
+    src, _, dest = spec.rpartition(":")   # from the right: a Windows source path starts with its drive letter (C:\build\engine)
     dest = dest[4:] if dest.startswith("vst/") else dest
+    if not src or not os.path.exists(src):
+        raise SystemExit("--extra needs SRC:DEST, SRC an existing file or folder and DEST relative to the plugin folder "
+                         "(a Windows source path's drive colon is not the separator): %r" % spec)
     if not re.fullmatch(r"[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*", dest) or ".." in dest.split("/"):
         raise SystemExit("--extra DEST must be a relative path of letters, digits, . _ - and / (no spaces or ..): %r" % dest)
     d = os.path.join(pdir, dest)
     os.makedirs(os.path.dirname(d), exist_ok=True)
     shutil.copytree(src, d, symlinks=True) if os.path.isdir(src) else shutil.copy2(src, d)
+    # a payload's own shell and awk scripts run on the device too, and a Windows build folder has CRLF in them
+    for p in (walk(d) if os.path.isdir(d) else [d]):
+        if os.path.islink(p) or not device_script(p):
+            continue
+        with open(p, "rb") as f:
+            raw = f.read()
+        fixed = device_text(raw)
+        if fixed != raw:
+            print("note: %s: LF line endings, no BOM (it runs on the device)" % zip_rel(p, pdir))
+            with open(p, "wb") as f:
+                f.write(fixed)
     extras.append(dest)
 meta = re.sub(r'(\s)file="[^"]*"', lambda m: '%sfile="%%payload-path%%/%s/%s"' % (m.group(1), skin_name, so_path), entry, count=1)
 open(os.path.join(pdir, "plugin-meta.xml"), "w", newline="\n").write(meta + "\n")
 # plugin_list.awk runs on the device, so it has to ship with LF line endings: with CRLF the device awk stops at
 # the first line of code ("Unexpected token"), and a Windows checkout (core.autocrlf) has CRLF in tools/release/.
-# Every other text file here is written with an explicit LF; this one was copied, so normalise it here too.
-with open(os.path.join(HERE, "release", "plugin_list.awk"), newline=None) as f:
-    awk_program = f.read()
-open(os.path.join(root, "plugin_list.awk"), "w", newline="\n").write(awk_program)
+# Every other text file here is written with an explicit LF; this one is copied, so normalise it here too.
+with open(os.path.join(HERE, "release", "plugin_list.awk"), "rb") as f:
+    awk_program = device_text(f.read())
+with open(os.path.join(root, "plugin_list.awk"), "wb") as f:
+    f.write(awk_program)
 
 
 for d in a.user_data:
@@ -155,11 +196,6 @@ def executable(path):
     with open(path, "rb") as f:
         head = f.read(4)
     return head == b"\x7fELF" or head[:2] == b"#!"
-
-
-def zip_rel(path, start):
-    """A path inside the zip, SHA256SUMS and MODES: always with "/" (os.path.relpath gives backslashes on Windows)."""
-    return os.path.relpath(path, start).replace(os.sep, "/")
 
 
 def elf_machine(path):
@@ -252,15 +288,6 @@ See `SHA256SUMS`. Made with [mpc-vst-plugins](https://github.com/open-mpc/mpc-vs
 open(os.path.join(root, "INSTALL.md"), "w", newline="\n").write(install_md)
 
 
-
-def walk(top):
-    """Every file and symlink under top (symlinks, including ones to directories, are not followed)."""
-    for d, dirs, files in os.walk(top):
-        dirs.sort()
-        for f in sorted(files + [x for x in dirs if os.path.islink(os.path.join(d, x))]):
-            yield os.path.join(d, f)
-
-
 def _json_or_none(path):
     try:
         return json.load(open(path))
@@ -348,13 +375,14 @@ for p in walk(root):
 open(os.path.join(root, "SHA256SUMS"), "w", newline="\n").write("\n".join(sums) + "\n")
 
 # The device reads these with sh, awk and sha256sum, and each stops at a CR ("Unexpected token" at the first line of
-# code): a CRLF plugin_list.awk shipped once and the plugin never got registered. Everything above writes LF, so this
-# only fires when a future edit copies a file in instead; fail here rather than in the installer on the device.
+# code) or reads a BOM as part of the first line: a CRLF plugin_list.awk shipped once and the plugin never got
+# registered. Everything above writes LF, so this only fires when a future edit copies a file in instead; fail here
+# rather than in the installer on the device.
 for f in ("install.sh", "uninstall.sh", "plugin_list.awk", "SHA256SUMS", "MODES"):
     with open(os.path.join(root, f), "rb") as fh:
-        cr = fh.read().count(b"\r")
-    if cr:
-        raise SystemExit("%s has %d CR (Windows) line endings; it runs on the device, which needs LF" % (f, cr))
+        problem = device_text_problems(f, fh.read())
+    if problem:
+        raise SystemExit(problem)
 
 os.makedirs(a.out, exist_ok=True)
 zpath = os.path.join(a.out, "%s-mpc-%s.zip" % (top, "aarch64" if manifest["arch"] == "aarch64" else "armv7"))   # -mpc-armv7.zip (Gen1) or -mpc-aarch64.zip (Gen2)

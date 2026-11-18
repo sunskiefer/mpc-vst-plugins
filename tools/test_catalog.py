@@ -125,6 +125,49 @@ class DeviceTextTest(Base):
                 self.assertEqual(data.count(b"\r"), 0, "%s ships CR line endings" % n)
                 self.assertTrue(data.endswith(b"\n"), n)
 
+    def test_crlf_in_a_shipped_script_is_an_error(self):
+        z = self.build()
+        bad = self.resum(z, "install.sh", lambda d: d.replace(b"\n", b"\r\n"))
+        e, _, _ = catalog_check.check(bad)
+        self.assertTrue(any("CR (Windows) line endings" in x for x in e), e)
+
+    def test_a_bom_in_a_shipped_script_is_an_error(self):
+        z = self.build()
+        bad = self.resum(z, "plugin_list.awk", lambda d: b"\xef\xbb\xbf" + d)
+        e, _, _ = catalog_check.check(bad)
+        self.assertTrue(any("UTF-8 BOM" in x for x in e), e)
+
+    def test_a_payload_script_is_shipped_with_lf(self):
+        eng = os.path.join(self.tmp, "engine")
+        os.makedirs(eng)
+        open(os.path.join(eng, "run.sh"), "wb").write(b"#!/bin/sh\r\necho hi\r\n")
+        open(os.path.join(eng, "banks.bin"), "wb").write(b"a\r\nb")
+        z = self.build(extra=("--extra", eng + ":engine"))
+        with zipfile.ZipFile(z) as zf:
+            top = zf.namelist()[0].split("/")[0]
+            base = "%s/portable/Acme - VST - Test Synth/engine/" % top
+            self.assertEqual(zf.read(base + "run.sh"), b"#!/bin/sh\necho hi\n")
+            self.assertEqual(zf.read(base + "banks.bin"), b"a\r\nb")   # not a script: byte for byte
+
+    def test_a_payload_script_with_crlf_is_flagged(self):
+        eng = os.path.join(self.tmp, "engine")
+        os.makedirs(eng)
+        open(os.path.join(eng, "run.sh"), "w").write("#!/bin/sh\necho hi\n")
+        z = self.build(extra=("--extra", eng + ":engine"))
+        bad = self.resum(z, "engine/run.sh", lambda d: d.replace(b"\n", b"\r\n"))
+        e, w, _ = catalog_check.check(bad, catalog=True)
+        self.assertEqual(e, [])
+        self.assertTrue(any("engine/run.sh" in x and "CR (Windows)" in x for x in w), w)
+
+    def test_extra_without_a_dest_says_so(self):
+        self.build()   # makes the .so, the skin and entry.xml
+        r = subprocess.run([sys.executable, os.path.join(HERE, "release.py"), "--so", os.path.join(self.tmp, "test_synth.so"),
+                            "--skin", os.path.join(self.tmp, "Acme - VST - Test Synth"), "--entry", os.path.join(self.tmp, "entry.xml"),
+                            "--version", "1.0.0", "--extra", os.path.join(self.tmp, "engine"), "-o", os.path.join(self.tmp, "dist2")],
+                           capture_output=True, text=True)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("--extra needs SRC:DEST", r.stderr)
+
 
 class RiskyCallsTest(Base):
     def test_risky_imports_are_flagged_not_rejected(self):
