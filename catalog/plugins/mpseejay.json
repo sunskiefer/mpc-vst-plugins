@@ -9,6 +9,6 @@
   "style": "player",
   "tags": ["dj", "player", "decks", "sync"],
   "min_os": "3.10.1",
-  "screenshot": "https://raw.githubusercontent.com/noahsoconnor/mpseejay/v1.0.0/docs/screenshot.png",
+  "screenshot": "https://raw.githubusercontent.com/noahsoconnor/mpseejay/v1.1.0/docs/screenshot.png",
   "asset_pattern": "*-mpc-armv7.zip"
 }
