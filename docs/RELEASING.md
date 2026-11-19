@@ -174,8 +174,17 @@ the SDK's path (`VST/<slug>-arm32.so`). The SDK finds its folder by walking up f
 `release.py --so-path`, so every check and the install scripts are the usual ones; `tools/sdk_zip.py` then joins the zips back into
 the SDK zip with the same paths. A plugin without `Plugin Skins/TUI.json` and `version.xml` is refused. Extra options (`--bench`,
 `--user-data` ...) go on to release.py. Tests: `tools/test_sdk_release.py`. In CI: `vst-release.yml` with `sdk_project` ("Releasing from CI"). A release with only the SDK zip is converted by the catalog itself (docs/CATALOG.md). On Windows (2026-11-14): `release.py` writes `/` paths in the zip, `SHA256SUMS` and
-`MODES`, LF line endings, and takes ELF binaries and `#!` scripts as executable (Windows has no exec bits); clone this repo with
-`core.autocrlf false`, or the canonical `install.sh` / `plugin_list.awk` go into the zip with CRLF and fail the identity check.
+`MODES`, LF line endings, and takes ELF binaries and `#!` scripts as executable (Windows has no exec bits); `.gitattributes` pins
+`tools/release/*` to LF, so a Windows clone is fine now (before that, a `core.autocrlf` clone put CRLF into
+`plugin_list.awk` and the device's awk stopped at its first line of code, 2026-11-17). `release.py` writes
+`plugin_list.awk` with LF and no BOM, gives a payload's own `sh`/`awk` scripts (`--extra`) LF too, and refuses to write
+the zip when `install.sh`, `uninstall.sh`, `plugin_list.awk`, `SHA256SUMS` or `MODES` has a CR or a BOM;
+`catalog_check.py` reports those five as errors and any other `.sh`/`.awk` in the package as a warning.
+
+`tools/install_smoke.py <zip>` unpacks a package, runs its `install.sh` and `uninstall.sh` against a scratch Synths
+folder and a minimal `MPC.settings` (the installer's `MPC_INSTALL_TEST=1` mode), and checks the plugin folder, the
+plugin-list entry and a second install that must not duplicate it: the last check before a zip is uploaded, no device
+needed (Git Bash on Windows, or any POSIX shell).
 
 ## Renaming a plugin (2026-11-13)
 On MPC OS 3.10.1 a plugin's folder must be `<maker> - VST - <name>`, so a new name is a new folder. Release it with the reusable

@@ -39,6 +39,27 @@ ADDIN_FILE = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9._-]*")
 ARCHES = ("armv7", "aarch64")   # armv7 = Gen1 MPC and Force (32-bit); aarch64 = Gen2 MPC (RK3588, 64-bit; docs/GEN2.md)
 
 
+BOM = b"\xef\xbb\xbf"   # a UTF-8 BOM, which Windows editors and PowerShell add
+
+
+def device_text(data):
+    """The bytes a device-side sh/awk file needs: no BOM, LF line endings (see device_text_problems)."""
+    if data.startswith(BOM):
+        data = data[len(BOM):]
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def device_text_problems(name, data):
+    """Why a device cannot read these bytes (None when it can): its sh and awk stop at the first CR ("Unexpected
+    token"), and a BOM is read as part of the first line. A released plugin_list.awk shipped with CRLF once."""
+    if data.startswith(BOM):
+        return "%s starts with a UTF-8 BOM; the device reads it as part of the first line" % name
+    cr = data.count(b"\r")
+    if cr:
+        return "%s has %d CR (Windows) line endings; it runs on the device, which needs LF" % (name, cr)
+    return None
+
+
 def arm64(d):
     """Whether the bytes start an ELF file for a Gen2 device: 64-bit (EI_CLASS 2), little-endian, AArch64 (e_machine 183)."""
     return d[:4] == b"\x7fELF" and d[4:6] == b"\x02\x01" and int.from_bytes(d[18:20], "little") == 183
@@ -233,6 +254,19 @@ def check(zpath, catalog=False, expect_id=None, expect_repo=None, require_portab
             t = z.read(n).decode(errors="replace")
             if t.startswith("/") or not posixpath.normpath(posixpath.join(posixpath.dirname(n), t)).startswith(top + "/"):
                 err("symlink %s points outside the package: %s" % (n, t))
+
+    # The device's sh, awk and sha256sum stop at a CR and read a BOM as part of the first line: a released
+    # plugin_list.awk shipped with CRLF once and the device's awk stopped at its first line of code (docs/RELEASING.md).
+    for f in ("install.sh", "uninstall.sh", "plugin_list.awk", "SHA256SUMS", "MODES"):
+        if f in files:
+            problem = device_text_problems(f, files[f])
+            if problem:
+                err("device-side text: " + problem)
+    for f, data in sorted(files.items()):   # a payload's own scripts: the plugin may run them on the device
+        if "/" in f and f.rsplit("/", 1)[-1].lower().endswith((".sh", ".awk")):
+            problem = device_text_problems(f, data)
+            if problem:
+                warn("device-side text: " + problem)
 
     if "mpc-plugin.json" not in files:
         err("missing mpc-plugin.json")
