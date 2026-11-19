@@ -2347,6 +2347,40 @@ class InstallerTest(Base):
         self.assertTrue(os.path.isdir(retired))
         self.assertIn("resolves to the new plugin folder", r.stdout)
 
+    def test_case_only_retire_name_is_safe_when_stat_is_unavailable(self):
+        """The case-only protection still works on a device without stat."""
+        old = "Acme - VST - test synth"
+        z = self.build(extra=("--retire", old))
+        pkg = os.path.join(self.tmp, "pkg-case-only-no-stat")
+        with zipfile.ZipFile(z) as zf:
+            zf.extractall(pkg)
+        self.top = os.path.join(pkg, os.listdir(pkg)[0])
+        os.makedirs(self.synths)
+        retired = os.path.join(self.synths, old)
+        os.makedirs(retired)
+        open(os.path.join(retired, "mpc-plugin.json"), "w").write('{"id": "test-synth"}')
+
+        # GitHub's Linux runner is case-sensitive.  Make stat unavailable to
+        # exercise the conservative fallback used on a minimal device shell.
+        fake_bin = os.path.join(self.tmp, "fake-bin")
+        os.makedirs(fake_bin)
+        fake_stat = os.path.join(fake_bin, "stat")
+        open(fake_stat, "w").write("#!/bin/sh\nexit 127\n")
+        os.chmod(fake_stat, 0o755)
+        old_test_path = os.environ.get("INSTALLER_TEST_PATH")
+        os.environ["INSTALLER_TEST_PATH"] = fake_bin + os.pathsep + os.environ.get("PATH", "")
+        try:
+            r = self.run_script("install.sh")
+        finally:
+            if old_test_path is None:
+                os.environ.pop("INSTALLER_TEST_PATH", None)
+            else:
+                os.environ["INSTALLER_TEST_PATH"] = old_test_path
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(os.path.exists(os.path.join(self.synths, self.SKIN)))
+        self.assertTrue(os.path.isdir(retired))
+        self.assertIn("resolves to the new plugin folder", r.stdout)
+
     def test_asset_name_keeps_the_zip_names_after_a_rename(self):
         """release.py --asset-name: the zips keep their old file-name stem (the folder and plugin name are the new ones)."""
         self.build(extra=("--asset-name", "Old-Name"))   # build() returns the default name; the zip is under the given stem

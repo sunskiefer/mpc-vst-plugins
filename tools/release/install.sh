@@ -182,14 +182,16 @@ same_dir() {
     # On a case-insensitive volume (notably the Force's exFAT SSD), an old name
     # differing only in case resolves to NEW. Never remove it in that case.
     if command -v stat >/dev/null 2>&1; then
-        a=$(stat -c '%d:%i' "$1" 2>/dev/null)
-        b=$(stat -c '%d:%i' "$2" 2>/dev/null)
-        [ -n "$a" ] && [ "$a" = "$b" ] && return 0
+        sd_a=$(stat -c '%d:%i' "$1" 2>/dev/null) || sd_a=
+        sd_b=$(stat -c '%d:%i' "$2" 2>/dev/null) || sd_b=
+        if [ -n "$sd_a" ] && [ -n "$sd_b" ]; then
+            [ "$sd_a" = "$sd_b" ] && return 0
+            return 1
+        fi
     fi
     # If stat is unavailable, the conservative fallback is to leave a
     # case-only name alone rather than risk deleting the new folder.
-    [ "$(printf '%s' "${1##*/}" | tr '[:upper:]' '[:lower:]')" =
-      "$(printf '%s' "${2##*/}" | tr '[:upper:]' '[:lower:]')" ]
+    [ "$(printf '%s' "${1##*/}" | tr '[:upper:]' '[:lower:]')" = "$(printf '%s' "${2##*/}" | tr '[:upper:]' '[:lower:]')" ]
 }
 if [ -n "$RETIRE" ]; then
     OLDIFS=$IFS; IFS=:
