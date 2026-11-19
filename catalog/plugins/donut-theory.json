@@ -1,0 +1,19 @@
+{
+  "id": "donut-theory",
+  "name": "Donut Theory",
+  "author": "kim",
+  "repo": "Sunghyun23/kimswork",
+  "kind": "instrument",
+  "license": "MIT",
+  "summary": "Analog-inspired synthesizer for bass, keys, leads and pads, with two oscillators, dual LFOs and up to 16 editable chord slots. Requires MPC OS 3.10.1 or later.",
+  "style": "synth",
+  "tags": [
+    "synth",
+    "analog",
+    "chords"
+  ],
+  "min_os": "3.10.1",
+  "homepage": "https://kimswork.app/plugins/donut-theory/",
+  "screenshot": "https://raw.githubusercontent.com/Sunghyun23/kimswork/4a45d8883cc942d9d9db1e81a0f55e04067917ff/mpc-software/plugins/public/DonutTheory/design/device-1.14.2/dt1142-poly-final.png",
+  "asset_pattern": "donut-theory-*-mpc-armv7.zip"
+}
