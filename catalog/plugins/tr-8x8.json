@@ -1,0 +1,4 @@
+{ "id": "tr-8x8", "name": "8X8", "author": "sd88me", "repo": "sd88me/mpc-vst-TR-MPC",
+  "kind": "instrument", "style": "drum-machine", "tags": ["tr-808", "gen2"], "license": "AGPL-3.0-only",
+  "asset_pattern": "8X8-*-mpc-aarch64.zip",
+  "summary": "A circuit-solved TR-808 for Gen2 MPC devices: the voices are the 808's own circuits, solved from the schematics with Lemus, not modelled by ear. Same panel as 8W8, plus drive and distortion per voice, reverb and delay sends, a master bus, extra controls and a Latency setting. CPU heavy, Gen2 only." }
