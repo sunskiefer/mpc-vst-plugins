@@ -178,12 +178,32 @@ if [ $LEGACY = 1 ] && [ "$LEGACY_SO" != "$FILE" ]; then
 fi
 # 4. a renamed plugin (release.py --retire): the old folder goes, but only a folder named as listed whose mpc-plugin.json carries this
 #    plugin's id; its user data (USER_DATA) moves into the new folder first. Its plugin-list entry was replaced by uid above.
+same_dir() {
+    # On a case-insensitive volume (notably the Force's exFAT SSD), an old name
+    # differing only in case resolves to NEW. Never remove it in that case.
+    if command -v stat >/dev/null 2>&1; then
+        sd_a=$(stat -c '%d:%i' "$1" 2>/dev/null) || sd_a=
+        sd_b=$(stat -c '%d:%i' "$2" 2>/dev/null) || sd_b=
+        if [ -n "$sd_a" ] && [ -n "$sd_b" ]; then
+            [ "$sd_a" = "$sd_b" ] && return 0
+            return 1
+        fi
+    fi
+    # If stat is unavailable, the conservative fallback is to leave a
+    # case-only name alone rather than risk deleting the new folder.
+    [ "$(printf '%s' "${1##*/}" | tr '[:upper:]' '[:lower:]')" = "$(printf '%s' "${2##*/}" | tr '[:upper:]' '[:lower:]')" ]
+}
 if [ -n "$RETIRE" ]; then
     OLDIFS=$IFS; IFS=:
     for r in $RETIRE; do
         IFS=$OLDIFS
         o="$SYNTHS/$r"
         [ "$r" != "$SKIN" ] && [ -d "$o" ] || continue
+        if same_dir "$o" "$NEW"; then
+            echo "left $o alone (it resolves to the new plugin folder on this filesystem)"
+            IFS=:
+            continue
+        fi
         if grep -q "\"id\": *\"$PLUGIN_ID\"" "$o/mpc-plugin.json" 2>/dev/null; then
             for d in $USER_DATA; do
                 if [ -e "$o/$d" ] && [ ! -e "$NEW/$d" ]; then
