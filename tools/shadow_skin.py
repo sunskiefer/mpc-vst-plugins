@@ -122,7 +122,7 @@ def strip_frames(h, want=FRAMES):
 
 KNOB_QLINKS = [13, 9, 5, 1, 14, 10, 6, 2]
 CONTROL_KINDS = ("knob", "slider_v", "slider_h", "toggle", "button", "enum_h", "enum_v", "readout", "stepper", "list", "menu",
-                 "popup", "meter")
+                 "popup", "meter", "wheel")
 LOOK_DEFAULTS = {}         # top-level <group>_<attr>= lines (skin_assets.py), set by apply_theme()
 OPEN_SUFFIX = "__open"     # popup: hidden wrapper-only param, 1 while the option list is shown
 POP_ROW, POP_GAP, POP_PAD = 40, 2, 6
@@ -1163,6 +1163,14 @@ def build(layout_path, params, skin_dir, art_bin, png_from_ppm):
                     c["bounds"]["showWhenDataModelInvalid"] = "Show"
                     c["bounds"]["additionalInvalidatingHandles"] = [shown]
                 on_top += parts
+            elif kind == "wheel":
+                # A data-wheel target: a small invisible control the host can focus. The wheel edits its parameter (key=, a whole-number
+                # one: a list position), and the wheel push (Enter Pressed) toggles a second one (press=, a momentary trigger) through
+                # the extra handle "Press". It draws nothing and has no touch action, so a tap on it does nothing.
+                x, y, rw, rh = w["cx"] - w["w"] // 2, w["cy"] - w["h"] // 2, w["w"], w["h"]
+                key = "shWheel_%dx%d" % (rw, rh)
+                defs.setdefault(key, _local(key, [_action("Enter Pressed", "Toggle Switch", handle="Press")], [_focus(rw, rh)]))
+                kids.append(_placed(key, name, i, x, y, rw, rh, focus="Yes", extra={"Press": index[w["press"]]}))
             elif kind == "readout":
                 x, y, rw, rh = w["cx"] - w["w"] // 2, w["cy"] - w["h"] // 2, w["w"], w["h"]
                 dot = w.get("style") == "dotmatrix"
