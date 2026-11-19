@@ -1,0 +1,5 @@
+{ "id": "tr-9x9", "name": "9X9", "author": "sd88me", "repo": "sd88me/mpc-vst-TR-MPC",
+  "kind": "instrument", "style": "drum-machine", "tags": ["tr-909", "gen2"], "license": "AGPL-3.0-only",
+  "asset_pattern": "9X9-*-mpc-aarch64.zip",
+  "summary": "A circuit-solved TR-909 for Gen2 MPC devices: kick, snare, toms, rim and clap are the 909's own circuits, solved from the schematics with Lemus. The hats, ride and crash play the 909's sample ROMs, which you supply in the plugin folder; without them they fall back to 9W9's samples. Drive, sends, a master bus, extra controls and a Latency setting. CPU heavy, Gen2 only.",
+  "requires": "your own copies of the three 909 hat, crash and ride ROMs (optional; without them 9W9's samples play)" }
