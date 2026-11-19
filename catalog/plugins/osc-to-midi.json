@@ -1,0 +1,12 @@
+{
+  "id": "osc-to-midi",
+  "name": "OSC to MIDI",
+  "author": "Gio Music",
+  "repo": "RAS-G/OSC-to-MIDI-for-MPC",
+  "kind": "instrument",
+  "license": "MIT",
+  "min_os": "3.10.1",
+  "summary": "Turns OSC from TouchOSC, Lemur or Open Stage Control over Wi-Fi into MIDI notes and CCs for other MPC tracks. Tested on an MPC Live III (MPC OS 3.10.1).",
+  "style": "utility",
+  "tags": ["osc", "midi", "controller"]
+}
