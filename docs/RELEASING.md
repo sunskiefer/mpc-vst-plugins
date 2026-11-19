@@ -127,6 +127,10 @@ Run on the device as root (`sh install.sh [-y] [-n] [-t <synths-dir>]`):
    the settings edit succeeded; nothing else in `/sdcard/vst` is touched.
 6. Starts MPC.
 
+`uninstall.sh [-y] [-n] [-t <synths-dir>]` removes the `MPC.settings` entry and the plugin folder, keeping `user_data`. Without
+`-t` it looks for the folder where `install.sh` puts it: `<drive>/VST2 Plugins` on the same drives in the same order, then
+`/sdcard/Synths`. When it finds no folder it says so and still exits 0 (issue #1037, 2026-11-19).
+
 Why MPC is stopped for the edit: it holds its settings in memory while it runs and saves them itself, so an edit made
 underneath it can be lost (then the plugin is missing after the next restart). Tools that rebuild the whole list from the
 plugin folders in the `Synths` folders keep a plugin installed this way, because each one is such a folder with its own

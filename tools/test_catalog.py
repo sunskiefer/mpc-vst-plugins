@@ -2473,6 +2473,41 @@ class InstallerTest(Base):
         self.assertEqual(os.listdir(self.synths), [self.SKIN])
         self.assertEqual(os.listdir(os.path.join(self.synths, self.SKIN)), ["banks"])
 
+    def run_uninstall_without_t(self, drives):
+        """uninstall.sh as INSTALL.md gives it (no -t), with the drives it searches named by the test."""
+        env = dict(os.environ, MPC_INSTALL_TEST="1", MPC_SETTINGS=self.settings_path, MPC_LEGACY_ROOT=self.legacy_root,
+                   MPC_TEST_LOG=os.path.join(self.tmp, "mpc_ctl.log"), MPC_TEST_DRIVES=" ".join(drives))
+        if os.environ.get("INSTALLER_TEST_PATH"):
+            env["PATH"] = os.environ["INSTALLER_TEST_PATH"]
+        return subprocess.run(["sh", os.path.join(self.top, "uninstall.sh"), "-y"], cwd=self.top, env=env, capture_output=True, text=True)
+
+    def test_uninstall_without_t_finds_the_vst2_plugins_folder(self):
+        """MPC OS 3.10.1+: install.sh picks <drive>/VST2 Plugins by itself, so uninstall.sh has to look there too (issue #1037)."""
+        drive = os.path.join(self.tmp, "device", "storage")
+        vst2 = os.path.join(drive, "VST2 Plugins")
+        self.assertEqual(self.run_script("install.sh", "-t", vst2).returncode, 0)   # the last -t wins
+        rom = os.path.join(vst2, self.SKIN, "roms", "mine.rom")
+        os.makedirs(os.path.dirname(rom))
+        open(rom, "w").write("user data")
+        r = self.run_uninstall_without_t([os.path.join(self.tmp, "device", "nvme"), drive])   # the first drive does not exist
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("using " + vst2, r.stdout)
+        self.assertEqual(list(self.entries()), ["Other"])
+        self.assertEqual(open(rom).read(), "user data")
+        self.assertEqual(sorted(os.listdir(os.path.join(vst2, self.SKIN))), ["banks", "roms"])   # only the user data folders stay
+
+    def test_uninstall_says_so_when_it_finds_no_folder(self):
+        vst2 = os.path.join(self.tmp, "device", "storage", "VST2 Plugins")
+        self.assertEqual(self.run_script("install.sh", "-t", vst2).returncode, 0)
+        r = self.run_script("uninstall.sh")   # -t names the Synths folder, where this plugin is not
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(list(self.entries()), ["Other"])
+        self.assertIn("no plugin folder at " + os.path.join(self.synths, self.SKIN), r.stdout)
+        self.assertTrue(os.path.isdir(os.path.join(vst2, self.SKIN)))
+        r = self.run_uninstall_without_t([os.path.join(self.tmp, "device", "storage")])   # found: no note
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn("no plugin folder", r.stdout)
+
     def test_refuses_unsafe_target_and_missing_settings(self):
         r = self.run_script("install.sh", "-t", "/tmp/a&b")
         self.assertNotEqual(r.returncode, 0)

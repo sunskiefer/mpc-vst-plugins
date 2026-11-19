@@ -2733,3 +2733,17 @@ Gen1 and Gen2 script tests in BusyBox (14 and 89 checks, all four Gen2 builds). 
 an MPC with the old Machinedrum-only patch, was not at hand). The template had lost the "run from inside MPC" fix that was made in
 the generated script on 2026-11-15; it is back in `script.template.sh`, so a regenerated script keeps it. Not on a device yet;
 `catalog/patches.json` still pins the previous script (its URL and sha256 move to this commit once it is on main).
+
+## 2026-11-19: `uninstall.sh` left the plugin folder behind on MPC OS 3.10.1 (device, Key 37, Gen1, MPC OS 3.10.1.12; fix offline only)
+
+Found while device-testing a third-party release zip made by `sdk_release.py` at 864411da (issue #1037). `sh install.sh -y` picked
+`/storage/VST2 Plugins` by itself and installed there. `sh uninstall.sh -y` then removed the `MPC.settings` entry, printed
+"Removed", exited 0 and left the whole plugin folder (131 files): the uninstall template had no drive lookup and only ever
+looked in `/sdcard/Synths`. `uninstall.sh -y -t "/storage/VST2 Plugins"` removed it, and `MPC.settings` was then byte-identical
+to the copy taken before the install. The settings entry stayed gone across that MPC restart with the folder still present.
+
+Fix: without `-t`, `tools/release/uninstall.sh` now looks for `<drive>/VST2 Plugins/<skin>` on the drives `install.sh` uses, in
+the same order, and falls back to `/sdcard/Synths`. If there is no folder to delete it prints a note instead of only "Removed".
+Offline only so far: two new `InstallerTest` cases in `tools/test_catalog.py` (they fail on the old template), and the full suite
+passes (218 tests). Not re-run on a device. Releases made before this carry the old `uninstall.sh`, so `catalog_check.py` now
+warns that theirs differs from the current template, and on MPC OS 3.10.1+ they still need `-t`.
