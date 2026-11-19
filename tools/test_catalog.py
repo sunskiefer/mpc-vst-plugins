@@ -123,7 +123,7 @@ class DeviceTextTest(Base):
             for n in names:
                 data = zf.read(n)
                 self.assertEqual(data.count(b"\r"), 0, "%s ships CR line endings" % n)
-                self.assertTrue(data.endswith(b"\n"), n)
+                self.assertTrue(data == b"" or data.endswith(b"\n"), n)   # MODES is empty when nothing is executable
 
     def test_crlf_in_a_shipped_script_is_an_error(self):
         z = self.build()
