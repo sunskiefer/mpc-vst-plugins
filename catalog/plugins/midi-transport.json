@@ -1,0 +1,14 @@
+{
+  "id": "midi-transport",
+  "name": "MIDI Transport",
+  "author": "Elsewave",
+  "repo": "shhQuiet/MPCMidiTransport",
+  "kind": "instrument",
+  "license": "MIT",
+  "min_os": "3.10.1",
+  "summary": "Map MIDI notes or CCs to MPC transport and hardware buttons. Assign your controller per project with MIDI Learn and Momentary or Toggle modes. Requires Open MPC Remote.",
+  "style": "utility",
+  "tags": ["midi", "transport", "controller"],
+  "screenshot": "https://raw.githubusercontent.com/shhQuiet/MPCMidiTransport/v1.0.0/docs/screenshots/control.png",
+  "asset_pattern": "*-mpc-armv7.zip"
+}
