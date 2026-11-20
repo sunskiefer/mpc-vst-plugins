@@ -63,9 +63,36 @@ else
     fi
 fi
 
+# the folder goes, except files the user added
+DROPPED=""
+drop_folder() {
+    DIR="$SYNTHS/$SKIN"; KEEP="$SYNTHS/.$SKIN.keep"
+    if [ -d "$DIR" ]; then
+        DROPPED=1
+        rm -rf "$KEEP"
+        for d in $USER_DATA; do
+            if [ -e "$DIR/$d" ]; then mkdir -p "$(dirname "$KEEP/$d")"; mv "$DIR/$d" "$KEEP/$d"; fi
+        done
+        rm -rf "$DIR"
+        if [ -d "$KEEP" ]; then mv "$KEEP" "$DIR"; echo "kept your own files in $DIR"; fi
+    fi
+}
+
 BAK="$SETTINGS.bak-$(basename "$SO" .so)-$(date +%Y%m%d-%H%M%S)"
-cp "$SETTINGS" "$BAK"
-awk -v mode=remove -v file="$FILE" -v alt="$LEGACY_SO" -v uid="$UID_HEX" -f plugin_list.awk "$SETTINGS" > "$SETTINGS.new"
+# A full drive has no room for the backup, and removing a plugin is how room is made (on Gen1 MPC.settings and the internal Synths
+# folder share a drive: the removal failed with "No space left on device"). Then the plugin's files and its older settings backups
+# go first, which leaves room for the edited settings, and this backup is kept in memory instead.
+if ! cp "$SETTINGS" "$BAK" 2>/dev/null; then
+    rm -f "$BAK"
+    echo "no room on the drive for the settings backup: removing the plugin's files first"
+    drop_folder
+    rm -f "$SETTINGS.bak-$(basename "$SO" .so)-"*
+    BAK="${TMPDIR:-/tmp}/${BAK##*/}"
+    cp "$SETTINGS" "$BAK" || { rm -f "$BAK"; die "no room for a backup of MPC.settings, on the drive or in ${TMPDIR:-/tmp}; MPC.settings unchanged"; }
+    echo "the settings backup is in $BAK (it is gone after the device restarts)"
+fi
+awk -v mode=remove -v file="$FILE" -v alt="$LEGACY_SO" -v uid="$UID_HEX" -f plugin_list.awk "$SETTINGS" > "$SETTINGS.new" ||
+    { rm -f "$SETTINGS.new"; die "could not write the edited settings (drive full?); MPC.settings unchanged"; }
 n=$(grep -c " uid=\"$UID_HEX\"" "$SETTINGS.new" || true)
 [ "$n" = 0 ] || { rm -f "$SETTINGS.new"; die "settings edit failed; MPC.settings unchanged"; }
 # without python3 (it may be absent on the device) at least make sure the file still has its root element
@@ -77,16 +104,8 @@ if command -v python3 >/dev/null; then
 fi
 mv "$SETTINGS.new" "$SETTINGS"
 
-# the folder goes, except files the user added
-DIR="$SYNTHS/$SKIN"; KEEP="$SYNTHS/.$SKIN.keep"
-if [ -d "$DIR" ]; then
-    rm -rf "$KEEP"
-    for d in $USER_DATA; do
-        if [ -e "$DIR/$d" ]; then mkdir -p "$(dirname "$KEEP/$d")"; mv "$DIR/$d" "$KEEP/$d"; fi
-    done
-    rm -rf "$DIR"
-    if [ -d "$KEEP" ]; then mv "$KEEP" "$DIR"; echo "kept your own files in $DIR"; fi
-elif [ ! -f "$OLDFILE" ]; then   # nothing of the plugin was found to delete: say so, the entry above may have been all there was
+drop_folder
+if [ -z "$DROPPED" ] && [ ! -f "$OLDFILE" ]; then   # nothing of the plugin was found to delete: say so, the entry above may have been all there was
     echo "note: no plugin folder at $DIR. If it is installed somewhere else, run this again with -t <that folder>."
 fi
 if [ "$LEGACY_SO" != "$FILE" ]; then rm -f "$OLDFILE"; fi
