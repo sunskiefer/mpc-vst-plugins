@@ -2747,3 +2747,12 @@ the same order, and falls back to `/sdcard/Synths`. If there is no folder to del
 Offline only so far: two new `InstallerTest` cases in `tools/test_catalog.py` (they fail on the old template), and the full suite
 passes (218 tests). Not re-run on a device. Releases made before this carry the old `uninstall.sh`, so `catalog_check.py` now
 warns that theirs differs from the current template, and on MPC OS 3.10.1+ they still need `-t`.
+
+## 2026-11-20: `vst2_migrate.sh --json` wrote a plugin.json naming a binary that is not in the folder (offline only)
+
+Plugin Manager issue open-mpc/plugin-manager#46 (MPC One+, MPC OS 3.10.1.12): a Manager installed from the universal zip has
+`openmpc_pm_g2-arm32.so`/`-arm64.so` and a plugin.json naming them. A failed self-update still ran `--json` on the folder, which
+took `file=` from the old MPC.settings entry (`openmpc_pm_g2.so`), wrote that name as `file32`, and MPC stopped listing the
+Manager. `--json` now keeps a plugin.json whose binary for this CPU is in the folder, and never writes a name that is not there
+(it exits 1 and leaves plugin.json as it was). The Plugin Manager also runs it only after a successful install now. Tested offline
+(the Plugin Manager's vst2 test section); not yet on a device.
