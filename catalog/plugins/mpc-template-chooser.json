@@ -1,0 +1,17 @@
+{
+  "id": "mpc-template-chooser",
+  "name": "MPC Template Chooser",
+  "author": "Elsewave",
+  "repo": "shhQuiet/MPCTemplateChooser",
+  "kind": "effect",
+  "license": "MIT",
+  "min_os": "3.10.1",
+  "summary": "Show ALL your templates on the new project page!  Installs a startup hook to replace Demos with Local templates from your Templates folders.  Requires MPC OS 3.10.1 or later.",
+  "style": "utility",
+  "tags": [
+    "templates",
+    "projects"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/shhQuiet/MPCTemplateChooser/v1.0.0/docs/screenshots/chooser-help.png",
+  "asset_pattern": "*-mpc-armv7.zip"
+}
