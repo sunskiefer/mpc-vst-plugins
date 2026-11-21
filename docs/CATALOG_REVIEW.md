@@ -28,7 +28,12 @@ Run it in order: the first items are mechanical and catch most problems.
 1. **CI is green.** The `build` check runs `tools/test_catalog.py` and the registry check. A red check is the author's to
    fix; quote the failing line from the log in your comment. Locally: `python3 tools/catalog_build.py --check-registry`.
    If the failure is in files the PR doesn't touch, say so: the branch was cut before a registry-wide change, it isn't
-   the author's error, and merging `main` in fixes it (#890, #892).
+   the author's error, and merging `main` in fixes it (#890, #892). A job that shows `failure` with no jobs and no log
+   is a CI hiccup: re-run it before judging (#1052, #1015).
+   **`expected one asset matching X-*, found 0` in a repo with several entries**, while the author's asset is on its release, is
+   release selection: another entry's newer release was judged as this one's. A tag that starts with a digit (`8x8-vst-v1.0.0`)
+   and `--require-portable` building only the entry under review used to cause it (#1041, fixed 2026-11-21 in `catalog_build.py`).
+   If it comes back, it isn't the author's error either.
 2. **Only catalog files change.** A catalog PR that also touches anything outside `catalog/plugins/` or
    `catalog/collections/` is tier 4. Also look for unrelated hunks, entries carried in from a stacked or stale branch,
    and conflict resolutions that roll `main` back (a delisted entry re-added, `flags_reviewed` dropped, an older entry
@@ -65,6 +70,14 @@ Run it in order: the first items are mechanical and catch most problems.
    after merge; a release that fails shows as an issue on this repo, so a missing release just means the card stays empty.
    A build-yourself entry has no release by design (`catalog/README.md`, "If your plugin can't publish a zip").
    For a new entry, also run what CI runs: `python3 tools/catalog_build.py --require-portable <id>`.
+   **Run `tools/catalog_check.py <zip> --catalog` with the tools at current `main`, not the PR's base, and read the warnings.**
+   "install.sh/uninstall.sh differs from this repo's current template" means the release was built with older tools. CI cannot
+   catch it (`--require-portable` passes with warnings), and the author's "0 warnings" is only true for the day they ran it.
+   Ask for a rebuild unless you can show that the missing block is unreachable for this entry, and say why (#1013: the
+   zip installed to `/sdcard/Synths` on 3.10.1+; #1016: `retire: []`, benign; 8X8/9X9 1.0.0: `uninstall.sh` left the folder).
+   **Releases change after review.** A tag can be deleted and re-cut (8X8/9X9 1.0.0 became 1.0.1 on 2026-11-20, so the
+   SHA-256 in the PR no longer matched anything): before a maintainer merges, check the head SHA, the release's asset
+   and its SHA-256 again.
    **If it fails on a zip that unpacks to `plugin.json`, `version.xml`, `VST/` and `Plugin Skins/`**, that is Akai's SDK
    one-folder format, not a missing-`release.py` mistake. Offer both fixes: rebuild per-CPU zips with `tools/release.py`
    (or `vst-release.yml` with `sdk_project`), **or** keep the SDK zip, name the asset `*-mpc-sdk.zip` and remove
@@ -101,6 +114,9 @@ Run it in order: the first items are mechanical and catch most problems.
 15. **Device run for installers that touch the system:** a custom installer, or anything that runs as root or hooks MPC
     (`LD_PRELOAD`, fixed addresses), needs one real install, update and uninstall on a device. The output goes in the PR
     before you recommend merge (#571, #834). An ordinary plugin entry can still be listed untested (Listed tier).
+    A device claim in the PR ("device-verified on a Live III") has to be in the plugin repo's `tested.json` as well, for that
+    entry and version. If the repo has several registry entries, each record needs `"id"`: a record without one counts
+    for no entry (`catalog/README.md`, "Report what you tested on"). Check the file, not the PR text (#1041).
 
 ## Hand it to a maintainer
 

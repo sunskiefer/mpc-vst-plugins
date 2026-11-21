@@ -2747,3 +2747,28 @@ the same order, and falls back to `/sdcard/Synths`. If there is no folder to del
 Offline only so far: two new `InstallerTest` cases in `tools/test_catalog.py` (they fail on the old template), and the full suite
 passes (218 tests). Not re-run on a device. Releases made before this carry the old `uninstall.sh`, so `catalog_check.py` now
 warns that theirs differs from the current template, and on MPC OS 3.10.1+ they still need `-t`.
+
+## 2026-11-21: the PR check judged a sibling's release as the entry's own; stale pins shipped old installers (offline only)
+
+Reproduced offline on #1041 (8X8). **Release selection:** `tag_prefix()` cut a tag at its first digit, so `8x8-vst-v1.0.0`,
+`9x9-vst-v1.0.0`, `8w8-vst-v1.3.1` and `9w9-vst-v1.3.1` all gave `""` (`cw78-vst-v1.3.1` gave `"cw"`), and `--require-portable <id>`
+built only that entry, so `shared_repo` was false: 9X9, published three seconds later, was taken as 8X8's newest release
+("expected one asset matching 8X8-*-mpc-aarch64.zip, found 0"). A full build was unaffected, which is why it passed after merge. The
+tag prefix now starts at a literal `v<digits>` (a digit-leading name stays whole; a tag with no `v` falls back to the first
+number) and `build(all_entries=...)` decides "shared repo" from the whole registry in the PR check as well (3 tests; the suite
+is otherwise unchanged: one add-in installer test, `AddinTest.test_installer_shell_tests`, fails in the container on `main` too, cause not investigated).
+**Stale installers:** the 8X8/9X9 release workflows were pinned to `606d78b` (2026-11-19, before the `uninstall.sh` fix of
+2026-11-19 above) and the older ports to `70c1623`, so 8X8/9X9 1.0.0 carried the old `uninstall.sh`. `catalog_check.py` only warns
+and `--require-portable` ignores warnings. 1.0.1 (2026-11-20, pinned to `122ac4e`) checks clean: `install.sh` 225 and `uninstall.sh`
+94 lines, both 0 warnings. The 1.0.0 tags and releases were deleted, so reviews that quoted their SHA-256 went stale. Also found:
+the plugin repo's `tested.json` has 7 records and none has an `id`, so with several entries in the repo none of them counts for any
+entry: by the build's own rule the six listed entries of that repo (6W6, 8W8, 9W9, CW-78, TR-MPC, Tap FX) are Listed, not Verified (the live cards were not looked at). The docs and the review checklist now say so.
+
+## 2026-11-20: `vst2_migrate.sh --json` wrote a plugin.json naming a binary that is not in the folder (offline only)
+
+Plugin Manager issue open-mpc/plugin-manager#46 (MPC One+, MPC OS 3.10.1.12): a Manager installed from the universal zip has
+`openmpc_pm_g2-arm32.so`/`-arm64.so` and a plugin.json naming them. A failed self-update still ran `--json` on the folder, which
+took `file=` from the old MPC.settings entry (`openmpc_pm_g2.so`), wrote that name as `file32`, and MPC stopped listing the
+Manager. `--json` now keeps a plugin.json whose binary for this CPU is in the folder, and never writes a name that is not there
+(it exits 1 and leaves plugin.json as it was). The Plugin Manager also runs it only after a successful install now. Tested offline
+(the Plugin Manager's vst2 test section); not yet on a device.
