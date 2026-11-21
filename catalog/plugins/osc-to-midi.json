@@ -6,7 +6,8 @@
   "kind": "instrument",
   "license": "MIT",
   "min_os": "3.10.1",
-  "summary": "Turns OSC from TouchOSC, Lemur or Open Stage Control over Wi-Fi into MIDI notes and CCs for other MPC tracks. Tested on an MPC Live III (MPC OS 3.10.1).",
+  "summary": "Turns OSC from TouchOSC, Lemur or Open Stage Control over Wi-Fi into MIDI notes and CCs for other MPC tracks. Listens for OSC on one UDP network port. Tested on an MPC Live III (MPC OS 3.10.1).",
+  "screenshot": "https://raw.githubusercontent.com/RAS-G/OSC-to-MIDI-for-MPC/54b91a1f9a47472c583462b76b17bd92e8ff8b8b/docs/screenshot.png",
   "style": "utility",
   "tags": ["osc", "midi", "controller"]
 }
