@@ -2581,6 +2581,21 @@ class InstallerTest(Base):
         self.assertIn("with the RACK addin", r.stdout)
         self.assertNotIn("from the plugin browser", r.stdout)
 
+    def test_uninstall_without_t_removes_the_folder_where_the_plugin_is(self):
+        """uninstall.sh with no -t finds the folder its plugin-list entry names (by uid), not only /sdcard/Synths."""
+        for sample in (False, True):
+            if sample: self.sample_device([self.synths])
+            self.assertEqual(self.run_script("install.sh").returncode, 0)
+            folder = os.path.join(self.synths, self.SKIN)
+            self.assertTrue(os.path.isdir(folder))
+            r = self.run_default("uninstall.sh") if sample else subprocess.run(
+                ["sh", os.path.join(self.top, "uninstall.sh"), "-y"], cwd=self.top, capture_output=True, text=True,
+                env=dict(os.environ, MPC_INSTALL_TEST="1", MPC_SETTINGS=self.settings_path, MPC_LEGACY_ROOT=self.legacy_root))
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("using %s (where Test Synth is installed)" % self.synths, r.stdout)
+            self.assertFalse(os.path.exists(os.path.join(folder, "test_synth.so")), sample)
+            self.assertNotIn("Test Synth", self.entries())
+
     def test_refuses_unsafe_target_and_missing_settings(self):
         r = self.run_script("install.sh", "-t", "/tmp/a&b")
         self.assertNotEqual(r.returncode, 0)
