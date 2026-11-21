@@ -5,7 +5,7 @@
   "repo": "Sunghyun23/kimswork",
   "kind": "effect",
   "license": "MIT",
-  "summary": "Preview stereo character compressor and three-band ducking effect for MPC track and master inserts, with sampler-style color, wow/flutter and eight momentary or latched performance effects. Requires MPC OS 3.10.1 or later.",
+  "summary": "Stereo character and three-band ducking compressor with eight latched/momentary effects and sound Dice. UI checked on MPC XL OS3.10.1.12; current physical controls/audio not certified. Requires MPC OS3.10.1+.",
   "style": "compressor",
   "tags": [
     "compressor",
@@ -15,6 +15,6 @@
   ],
   "min_os": "3.10.1",
   "homepage": "https://kimswork.app/plugins/crate-press/",
-  "screenshot": "https://raw.githubusercontent.com/Sunghyun23/kimswork/e0ad89615c28971d89125a2234348d0db64e9ca7/mpc-software/plugins/public/CratePress/design/device-0.2.4/main.png",
+  "screenshot": "https://raw.githubusercontent.com/Sunghyun23/kimswork/crate-press/v0.2.6/mpc-software/plugins/public/CratePress/design/device-0.2.6/footer-crate-final.png",
   "asset_pattern": "crate-press-*-mpc-armv7.zip"
 }
