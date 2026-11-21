@@ -78,7 +78,11 @@ jobs:
 The Plugin Manager lives in its own repo since 2026-11 ([open-mpc/plugin-manager](https://github.com/open-mpc/plugin-manager)) and calls this workflow like any port (`asset_name: Plugin-Manager-G2`, `retire: OpenMPC - VST - Plugin Manager G2`). Its registry entry lists `previous_repos: [open-mpc/mpc-vst-plugins]`, where its releases up to 1.1.0 stay.
 
 A port calls it from its own repo with a `workflow_dispatch` workflow that takes the version. Pin this repo to one
-commit in both places:
+commit in both places, and **move the pin to the current `main` before every release**: the installer templates and the release
+checks reach a release only through the pin. 8X8 and 9X9 1.0.0 were built at a pin from the day before and still shipped the old
+`uninstall.sh` (it left the plugin folder behind on MPC OS 3.10.1+, 2026-11-19), and `catalog_check.py` only warns about it.
+After the build, run `python3 tools/catalog_check.py <zip> --catalog` with `main` checked out: "install.sh differs from this
+repo's current template" means the zip predates a template change, so re-pin and rebuild:
 ```yaml
 jobs:
   vst:
