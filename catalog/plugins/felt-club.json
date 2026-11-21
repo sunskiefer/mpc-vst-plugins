@@ -1,0 +1,19 @@
+{
+  "id": "felt-club",
+  "name": "Felt Club",
+  "kind": "instrument",
+  "style": "physical-modeling",
+  "tags": [
+    "keys",
+    "physical-modeling",
+    "neo-soul"
+  ],
+  "homepage": "https://kimswork.app/plugins/felt-club/",
+  "asset_pattern": "felt-club-*-mpc-armv7.zip",
+  "author": "kim",
+  "repo": "Sunghyun23/kimswork",
+  "license": "MIT",
+  "min_os": "3.10.1",
+  "summary": "Seven sample-free physical keys and plucked engines with musical Dice and 57 sounds. UI checked on MPC XL OS3.10.1.12. Owner reports CPU peaks above100%; heavy playing can overload. Requires MPC OS3.10.1+.",
+  "screenshot": "https://raw.githubusercontent.com/Sunghyun23/kimswork/felt-club/v0.3.2/mpc-software/plugins/public/FeltClub/design/device-0.3.2/main.png"
+}
