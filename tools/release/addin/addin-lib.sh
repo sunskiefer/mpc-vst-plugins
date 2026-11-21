@@ -50,7 +50,9 @@ resolve_dropin_root() {   # service
     if [ -f "$SYSTEMD_ROOT/run/systemd/system/$1.service.d/$DROPIN_NAME" ]; then DROPIN_ROOT=/run; return; fi
     if [ -n "$up" ]; then DROPIN_ROOT=/etc; ETC_UPPER=$up
     elif ! root_ro || etc_overlay_rw; then DROPIN_ROOT=/etc
-    elif remount_root rw; then remount_root ro; DROPIN_ROOT=/etc
+    elif remount_root rw; then
+        remount_root ro || echo "warning: / is still writable; it is read-only again after a reboot" >&2
+        DROPIN_ROOT=/etc
     else DROPIN_ROOT=/run; fi
 }
 writable() {   # file: can it be replaced? A probe file, since busybox's [ -w ] says yes to root on a read-only mount
@@ -223,9 +225,13 @@ remount_root() {   # rw | ro (logged under test; ADDIN_REMOUNT_FAILS=1 simulates
     if [ -n "$ADDIN_INSTALL_TEST" ]; then
         echo "mount -o remount,$1 /" >> "${ADDIN_TEST_LOG:-/dev/null}"
         [ "$1" = rw ] && [ -n "${ADDIN_REMOUNT_FAILS:-}" ] && return 1
+        [ "$1" = ro ] && [ -n "${ADDIN_REMOUNT_RO_FAILS:-}" ] && return 1
         return 0
     fi
-    mount -o remount,"$1" /
+    [ "$1" = ro ] || { mount -o remount,rw /; return; }
+    # Read-only is refused (busy) while a process still has a file open for writing, as one can just after MPC restarts.
+    for _try in 1 2 3 4; do mount -o remount,ro / 2>/dev/null && return 0; sleep 1; done
+    mount -o remount,ro /
 }
 boot_unit_text() {   # service
     printf '[Unit]\nDescription=Reload systemd once /etc is mounted, so MPC starts with its addins (%s)\n' "$BOOT_MARK"
