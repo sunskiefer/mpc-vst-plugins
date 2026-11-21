@@ -2681,6 +2681,17 @@ class SyncTest(Base):
         self.assertIn("Other", e)                                                # missing file, but not in a Synths folder: kept
         self.assertIn("Test Synth", e)
 
+    def test_removes_an_entry_whose_file_in_a_vst2_plugins_folder_is_gone(self):
+        vst2 = os.path.join(self.tmp, "device", "VST2 Plugins")
+        os.makedirs(vst2)
+        shutil.move(os.path.join(self.synths, self.SKIN), os.path.join(vst2, self.SKIN))
+        self.assertEqual(self.sync(roots=[vst2]).returncode, 0)
+        self.assertEqual(self.entries()["Test Synth"], os.path.join(vst2, self.SKIN, "test_synth.so"))
+        shutil.rmtree(os.path.join(vst2, self.SKIN))
+        r = self.sync(roots=[vst2])
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn("Test Synth", self.entries())
+
     def test_a_folder_without_its_so_is_not_registered_and_its_old_entry_goes(self):
         self.assertEqual(self.sync().returncode, 0)
         self.assertIn("Test Synth", self.entries())
