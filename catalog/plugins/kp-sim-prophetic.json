@@ -1,0 +1,18 @@
+{ "id": "kp-sim-prophetic", "name": "Prophetic", "author": "ratbuddy", "repo": "ratbuddy/prophetic",
+  "kind": "instrument", "style": "synth", "tags": ["emulation", "firmware-derived", "physical-modelling", "arpeggiator", "polyphonic", "gen2", "korg"],
+  "license": "GPL-3.0-or-later",
+  "summary": "The Korg Prophecy's synthesis, built on your computer from your own Prophecy v2.0 ROMs: their DSP programs and sound-engine firmware, translated to C++. 128 programs, every parameter, Performance Editor, arpeggiator, 1-8 voices. Gen2; tested on an MPC Live III.",
+  "distribution": "build-yourself",
+  "requires_user_files": [
+    { "name": "Prophecy v2.0 ic12 dump (512 KiB)", "description": "Your own dump of the V55PI ROM, SHA-1 950baf1f6c54394e780898634b7776e49f43acce." },
+    { "name": "Prophecy v2.0 ic22 dump (512 KiB)", "description": "Your own dump of the H8/3003 ROM, SHA-1 cd4cb221da19dd6f746dc7f3c145b1494993f6d8." }
+  ],
+  "build": {
+    "command": "python3 tools/make_plugin.py <folder or .zip with your dumps>",
+    "script": "tools/make_plugin.py",
+    "docs_url": "https://github.com/ratbuddy/prophetic/blob/{tag}/README.md#make-the-plugin-rom-owners",
+    "needs": ["Python 3.9+", "Internet once (the compiler download)"]
+  },
+  "components": [
+    { "id": "kp-sim-prophetic", "name": "Prophetic", "kind": "instrument", "uid": "KpPr" }
+  ] }
