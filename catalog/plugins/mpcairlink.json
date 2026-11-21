@@ -5,7 +5,7 @@
   "repo": "sttm/mpcairlink",
   "kind": "instrument",
   "license": "MIT AND BSD-3-Clause AND Apache-2.0 AND LGPL-2.1-or-later",
-  "summary": "Receive classic AirPlay or VBAN audio on an MPC plugin track. AirPlay default, jitter buffer, gain and stereo meters with 10/24 Hz updates. ARMv7 and AArch64; MPC OS 3.10.1+.",
+  "summary": "Receive classic AirPlay or VBAN audio on an MPC plugin track. Physical-style UI, gain on Q-Link 1, fixed 24 Hz meters and a 120 ms default VBAN buffer. ARMv7/AArch64; MPC OS 3.10.1+.",
   "style": "utility",
   "tags": [
     "network",
@@ -13,7 +13,7 @@
     "vban",
     "airplay"
   ],
-  "screenshot": "https://raw.githubusercontent.com/sttm/mpcairlink/v1.1.1/docs/ui-preview.png",
+  "screenshot": "https://raw.githubusercontent.com/sttm/mpcairlink/v1.3.0/docs/ui-preview.png",
   "asset_pattern": "*-mpc-armv7.zip",
   "min_os": "3.10.1"
 }
