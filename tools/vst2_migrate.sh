@@ -116,9 +116,16 @@ retire_old_skins() {
 
 if [ -n "$JSON" ]; then
     d=${JSON%/}
+    # a plugin.json whose binary for this CPU is in the folder (the one the package ships) is kept as it is: it can name binaries
+    # (a universal zip's "-arm32.so"/"-arm64.so") that plugin-meta.xml or an old MPC.settings entry do not (plugin-manager #46)
+    have=$(sed -n "s/.*\"$KEY\": *\"\([^\"]*\)\".*/\1/p" "$ROOT$d/plugin.json" 2>/dev/null | head -n 1)
+    if [ -n "$have" ] && [ -f "$ROOT$d/$have" ]; then echo "kept $d/plugin.json ($KEY $have is in the folder)"; retire_old_skins "${d##*/}" "${d%/*}"; exit 0; fi
     el=$(element "$ROOT$d" "${d%/*}")
     [ -n "$el" ] || { echo "$d: no plugin-meta.xml and no MPC.settings entry" >&2; exit 1; }
     uid=$(attr uid "$el"); case $uid in *[!0-9a-fA-F]*|'') echo "$d: uid \"$uid\" is not hex" >&2; exit 1 ;; esac
+    so=$(relfile "$ROOT$d" "$(attr file "$el")")
+    # never name a binary that is not there: MPC would drop the plugin from its list. Whatever plugin.json there is stays.
+    [ -f "$ROOT$d/$so" ] || { echo "$d: binary $so is not in the folder; plugin.json left as it was" >&2; exit 1; }
     write_json "$ROOT$d/plugin.json" "$el" && echo "wrote $d/plugin.json" || exit 1
     retire_old_skins "${d##*/}" "${d%/*}"
     exit 0
