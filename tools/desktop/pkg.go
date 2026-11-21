@@ -171,8 +171,8 @@ func OpenPackage(zipPath, source string) (*Package, error) {
 			if m.Kind != "addin" || !idRe.MatchString(m.ID) || m.Name == "" || m.Version == "" || !strings.HasSuffix(m.So, ".so") || strings.Contains(m.So, "/") {
 				return nil, errors.New("mpc-plugin.json of this addin is missing its id, name, version or library")
 			}
-			if m.Arch != "armv7" {
-				return nil, fmt.Errorf("built for %s: MPC OS standalone devices need armv7", m.Arch)
+			if m.Arch != "armv7" && m.Arch != "aarch64" {
+				return nil, fmt.Errorf("built for %s: MPC OS standalone devices need armv7 (Gen1) or aarch64 (Gen2)", m.Arch)
 			}
 			return &m, nil
 		case m.Layout != "portable":
