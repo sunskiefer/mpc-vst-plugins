@@ -6,9 +6,16 @@
   "kind": "instrument",
   "license": "MIT",
   "min_os": "3.10.1",
-  "summary": "Map MIDI notes or CCs to MPC transport and hardware buttons. Assign your controller per project with MIDI Learn and Momentary or Toggle modes. Requires Open MPC Remote.",
+  "summary": "Map MIDI notes or CCs to MPC transport and hardware buttons with per-project MIDI Learn and Momentary or Toggle modes. Requires Open MPC Remote. Tested on an original MPC X.",
   "style": "utility",
-  "tags": ["midi", "transport", "controller"],
+  "tags": [
+    "midi",
+    "transport",
+    "controller"
+  ],
   "screenshot": "https://raw.githubusercontent.com/shhQuiet/MPCMidiTransport/v1.0.0/docs/screenshots/control.png",
-  "asset_pattern": "*-mpc-armv7.zip"
+  "asset_pattern": "*-mpc-armv7.zip",
+  "depends": [
+    "remote"
+  ]
 }
