@@ -1,0 +1,15 @@
+{
+  "id": "argevox-geraet",
+  "name": "Argevox Gerät",
+  "author": "Argerax",
+  "repo": "ymn27nhnwd-hue/argevox-geraet",
+  "kind": "effect",
+  "license": "MIT",
+  "summary": "20-band live vocoder inspired by the Sennheiser VSM-201, with a voice gate, de-esser, and touch-adjustable band levels. Routes the carrier and microphone into opposite channels of a stereo submix.",
+  "style": "vocoder",
+  "tags": [
+    "vocoder",
+    "voice"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/ymn27nhnwd-hue/argevox-geraet/v0.2.1/docs/interfaz.png"
+}
