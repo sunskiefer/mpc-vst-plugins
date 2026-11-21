@@ -5,7 +5,9 @@ Design: `docs/CATALOG.md`. Formats: `docs/CATALOG_SPEC.md`.
 
 ## Add your plugin
 1. Make a release zip with `tools/release.py` (or the `vst-release.yml` workflow) with `--repo owner/name --license <SPDX>`,
-   and check it: `tools/catalog_check.py <zip> --catalog`. Publish it as a GitHub release on your repo. (A plain Akai SDK
+   and check it: `tools/catalog_check.py <zip> --catalog` (from the current `main` of this repo, and build with that `main` too:
+   a warning that `install.sh` or `uninstall.sh` differs from the template means the zip was built with older tools and may lack
+   an installer fix, so rebuild it). Publish it as a GitHub release on your repo. (A plain Akai SDK
    folder zip, with `plugin.json`, `version.xml`, `VST/` and `Plugin Skins/`, is not a release zip. Either use `release.py`,
    or attach it as `<Name>-<version>-mpc-sdk.zip` and leave `asset_pattern` out: the catalog converts it, see
    `docs/CATALOG.md`. The conversion suits a simple plugin; one that needs `--requires` / `--depends` / `--conflicts`,
@@ -55,6 +57,11 @@ These are the points reviewers most often send back:
 If your repo publishes several plugins (each with its own release zip and `asset_pattern`), group them so the catalog shows one card
 instead of one per plugin. **More than 5 entries from one repo by the same `author` without a collection fail the registry check (CI).** Entries
 credited to different authors are counted separately, so a repo that hosts a few ports of other people's plugins is not forced into one.
+
+Several entries in one repo (with or without a collection) need three things: a tag prefix of their own for each product, ending in
+`v<version>` (`8x8-vst-v1.0.0`, not `1.0.0`); a distinct `asset_pattern` for each; and an `id` on every `tested.json` record. A record
+without `id` counts for no entry once the repo has two or more, so a repo whose `tested.json` has none shows every entry as Listed.
+
 1. Add `catalog/collections/<id>.json`:
    ```json
    { "id": "my-pack", "title": "My Pack", "author": "Your name", "repo": "you/my-pack",
