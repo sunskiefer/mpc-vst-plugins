@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "min_os": "3.10.1",
-  "summary": "Show ALL your templates on the new project page!  Installs a startup hook to replace Demos with Local templates from your Templates folders.  Requires MPC OS 3.10.1 or later.",
+  "summary": "Replaces Demos on the New Project screen with templates from the /Templates folder on each drive. Installs a startup hook that rewrites the system file /sdcard/Demos/NewProjectDialog.json. Requires the Open MPC boot-reload service and MPC OS 3.10.1 or later. Tested on an original MPC X.",
   "style": "utility",
   "tags": [
     "templates",
