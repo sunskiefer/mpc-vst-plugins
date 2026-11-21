@@ -19,11 +19,31 @@ while [ $# -gt 0 ]; do
         *) die "usage: sh install.sh [-y] [-n] [-t <synths-dir>]" ;;
     esac
 done
+SETTINGS="${MPC_SETTINGS:-$(ls /media/az01-internal/Settings/*/MPC.settings /data/Settings/*/MPC.settings /data/Settings/*/MPC?Sample/MPC?Sample.settings 2>/dev/null | head -n 1)}"
+# The MPC Sample (its settings file is "MPC Sample.settings"): no plugin browser, a read-only root, and plugins only on its SD card.
+SAMPLE=0; case "$SETTINGS" in *"MPC Sample"*) SAMPLE=1 ;; esac
+# sample_card_synths: the Synths folder of the MPC Sample's SD card (MPC mounts the card at /media/<label>): the one MPC lists in
+# SynthContentLocations if its card is mounted, else <card>/Synths of the first card mounted there; nothing when no card is in.
+sample_card_synths() {
+    M="${MPC_MOUNTS:-/proc/mounts}"
+    { sed -n 's/.*<Location>\(\/media\/[^/<]*\/Synths\)\/*<\/Location>.*/\1/p' "$SETTINGS" 2>/dev/null | tr -d '\r'
+      awk '{ m = $2; gsub(/\\040/, " ", m); if (m ~ /^\/media\/[^\/]+$/ && m !~ /^\/media\/(az01-|acvs-)/) print m "/Synths" }' "$M" 2>/dev/null
+    } | while IFS= read -r s; do
+        D="${s%/Synths}" awk '{ m = $2; gsub(/\\040/, " ", m); if (m == ENVIRON["D"]) f = 1 } END { exit !f }' "$M" 2>/dev/null && { echo "$s"; break; } || true
+    done
+    return 0
+}
 # No -t: pick the folder this firmware loads from, without assuming a drive name (Live III: /nvme, Force/others: /sdcard, /media/az01-internal, /storage).
+#  0. the MPC Sample: its SD card's Synths folder (an error when no card is in);
 #  1. a copy of this plugin already in <drive>/VST2 Plugins: update it (an install elsewhere would leave the old copy loading);
 #  2. MPC OS 3.10.1+ (read from /usr/bin/MPC): <drive>/VST2 Plugins on the first candidate drive that already has a VST2 Plugins folder;
-#  3. otherwise the classic /sdcard/Synths (Gen1 and MPC OS before 3.10.1).
-if [ $TSET = 0 ] && [ -z "$MPC_INSTALL_TEST" ]; then
+#  3. otherwise the classic /sdcard/Synths (Gen1 and MPC OS before 3.10.1), or on a Gen2 unit, which has no /sdcard drive, its
+#     internal drive's Synths folder (/nvme/Synths on a Live III, /storage/Synths on a unit with loopback storage), as mpc-store.sh does.
+if [ $TSET = 0 ] && [ $SAMPLE = 1 ]; then
+    SYNTHS=$(sample_card_synths)
+    [ -n "$SYNTHS" ] || die "no SD card found: the MPC Sample keeps plugins on its card (/media/<card>/Synths). Insert it and run this again, or pass -t <folder>"
+    echo "using $SYNTHS (the MPC Sample's SD card); pass -t to choose another"
+elif [ $TSET = 0 ] && [ -z "$MPC_INSTALL_TEST" ]; then
     CANDS="/nvme /storage /media/az01-internal /sdcard"
     for d in $CANDS; do
         [ -d "$d/VST2 Plugins/$SKIN" ] && { SYNTHS="$d/VST2 Plugins"; break; }
@@ -36,6 +56,8 @@ if [ $TSET = 0 ] && [ -z "$MPC_INSTALL_TEST" ]; then
             done ;;
         esac
     fi
+    [ "$SYNTHS" = /sdcard/Synths ] && [ ! -d /sdcard/Synths ] && [ -d /nvme ] && SYNTHS=/nvme/Synths
+    [ "$SYNTHS" = /sdcard/Synths ] && [ ! -d /sdcard/Synths ] && [ -d /storage/Synths ] && SYNTHS=/storage/Synths
     [ "$SYNTHS" = /sdcard/Synths ] || echo "using $SYNTHS (the plugin folder of this MPC OS); pass -t to choose another"
 fi
 case "$SYNTHS" in /*) ;; *) die "-t must be an absolute path" ;; esac
@@ -62,7 +84,6 @@ if [ -z "$MPC_INSTALL_TEST" ]; then
     esac
     command -v systemctl >/dev/null || die "systemctl not found"
 fi
-SETTINGS="${MPC_SETTINGS:-$(ls /media/az01-internal/Settings/*/MPC.settings /data/Settings/*/MPC.settings /data/Settings/*/MPC?Sample/MPC?Sample.settings 2>/dev/null | head -n 1)}"
 [ -n "$SETTINGS" ] && [ -f "$SETTINGS" ] || die "MPC.settings not found (not an MPC OS device?)"
 [ -f "portable/$SKIN/plugin-meta.xml" ] || die "this package is damaged: portable/$SKIN is missing"
 sha256sum -c SHA256SUMS >/dev/null 2>&1 || die "files damaged (SHA256SUMS mismatch): copy the folder again"
@@ -74,7 +95,11 @@ OPTS=$(cd "$SYNTHS" 2>/dev/null && D=$(pwd -P) awk '{ m = $2; gsub(/\\040/, " ",
     if ((ENVIRON["D"] == m || index(ENVIRON["D"], m (m == "/" ? "" : "/")) == 1) && length(m) >= best) { best = length(m); o = $4 } }
     END { print o }' /proc/mounts 2>/dev/null)
 if printf '%s\n' "$OPTS" | grep -q '\(^\|,\)noexec\(,\|$\)'; then
-    echo "warning: $SYNTHS is on a noexec mount, so MPC will not be able to load this plugin from it. Install on the internal drive (-t /sdcard/Synths), or on Gen1 apply the Auto exec patch (tools/mpc_patch/auto_exec)."
+    if [ $SAMPLE = 1 ]; then
+        echo "warning: $SYNTHS is on a noexec mount (the MPC Sample mounts its card noexec), so MPC will not be able to load this plugin from it. Bind the folder onto itself and remount it exec: mount --bind \"$SYNTHS\" \"$SYNTHS\" && mount -o remount,bind,exec \"$SYNTHS\" (needed again after every restart of the Sample)."
+    else
+        echo "warning: $SYNTHS is on a noexec mount, so MPC will not be able to load this plugin from it. Install on the internal drive (-t /sdcard/Synths), or on Gen1 apply the Auto exec patch (tools/mpc_patch/auto_exec)."
+    fi
 fi
 # MPC draws a plugin's skin only if its folder is under a listed content location (the plugin loads either way; device test, MPC 3.10.0, docs/NOTES.md 2026-10-27).
 # Compare whole entries (not a substring: /sdcard/Synths-old must not count), ignoring CR and a trailing slash, which MPC accepts.
@@ -222,4 +247,5 @@ fi
 sync
 
 echo "Done. Settings backup: $BAK"
-echo "Starting MPC. Add '$NAME' to a track from the plugin browser."
+if [ $SAMPLE = 1 ]; then echo "Starting MPC. The MPC Sample has no plugin browser: a plugin loads from a project's inserts. Add '$NAME' there with the RACK addin."
+else echo "Starting MPC. Add '$NAME' to a track from the plugin browser."; fi

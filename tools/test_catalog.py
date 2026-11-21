@@ -2544,6 +2544,43 @@ class InstallerTest(Base):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertNotIn("no plugin folder", r.stdout)
 
+    def sample_device(self, locations=(), mounts=()):
+        """MPC.settings as an MPC Sample names it ("MPC Sample.settings"), and a mounts file for the scripts (MPC_MOUNTS)."""
+        d = os.path.join(self.tmp, "Settings", "MPC Sample")
+        os.makedirs(d, exist_ok=True)
+        self.settings_path = os.path.join(d, "MPC Sample.settings")
+        self.with_locations(*locations)
+        self.mounts = os.path.join(self.tmp, "mounts")
+        open(self.mounts, "w").write("".join("/dev/x %s exfat rw,noexec 0 0\n" % m.replace(" ", "\\040") for m in ("/", "/data") + tuple(mounts)))
+
+    def run_default(self, script, *args):
+        """The script with no -t, on the device sample_device() made."""
+        env = dict(os.environ, MPC_INSTALL_TEST="1", MPC_SETTINGS=self.settings_path, MPC_LEGACY_ROOT=self.legacy_root,
+                   MPC_TEST_LOG=os.path.join(self.tmp, "mpc_ctl.log"), MPC_MOUNTS=self.mounts)
+        return subprocess.run(["sh", os.path.join(self.top, script), "-y", *args], cwd=self.top, env=env, capture_output=True, text=True)
+
+    def test_on_an_mpc_sample_no_t_means_the_sd_card(self):
+        """The MPC Sample has a read-only root: without -t the installer takes its card's Synths folder (the one MPC lists, on a card
+        that is mounted), never /sdcard/Synths, and says when no card is in."""
+        self.sample_device(["/usr/share/x/Synths", "/media/OLD CARD/Synths", "/media/MY CARD/Synths"], ["/media/MY CARD", "/media/az01-internal"])
+        r = self.run_default("install.sh")
+        self.assertIn("using /media/MY CARD/Synths (the MPC Sample's SD card)", r.stdout)
+        self.assertNotIn("/sdcard", r.stdout + r.stderr)
+        self.sample_device([], ["/media/SD2"])           # MPC has not listed it yet: the mounted card
+        self.assertIn("using /media/SD2/Synths", self.run_default("install.sh").stdout)
+        self.sample_device(["/media/MPCSD/Synths"], [])  # no card in
+        r = self.run_default("install.sh")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("no SD card found", r.stderr)
+
+    def test_on_an_mpc_sample_the_messages_are_for_the_sample(self):
+        self.assertIn("from the plugin browser", self.run_script("install.sh").stdout)   # any other MPC: as it was
+        self.sample_device([self.synths])
+        r = self.run_script("install.sh")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("with the RACK addin", r.stdout)
+        self.assertNotIn("from the plugin browser", r.stdout)
+
     def test_refuses_unsafe_target_and_missing_settings(self):
         r = self.run_script("install.sh", "-t", "/tmp/a&b")
         self.assertNotEqual(r.returncode, 0)
