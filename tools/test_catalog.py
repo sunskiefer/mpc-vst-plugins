@@ -2925,6 +2925,21 @@ class StoreTest(Base):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertTrue(os.path.exists(os.path.join(self.synths, self.SKIN, "test_synth.so")))
 
+    def test_on_an_mpc_sample_no_t_means_the_sd_card(self):
+        mounts = os.path.join(self.tmp, "mounts")
+        env = dict(os.environ, MPC_INSTALL_TEST="1", MPC_SETTINGS=self.settings_path, MPC_STORE_TMP=self.tmp, MPC_STORE_DEVICE="mpc-sample",
+                   MPC_STORE_ARCH="aarch64", MPC_MOUNTS=mounts, MPC_ADDINS=os.path.join(self.tmp, "addins"))
+        url = "http://127.0.0.1:%d/catalog.tsv" % self.port
+        run = lambda *a: subprocess.run(["sh", os.path.join(HERE, "mpc-store.sh"), "-y", "--url", url, *a], env=env, capture_output=True, text=True)
+        open(mounts, "w").write("/dev/x / ext4 ro 0 0\n")                # no card in: list still works, a change says why it cannot
+        self.assertEqual(run("list").returncode, 0)
+        r = run("install", "test-synth")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("no SD card found", r.stderr)
+        open(mounts, "a").write("/dev/y /media/MY\\040CARD exfat rw,noexec 0 0\n")
+        r = run("prune")
+        self.assertNotIn("no SD card found", r.stderr)
+
     def test_a_gen2_device_installs_the_aarch64_zip(self):
         self.with_gen2()
         r = self.store("install", "test-synth", env_extra={"MPC_STORE_ARCH": "aarch64"})

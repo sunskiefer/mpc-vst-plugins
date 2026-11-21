@@ -2,6 +2,8 @@
 # mpc-store: install, update, remove and list catalog plugins and addins on an MPC OS device. BusyBox sh + wget/curl + unzip + sha256sum.
 # Run on the device as root:
 #   sh mpc-store.sh [-y] [-t <synths-dir>] [--url <catalog.tsv url>] [--dry-run] <command> [args]
+# (no -t: <drive>/VST2 Plugins on MPC OS 3.10.1+, the SD card's Synths folder on an MPC Sample, else /sdcard/Synths or a Gen2 unit's
+# internal drive's Synths folder)
 #     list                       the catalog's plugins, what is installed ("manual" = a folder that was not put there by this script), what is newer
 #     install <id[@version]>...  download, verify (sha256 from the catalog), then run each zip's own install.sh with MPC stopped once and started once
 #                                (an older installer without -n runs first and restarts MPC by itself)
@@ -23,7 +25,7 @@
 set -e
 # MPC_STORE_URL and --url take one address, or several separated by spaces that are tried in turn; the first that gives a catalog wins.
 URL="${MPC_STORE_URL:-https://open-mpc.github.io/catalog.tsv https://sd88me.github.io/mpc-vst-plugins/catalog.tsv}"
-SYNTHS=/sdcard/Synths; YES=0; DRY=0; MAJOR=0; FORCE=0
+SYNTHS=/sdcard/Synths; YES=0; DRY=0; MAJOR=0; FORCE=0; TSET=0
 ADDINS="${MPC_ADDINS:-/data/mpc-addins}"
 TAB=$(printf '\t')
 die() { echo "error: $*" >&2; exit 1; }
@@ -33,7 +35,7 @@ while [ $# -gt 0 ]; do
         --dry-run) DRY=1; shift ;;
         --major) MAJOR=1; shift ;;
         --force) FORCE=1; shift ;;
-        -t) [ -n "$2" ] || die "-t needs a folder"; SYNTHS="$2"; shift 2 ;;
+        -t) [ -n "$2" ] || die "-t needs a folder"; SYNTHS="$2"; TSET=1; shift 2 ;;
         --url) [ -n "$2" ] || die "--url needs a link"; URL="$2"; shift 2 ;;
         -*) die "unknown option $1 (see the top of this file)" ;;
         *) break ;;
@@ -49,20 +51,51 @@ if [ -z "$MPC_INSTALL_TEST" ] && [ "$CMD" != list ] && [ $DRY = 0 ]; then
     case "$ARCH" in armv7*|aarch64) ;; *) die "this is for MPC OS devices (Gen1 32-bit ARM or Gen2 aarch64); this one is $ARCH" ;; esac
     command -v systemctl >/dev/null || die "systemctl not found"
 fi
-# Gen2 (the Live III, MPC OS 3.x aarch64): /sdcard isn't mounted, so the writable internal drive is /nvme/Synths.
-# Fall back to it when the /sdcard default is in effect and absent (harmless on Gen1/Force).
-[ "$SYNTHS" = /sdcard/Synths ] && [ ! -d /sdcard/Synths ] && [ -d /nvme ] && SYNTHS=/nvme/Synths
-# A Gen2 unit without NVMe (an MPC One, a Key 37) keeps user content on the loopback image mounted at /storage.
-[ "$SYNTHS" = /sdcard/Synths ] && [ ! -d /sdcard/Synths ] && [ -d /storage/Synths ] && SYNTHS=/storage/Synths
 SETTINGS="${MPC_SETTINGS:-$(ls /media/az01-internal/Settings/*/MPC.settings /data/Settings/*/MPC.settings /data/Settings/*/MPC?Sample/MPC?Sample.settings 2>/dev/null | head -n 1)}"
 # The catalog's id for this device when an entry is limited to some (catalog.tsv column 24, registry "devices"): the MPC Sample's
 # settings file is "MPC Sample.settings"; "" for any other MPC.
 DEVICE="${MPC_STORE_DEVICE-$(case "$SETTINGS" in *"MPC Sample"*) echo mpc-sample ;; esac)}"
+# sample_card_synths: the Synths folder of the MPC Sample's SD card (as in the packages' install.sh)
+sample_card_synths() {
+    M="${MPC_MOUNTS:-/proc/mounts}"
+    { sed -n 's/.*<Location>\(\/media\/[^/<]*\/Synths\)\/*<\/Location>.*/\1/p' "$SETTINGS" 2>/dev/null | tr -d '\r'
+      awk '{ m = $2; gsub(/\\040/, " ", m); if (m ~ /^\/media\/[^\/]+$/ && m !~ /^\/media\/(az01-|acvs-)/) print m "/Synths" }' "$M" 2>/dev/null
+    } | while IFS= read -r s; do
+        D="${s%/Synths}" awk '{ m = $2; gsub(/\\040/, " ", m); if (m == ENVIRON["D"]) f = 1 } END { exit !f }' "$M" 2>/dev/null && { echo "$s"; break; } || true
+    done
+    return 0
+}
+# No -t: the folder this device loads plugins from, as the packages' install.sh picks it.
+if [ $TSET = 0 ] && [ "$DEVICE" = mpc-sample ]; then
+    # The MPC Sample: its SD card's Synths folder (its root, /sdcard included, is read-only)
+    SYNTHS=$(sample_card_synths)
+    [ -n "$SYNTHS" ] || [ "$CMD" = list ] || die "no SD card found: the MPC Sample keeps plugins on its card (/media/<card>/Synths). Insert it and run this again, or pass -t <folder>"
+    [ -n "$SYNTHS" ] || SYNTHS=/sdcard/Synths
+elif [ $TSET = 0 ]; then
+    # MPC OS 3.10.1+ (read from /usr/bin/MPC) loads plugins from <drive>/VST2 Plugins: the first internal drive that has that folder
+    OSV=$( [ -n "$MPC_INSTALL_TEST" ] || grep -ao '3\.1[0-9]\.[0-9][0-9]*\(\.[0-9][0-9]*\)*' /usr/bin/MPC 2>/dev/null | sort -uV | tail -n 1)
+    case "$OSV" in 3.1[1-9]*|3.10.[1-9]*)
+        for d in /nvme /storage /media/az01-internal /sdcard; do
+            [ -d "$d/VST2 Plugins" ] && { SYNTHS="$d/VST2 Plugins"; break; }
+        done ;;
+    esac
+    # Gen2 (the Live III, MPC OS 3.x aarch64): /sdcard isn't mounted, so the writable internal drive is /nvme/Synths.
+    # Fall back to it when the /sdcard default is in effect and absent (harmless on Gen1/Force).
+    [ "$SYNTHS" = /sdcard/Synths ] && [ ! -d /sdcard/Synths ] && [ -d /nvme ] && SYNTHS=/nvme/Synths
+    # A Gen2 unit without NVMe (an MPC One, a Key 37) keeps user content on the loopback image mounted at /storage.
+    [ "$SYNTHS" = /sdcard/Synths ] && [ ! -d /sdcard/Synths ] && [ -d /storage/Synths ] && SYNTHS=/storage/Synths
+fi
 # for_device <devices column>: 0 when this device may have it ('-', or its id is in the comma list)
 for_device() { [ "$1" = "-" ] || [ -z "$1" ] || case ",$1," in *",$DEVICE,"*) [ -n "$DEVICE" ] ;; *) false ;; esac; }
 W="${MPC_STORE_TMP:-/tmp}/mpc-store.$$"; mkdir -p "$W" || die "cannot create $W"
 trap 'rm -rf "$W"' EXIT
 STATE="$SYNTHS/.mpc-store"
+# Before 3.10.1 had its own default here, installs went to <drive>/Synths, and their record stayed there: say how to reach them.
+if [ $TSET = 0 ] && [ ! -s "$STATE" ]; then
+    case "$SYNTHS" in */"VST2 Plugins")
+        if [ -s "${SYNTHS%/VST2 Plugins}/Synths/.mpc-store" ]; then echo "note: earlier installs are recorded in ${SYNTHS%/VST2 Plugins}/Synths: pass -t \"${SYNTHS%/VST2 Plugins}/Synths\" to update or remove them" >&2; fi ;;
+    esac
+fi
 
 fetch() {   # fetch <url> <dest>
     if command -v wget >/dev/null 2>&1; then wget -q -O "$2" "$1" || return 1
