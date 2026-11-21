@@ -147,6 +147,11 @@ func (i DeviceInfo) primaryRoot() Root {
 			return r
 		}
 	}
+	for _, d := range i.Drives { // a drive with no Synths folder yet (the Sample's card)
+		if d.Path+"/Synths" == i.Synths {
+			return Root{Path: i.Synths, Label: d.Label, FS: d.FS, NoExec: d.NoExec, FreeKB: d.FreeKB, Primary: true}
+		}
+	}
 	return Root{Path: i.Synths, Label: "Internal drive", Primary: true}
 }
 
@@ -603,6 +608,23 @@ true`, shQuote(d.cfg.SynthsDir), d.cfg.SettingsGlob, shQuote(d.cfg.RemoteTmp), d
 			}
 		}
 	}
+	// The MPC Sample's /sdcard is read-only: plugins live on its mounted SD card (/media/<label>/Synths), which is not an internal drive.
+	labelPrimary := primary
+	if info.Device() == "mpc-sample" {
+		primary, labelPrimary = "", ""
+		for _, r := range cands {
+			if strings.HasPrefix(r.Path, "/media/") {
+				primary = r.Path
+				break
+			}
+		}
+		for _, dr := range info.Drives {
+			if primary == "" && strings.HasPrefix(dr.Path, "/media/") {
+				primary = dr.Path + "/Synths"
+			}
+		}
+		info.Synths = primary
+	}
 	// the same storage through two paths is one location; the first path wins (the internal drive is listed first)
 	seen := map[string]bool{}
 	keep := map[string]bool{}
@@ -612,7 +634,7 @@ true`, shQuote(d.cfg.SynthsDir), d.cfg.SettingsGlob, shQuote(d.cfg.RemoteTmp), d
 		}
 		seen[r.ID] = true
 		r.Primary = r.Path == primary
-		r.Label = rootLabel(r.Path, primary)
+		r.Label = rootLabel(r.Path, labelPrimary)
 		r.NoSymlinks = noSymlinkFS(r.FS)
 		for _, loc := range locs {
 			if loc == r.Path {
