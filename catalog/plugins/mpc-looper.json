@@ -1,0 +1,20 @@
+{
+  "id": "mpc-looper",
+  "name": "MPC Looper",
+  "author": "sttm",
+  "repo": "sttm/mpc-looper",
+  "kind": "effect",
+  "license": "MIT",
+  "summary": "Experimental four-loop stereo insert for MPC OS 3.10.1+. Disk-backed recording up to 32 bars, overdub, undo, tempo sync and Warp, per-loop stop timing, and separate WAV exports. Fixed audio caches; final revision and Gen2 are offline-only.",
+  "style": "looper",
+  "tags": [
+    "looper",
+    "overdub",
+    "tempo-sync",
+    "performance",
+    "warp"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/sttm/mpc-looper/v0.6.1/docs/ui-preview.png",
+  "asset_pattern": "*-mpc-armv7.zip",
+  "min_os": "3.10.1"
+}
