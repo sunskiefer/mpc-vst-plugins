@@ -752,11 +752,13 @@ def tag_versions(e, src, yanked, tested, keep, problems):
 catalog_breakage = []   # the last build()'s 5b dry-run list (kept out of catalog.json while it is a dry run)
 
 
-def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), added=None, collections=None, confirmed=None):
+def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), added=None, collections=None, confirmed=None, all_entries=None):
     """-> (catalog dict, problems list [{id, tag, error, unreadable?, superseded?}]). "unreadable" marks a repo or
     release list that could not be read at all, as opposed to one that was read and found invalid.
     A plugin whose newest stable release is of the old layout (no "layout" field) gets a problem, so the catalog repo opens an
     issue for it. require_portable (entry ids): such a release is invalid instead (the PR check for new listings).
+    all_entries: the whole registry when entries is only a part of it (the PR check builds just the entries under review); whether a
+    repo is shared by several entries is decided from it, so the check judges a release the way the full build does.
     collections ({id: collection}, from load_collections): a member keeps its "collection" field only when the collection is
     in it with the same repo, and the catalog gets collections[] (collections_of)."""
     os.makedirs(cache, exist_ok=True)
@@ -767,7 +769,8 @@ def build(entries, src, cache, yanked, keep=10, now=None, require_portable=(), a
         build_yourself = e.get("distribution", "release") == "build-yourself"
         releases = []
         all_time = 0   # every published release asset ever, whether or not it is listed (invalid, yanked or past --keep)
-        shared_repo = sum(1 for o in entries if o["repo"].lower() == e["repo"].lower()) > 1   # told apart by asset_pattern
+        shared_repo = sum(1 for o in (entries if all_entries is None else all_entries)
+                          if o["repo"].lower() == e["repo"].lower()) > 1   # told apart by asset_pattern
         failed = []    # this entry's failing releases, with their publish time (see "superseded" below)
         if not build_yourself:
             try:
@@ -1150,8 +1153,11 @@ def sdk_check(zpath, folder):
 
 
 def tag_prefix(tag):
-    """The part of a tag before its version: "desktop-" for "desktop-v0.5.2", "" for "v1.0.0"."""
-    return re.sub(r"v?\d+(\.\d+)*.*$", "", tag or "")
+    """The part of a tag before its version: "desktop-" for "desktop-v0.5.2", "" for "v1.0.0". A literal "v" starts the version, so
+    "8x8-vst-v1.0.0" gives "8x8-vst-" and not "" (a name that starts with a digit is not a version). Without a "v", the first number."""
+    tag = tag or ""
+    m = re.search(r"v\d+(\.\d+)*.*$", tag)
+    return tag[:m.start()] if m else re.sub(r"\d+(\.\d+)*.*$", "", tag)
 
 
 def hook_overlaps_of(plugins):
@@ -1229,7 +1235,8 @@ def main():
         by_id, ids = {e["id"]: e for e in entries}, set(a.require_portable)
         while True:
             sel = [e for e in entries if e["id"] in ids]
-            catalog, problems = build(sel, GitHub(os.environ.get("GITHUB_TOKEN")), a.cache, yanked, a.keep, require_portable=set(a.require_portable), added=added, collections=collections)
+            catalog, problems = build(sel, GitHub(os.environ.get("GITHUB_TOKEN")), a.cache, yanked, a.keep, require_portable=set(a.require_portable), added=added, collections=collections,
+                                 all_entries=entries)
             more = {d for p in problems for d in p.get("absent", ())} & set(by_id) - ids
             if not more:
                 break

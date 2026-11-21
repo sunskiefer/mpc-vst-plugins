@@ -1183,6 +1183,42 @@ class BuildTest(Base):
             self.assertEqual((p["tier"], p["verified_on"]), ("listed", []))
             self.assertEqual(p["versions"][0]["tested"], [])
 
+    def test_tag_prefix_keeps_a_digit_leading_product_name(self):
+        """"8x8-vst-v1.0.0" and "9x9-vst-v1.0.0" are different products; both used to collapse to "" (#1041)."""
+        for tag, want in (("v1.0.0", ""), ("desktop-v0.5.2", "desktop-"), ("8x8-vst-v1.0.0", "8x8-vst-"), ("9x9-vst-v1.0.0", "9x9-vst-"),
+                          ("cw78-vst-v1.3.1", "cw78-vst-"), ("1.0.0", ""), ("tr-mpc-1.2", "tr-mpc-"), (None, "")):
+            with self.subTest(tag=tag):
+                self.assertEqual(catalog_build.tag_prefix(tag), want)
+
+    def pr_check_setup(self):
+        """Two entries of one repo with digit-leading tags; the sibling's release is the newest one."""
+        first = os.path.join(self.tmp, "first.zip")
+        shutil.copy(self.build("1.0.0"), first)
+        second = self.build("1.0.0", extra=("--id", "other-synth"))
+        entries = [dict(self.ENTRY, asset_pattern="First-*-mpc-armv7.zip"),
+                   dict(self.ENTRY, id="other-synth", asset_pattern="Second-*-mpc-armv7.zip")]
+        gh = FakeGitHub({"acme/test-synth": [
+            self.rel("9x9-vst-v1.0.0", 2, name="Second-1.0.0-mpc-armv7.zip", at="2026-09-29T00:00:03Z"),
+            self.rel("8x8-vst-v1.0.0", 1, name="First-1.0.0-mpc-armv7.zip", at="2026-09-29T00:00:00Z")]}, {1: first, 2: second})
+        return entries, gh
+
+    def test_a_pr_check_of_one_entry_skips_its_siblings_newer_release(self):
+        """--require-portable builds only the entry under review. A sibling's newer release in the same repo is not a failing
+        release of this entry: "expected one asset matching First-*, found 0" (#1041)."""
+        entries, gh = self.pr_check_setup()
+        cat, problems = catalog_build.build(entries[:1], gh, os.path.join(self.tmp, "pr"), set(),
+                                            require_portable={"test-synth"}, all_entries=entries)
+        self.assertEqual(problems, [])
+        self.assertEqual(cat["plugins"][0]["latest"], "1.0.0")
+
+    def test_a_pr_check_scopes_test_records_like_the_full_build(self):
+        """The shared-repo rule (a test record needs its "id") counts the whole registry, not just the entries being checked."""
+        entries, gh = self.pr_check_setup()
+        gh.tested = lambda repo: [{"version": "1.0.0", "device": "MPC Live II"}]
+        cat, problems = catalog_build.build(entries[:1], gh, os.path.join(self.tmp, "pr"), set(), all_entries=entries)
+        self.assertEqual(problems, [])
+        self.assertEqual((cat["plugins"][0]["tier"], cat["plugins"][0]["versions"][0]["tested"]), ("listed", []))
+
     def test_explicit_test_ids_do_not_fall_back_to_legacy_matching(self):
         gh = FakeGitHub({"acme/test-synth": [self.rel("v1.0.0", 1)]}, {1: self.build("1.0.0")})
         for ident in ("test-synth", "other-synth", "TEST-SYNTH", "", None, 7, [], {}):
