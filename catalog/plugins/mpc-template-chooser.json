@@ -1,0 +1,17 @@
+{
+  "id": "mpc-template-chooser",
+  "name": "MPC Template Chooser",
+  "author": "Elsewave",
+  "repo": "shhQuiet/MPCTemplateChooser",
+  "kind": "effect",
+  "license": "MIT",
+  "min_os": "3.10.1",
+  "summary": "Replaces Demos on the New Project screen with templates from the /Templates folder on each drive. Installs a startup hook that rewrites the system file /sdcard/Demos/NewProjectDialog.json. Requires the Open MPC boot-reload service and MPC OS 3.10.1 or later. Tested on an original MPC X.",
+  "style": "utility",
+  "tags": [
+    "templates",
+    "projects"
+  ],
+  "screenshot": "https://raw.githubusercontent.com/shhQuiet/MPCTemplateChooser/v1.0.0/docs/screenshots/chooser-help.png",
+  "asset_pattern": "*-mpc-armv7.zip"
+}
