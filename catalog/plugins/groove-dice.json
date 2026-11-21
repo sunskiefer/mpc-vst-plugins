@@ -5,7 +5,7 @@
   "repo": "Sunghyun23/kimswork",
   "kind": "instrument",
   "license": "MIT",
-  "summary": "Neo-soul and hip-hop drums with one-bar grooves, layered original sounds, fills and expansion packs. Optional macOS/Windows Pack Builder creates .gdexp packs. UI checked on MPC XL; other models untested for this release. Requires MPC OS 3.10.1+.",
+  "summary": "Neo-soul/hip-hop drums with one-bar grooves, six fill/roll pads, original sounds and expansion packs. UI/pad policy checked on MPC XL OS3.10.1.12; other models untested for this release. Requires OS3.10.1+.",
   "style": "drum-machine",
   "tags": [
     "drums",
@@ -14,6 +14,6 @@
   ],
   "min_os": "3.10.1",
   "homepage": "https://kimswork.app/plugins/groove-dice/",
-  "screenshot": "https://raw.githubusercontent.com/Sunghyun23/kimswork/e1811423e910f79bd28241ee79ed1e9289a25173/mpc-software/plugins/public/GrooveDice/design/device-1.6.2/public-main.png",
+  "screenshot": "https://raw.githubusercontent.com/Sunghyun23/kimswork/groove-dice/v1.11.0/mpc-software/plugins/public/GrooveDice/design/device-1.9.0/public-main.png",
   "asset_pattern": "groove-dice-*-mpc-armv7.zip"
 }
