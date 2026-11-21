@@ -1,0 +1,12 @@
+{
+  "id": "audity-78",
+  "name": "Audity '78",
+  "author": "Lumina Aerospace LLC",
+  "repo": "Luminous-Works/mpc-vst-audity-78",
+  "kind": "instrument",
+  "license": "MIT",
+  "summary": "Wavetable synth: two morphing wavetable oscillators, SSM2040-style filters, chorus, delay and reverb. 16 sounds.",
+  "style": "synth",
+  "tags": ["wavetable", "polyphonic", "analog", "chorus", "reverb"],
+  "screenshot": "https://raw.githubusercontent.com/Luminous-Works/mpc-vst-audity-78/v0.1.0/docs/screenshots/audity-78.png"
+}
