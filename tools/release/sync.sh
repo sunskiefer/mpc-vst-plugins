@@ -5,7 +5,7 @@
 # roots is registered once, the first root wins), and in MPC.settings' pluginList-arm it
 #   - adds a folder that has no entry (its plugin-meta.xml, with %payload-path% replaced by the Synths folder),
 #   - replaces an entry with the same uid whose .so is gone,
-#   - removes an entry that points into a Synths folder but whose .so is gone,
+#   - removes an entry that points into a Synths or VST2 Plugins folder but whose .so is gone,
 # (a folder whose .so is missing is ignored) and leaves every other entry alone (plugins registered another way, other tools' entries). Nothing to do = no MPC restart.
 # Backs up MPC.settings, checks the result, stops MPC before the edit and starts it after (-n: the caller does that, as for
 # install.sh -n). --dry-run only prints what it would do. Same folder rule as MockbaMod's vstscanner.sh (/media/*/Synths/*/
@@ -81,7 +81,7 @@ while IFS=$TAB read -r uid file meta; do
     [ $ok = 1 ] || printf '%s\t%s\t%s\n' "$uid" "$file" "$meta" >> "$W/add"
 done < "$W/want"
 while IFS=$TAB read -r hu hf; do
-    case "$hf" in */Synths/*) [ -f "$hf" ] || printf '%s\t%s\n' "$hu" "$hf" >> "$W/drop" ;; esac
+    case "$hf" in */Synths/*|*"/VST2 Plugins/"*) [ -f "$hf" ] || printf '%s\t%s\n' "$hu" "$hf" >> "$W/drop" ;; esac
 done < "$W/have"
 
 nadd=$(wc -l < "$W/add" | tr -d ' '); ndrop=$(wc -l < "$W/drop" | tr -d ' ')

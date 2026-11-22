@@ -222,6 +222,12 @@ fresh; printf 'ADDIN_NETWORK=1\nADDIN_LOGIN=1\nADDIN_WEB_PORT=6790\nADDIN_WEB_PO
 printf 'y\nn\n' | ADDIN_INSTALL_TEST=1 SYSTEMD_ROOT="$T/root" ADDIN_TEST_LOG="$T/log" $SH "$T/pkg-a/install.sh" -t "$T/addins/a" > "$T/out" 2>&1
 grep -q "It asks for a password" "$T/out" && ! grep -q "It has no login" "$T/out" && ok "ADDIN_LOGIN=1: the question says it asks for a password (web keys accepted)" || bad "prompt: $(cat "$T/out")"
 
+# 13b. the root can be made writable but not read-only again (busy, just after MPC restarted): a warning, and the install goes on
+fresh; unit 'Environment=LD_PRELOAD=/usr/lib/x.so'
+printf '/dev/root / ext4 ro,relatime 0 0\n' > "$T/mounts-ro"
+ADDIN_MOUNTS="$T/mounts-ro" ADDIN_REMOUNT_RO_FAILS=1 run a install.sh && [ -f "$A" ] && { grep -qs "$A" "$DROP" || line | grep -q "$A"; } && grep -q "still writable" "$T/out" \
+  && ok "a busy root: the install warns and finishes" || bad "busy root: $(cat "$T/out")"
+
 # 14. /etc is an overlay that systemd mounts after reading its units (MPC OS 3.x), on a read-only root: the drop-in alone is
 # not seen at boot, so the first install adds a reload unit pulled in by MPC's service, and the last uninstall removes it
 fresh; unit 'Environment=LD_PRELOAD=/usr/lib/x.so'; ro a-w; chmod u+w "$T/root/usr/lib/systemd/system"   # the remount makes the root writable

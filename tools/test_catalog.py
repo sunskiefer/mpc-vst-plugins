@@ -2544,6 +2544,58 @@ class InstallerTest(Base):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertNotIn("no plugin folder", r.stdout)
 
+    def sample_device(self, locations=(), mounts=()):
+        """MPC.settings as an MPC Sample names it ("MPC Sample.settings"), and a mounts file for the scripts (MPC_MOUNTS)."""
+        d = os.path.join(self.tmp, "Settings", "MPC Sample")
+        os.makedirs(d, exist_ok=True)
+        self.settings_path = os.path.join(d, "MPC Sample.settings")
+        self.with_locations(*locations)
+        self.mounts = os.path.join(self.tmp, "mounts")
+        open(self.mounts, "w").write("".join("/dev/x %s exfat rw,noexec 0 0\n" % m.replace(" ", "\\040") for m in ("/", "/data") + tuple(mounts)))
+
+    def run_default(self, script, *args):
+        """The script with no -t, on the device sample_device() made."""
+        env = dict(os.environ, MPC_INSTALL_TEST="1", MPC_SETTINGS=self.settings_path, MPC_LEGACY_ROOT=self.legacy_root,
+                   MPC_TEST_LOG=os.path.join(self.tmp, "mpc_ctl.log"), MPC_MOUNTS=self.mounts)
+        return subprocess.run(["sh", os.path.join(self.top, script), "-y", *args], cwd=self.top, env=env, capture_output=True, text=True)
+
+    def test_on_an_mpc_sample_no_t_means_the_sd_card(self):
+        """The MPC Sample has a read-only root: without -t the installer takes its card's Synths folder (the one MPC lists, on a card
+        that is mounted), never /sdcard/Synths, and says when no card is in."""
+        self.sample_device(["/usr/share/x/Synths", "/media/OLD CARD/Synths", "/media/MY CARD/Synths"], ["/media/MY CARD", "/media/az01-internal"])
+        r = self.run_default("install.sh")
+        self.assertIn("using /media/MY CARD/Synths (the MPC Sample's SD card)", r.stdout)
+        self.assertNotIn("/sdcard", r.stdout + r.stderr)
+        self.sample_device([], ["/media/SD2"])           # MPC has not listed it yet: the mounted card
+        self.assertIn("using /media/SD2/Synths", self.run_default("install.sh").stdout)
+        self.sample_device(["/media/MPCSD/Synths"], [])  # no card in
+        r = self.run_default("install.sh")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("no SD card found", r.stderr)
+
+    def test_on_an_mpc_sample_the_messages_are_for_the_sample(self):
+        self.assertIn("from the plugin browser", self.run_script("install.sh").stdout)   # any other MPC: as it was
+        self.sample_device([self.synths])
+        r = self.run_script("install.sh")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("with the RACK addin", r.stdout)
+        self.assertNotIn("from the plugin browser", r.stdout)
+
+    def test_uninstall_without_t_removes_the_folder_where_the_plugin_is(self):
+        """uninstall.sh with no -t finds the folder its plugin-list entry names (by uid), not only /sdcard/Synths."""
+        for sample in (False, True):
+            if sample: self.sample_device([self.synths])
+            self.assertEqual(self.run_script("install.sh").returncode, 0)
+            folder = os.path.join(self.synths, self.SKIN)
+            self.assertTrue(os.path.isdir(folder))
+            r = self.run_default("uninstall.sh") if sample else subprocess.run(
+                ["sh", os.path.join(self.top, "uninstall.sh"), "-y"], cwd=self.top, capture_output=True, text=True,
+                env=dict(os.environ, MPC_INSTALL_TEST="1", MPC_SETTINGS=self.settings_path, MPC_LEGACY_ROOT=self.legacy_root))
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("using %s (where Test Synth is installed)" % self.synths, r.stdout)
+            self.assertFalse(os.path.exists(os.path.join(folder, "test_synth.so")), sample)
+            self.assertNotIn("Test Synth", self.entries())
+
     def test_refuses_unsafe_target_and_missing_settings(self):
         r = self.run_script("install.sh", "-t", "/tmp/a&b")
         self.assertNotEqual(r.returncode, 0)
@@ -2628,6 +2680,17 @@ class SyncTest(Base):
         self.assertNotIn("Gone", e)
         self.assertIn("Other", e)                                                # missing file, but not in a Synths folder: kept
         self.assertIn("Test Synth", e)
+
+    def test_removes_an_entry_whose_file_in_a_vst2_plugins_folder_is_gone(self):
+        vst2 = os.path.join(self.tmp, "device", "VST2 Plugins")
+        os.makedirs(vst2)
+        shutil.move(os.path.join(self.synths, self.SKIN), os.path.join(vst2, self.SKIN))
+        self.assertEqual(self.sync(roots=[vst2]).returncode, 0)
+        self.assertEqual(self.entries()["Test Synth"], os.path.join(vst2, self.SKIN, "test_synth.so"))
+        shutil.rmtree(os.path.join(vst2, self.SKIN))
+        r = self.sync(roots=[vst2])
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn("Test Synth", self.entries())
 
     def test_a_folder_without_its_so_is_not_registered_and_its_old_entry_goes(self):
         self.assertEqual(self.sync().returncode, 0)
@@ -2872,6 +2935,21 @@ class StoreTest(Base):
         r = self.store("install", "test-synth", env_extra={"MPC_STORE_ARCH": "aarch64", "MPC_STORE_DEVICE": "mpc-sample"})
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertTrue(os.path.exists(os.path.join(self.synths, self.SKIN, "test_synth.so")))
+
+    def test_on_an_mpc_sample_no_t_means_the_sd_card(self):
+        mounts = os.path.join(self.tmp, "mounts")
+        env = dict(os.environ, MPC_INSTALL_TEST="1", MPC_SETTINGS=self.settings_path, MPC_STORE_TMP=self.tmp, MPC_STORE_DEVICE="mpc-sample",
+                   MPC_STORE_ARCH="aarch64", MPC_MOUNTS=mounts, MPC_ADDINS=os.path.join(self.tmp, "addins"))
+        url = "http://127.0.0.1:%d/catalog.tsv" % self.port
+        run = lambda *a: subprocess.run(["sh", os.path.join(HERE, "mpc-store.sh"), "-y", "--url", url, *a], env=env, capture_output=True, text=True)
+        open(mounts, "w").write("/dev/x / ext4 ro 0 0\n")                # no card in: list still works, a change says why it cannot
+        self.assertEqual(run("list").returncode, 0)
+        r = run("install", "test-synth")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("no SD card found", r.stderr)
+        open(mounts, "a").write("/dev/y /media/MY\\040CARD exfat rw,noexec 0 0\n")
+        r = run("prune")
+        self.assertNotIn("no SD card found", r.stderr)
 
     def test_a_gen2_device_installs_the_aarch64_zip(self):
         self.with_gen2()
