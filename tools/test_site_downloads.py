@@ -38,6 +38,17 @@ class T(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 sd.build(self.lst, os.path.join(self.d, "s"), get=lambda u: self.data)
 
+    def test_fetch_accepts_stick_sized_file(self):
+        class R(io.BytesIO):
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+        real = sd.urllib.request.urlopen
+        sd.urllib.request.urlopen = lambda req, timeout=0: R(b"\0" * (73 << 20))  # the 2.0.0 stick is 72,916,787 bytes
+        try:
+            self.assertEqual(len(sd.fetch("https://github.com/o/r/a.zip")), 73 << 20)
+        finally:
+            sd.urllib.request.urlopen = real
+
     def test_repo_list_and_stick_pin(self):
         es = {e["id"]: e for e in sd.entries(os.path.join(sd.ROOT, "catalog", "downloads.json"))}
         pin = json.load(open(os.path.join(sd.ROOT, "tools", "desktop", "g2stick-pin.json")))

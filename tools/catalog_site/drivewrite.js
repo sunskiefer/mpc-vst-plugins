@@ -5,7 +5,7 @@
    Used by guide.js; also loaded by tools/test_drivewrite.mjs under Node. */
 var DriveWrite = (function () {
   var HOUSEKEEPING = { "system volume information": 1, "$recycle.bin": 1, ".trashes": 1, ".spotlight-v100": 1, ".fseventsd": 1, ".ds_store": 1 };
-  var MAX = 64 << 20;
+  var MAX = 128 << 20;   /* the 3.9.1 stick zip is ~70 MB; same cap as tools/site_downloads.py */
 
   function supported() { return typeof window !== "undefined" && typeof window.showDirectoryPicker === "function" && typeof DecompressionStream === "function"; }
 

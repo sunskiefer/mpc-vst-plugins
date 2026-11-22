@@ -18,7 +18,7 @@ import urllib.error
 import urllib.request
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-MAX = 64 << 20
+MAX = 128 << 20  # the 3.9.1 stick is ~70 MB; the browser reader (drivewrite.js) has the same cap
 NEED = {"pm-stick": ["autorun/autorun.json", "autorun/autorun.check", "autorun/open.sh", "autorun/runtime/run.sh", "autorun/runtime/payload.sha256", ".mpc-g2-stick"]}  # as g2stick.go (g2StickNeed)
 
 
