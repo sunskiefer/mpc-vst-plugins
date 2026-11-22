@@ -10,13 +10,15 @@ permissions:
   contents: read
 jobs:
   check:
-    # Not ubuntu-latest: from 2026-11-22 that is Ubuntu 26.04 (Rust coreutils), where the drum-pad script's byte writes do not land
-    # and test_patches.py fails. The device runs BusyBox, so see issue #1085 for running these tests with BusyBox tools instead.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # test_auto_exec.py installs the earlier auto exec scripts from history to test the update
+      # The device runs these scripts with BusyBox. ubuntu-latest (26.04 from 2026-11-22) has uutils coreutils, whose dd truncates the
+      # file in the drum-pad script's `dd bs=1 seek=N 1<>file` (issue #1085), so test_patches.py puts BusyBox's applets first on PATH.
+      - name: BusyBox, the tools the device has
+        run: sudo apt-get install -y busybox-static
       - name: Tests
         run: python3 tools/test_patches.py
       - name: Drive exec patch, with real mounts (root, private mount namespace)

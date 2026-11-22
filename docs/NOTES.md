@@ -2789,3 +2789,20 @@ here: the old script gives `no-root` on a simulated `/storage`-only layout and t
 Documents/Devices` for device scripts (if it does not, the patch installs and never runs). The Lua fallback list (`/nvme`, `/sdcard`,
 `/data/UserData`) is unchanged: it is only used when `debug.getinfo` is missing, and the `.ini` `checksum=` (unchanged since the first
 script) is not the sha256 of the Lua, so it cannot be regenerated here. `test_script.sh` has a `/storage` case (needs Docker; not run).
+
+## 2026-11-22: the Patches check failed on ubuntu-latest (26.04): uutils' dd truncates `dd 1<>file` (CI only; the device is not affected)
+
+`ubuntu-latest` became Ubuntu 26.04 (runner image 20261116.202.1), whose `dd` is uutils coreutils 0.10.0 (`/usr/lib/cargo/bin/coreutils/dd`).
+`mpc-drum-pad-patch.sh` writes each patch region with `printf ... | dd bs=1 seek=N 1<>file`. **Verified in CI on that image:** after
+`printf 'ABC' | dd bs=1 seek=16 1<>f` a 1 MiB file is 19 bytes (truncated at the end of the write), while `dd of=f bs=1 seek=16 conv=notrunc`
+keeps its 1048576 bytes. In `test_patches.py` the first region write therefore cut the stand-in binary short, the md5 check failed, the
+script printed "checksum mismatch after patching; restoring the original" and **exited 0**, so `test_confirmed_install_needs_no_typed_word_then_undo`
+saw the stock md5 (`#1084`'s PR run and the `main` push run). On the same image `test_hwremap_patch.py` (31 tests), `test_drive_exec.py`
+(20) and `test_auto_exec.py` pass, and `test_patches.py` passes (21) with BusyBox's applets first on PATH (BusyBox 1.37.0 on the image; the
+device has 1.36.1). `coreutils-from-gnu` cannot be installed beside the image's `coreutils-from-uutils` (apt reports a conflict), so
+switching the runner back to GNU is not a one-line fix. **Fix:** `test_patches.py` links BusyBox's applets for the tools the device scripts
+use and puts them first on PATH (and skips with a message when only uutils' dd is available), and `patches.yml` installs `busybox-static` and
+runs on `ubuntu-latest` again (the `ubuntu-24.04` pin of #1086 is gone). The device script is unchanged: it is pinned by hash in
+`catalog/patches.json` and works on BusyBox and GNU; its portable form, for the next script version, is `dd of="$F" bs=1 seek=N conv=notrunc`.
+**Not verified:** that BusyBox 1.36.1 on a device accepts `of=`/`conv=notrunc` (BusyBox documents both; not run there), and whether other uutils
+`dd` cases differ.
