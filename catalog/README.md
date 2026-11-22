@@ -53,6 +53,18 @@ These are the points reviewers most often send back:
 - **Other people's material:** no ROMs, firmware, samples or other copyrighted content (such as MIDI files of real songs).
   No tools in your repo that fetch a manufacturer's ROM from an unlicensed source.
 
+## Change your listing
+A new screenshot, a better summary, tags or a tip link: change your own entry the same way you added it, with a PR. You don't
+need a clone or a command line:
+1. Open `catalog/plugins/<id>.json` on GitHub and click the pencil ("Edit this file"). GitHub offers to fork the repo for you.
+2. Change the field (for a screenshot, a raw GitHub link pinned to a tag or commit) and click "Propose changes", then
+   "Create pull request".
+3. Say in one line what changed. A reviewer checks it against [docs/CATALOG_REVIEW.md](../docs/CATALOG_REVIEW.md) and merges it.
+
+For a screenshot: the card shows it in a 2:1 frame (1280x640 is ideal) and crops other shapes, so a 5:4 image loses its top and
+bottom. An image with a dark background looks dark on the card, so a lighter, opaque background stands out more. A change to
+`id`, `repo` or `author` goes to a maintainer for review, so say why in the PR.
+
 ## Many plugins from one repo: a collection
 If your repo publishes several plugins (each with its own release zip and `asset_pattern`), group them so the catalog shows one card
 instead of one per plugin. **More than 5 entries from one repo by the same `author` without a collection fail the registry check (CI).** Entries

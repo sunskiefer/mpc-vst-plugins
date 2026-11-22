@@ -13,5 +13,5 @@
   ],
   "license": "MIT",
   "summary": "Send beats over Wi-Fi between your MPC or Force and a folder on your computer (macOS or Windows hub included), with a cassette deck to preview them. Opens a local-network HTTP hub with no password: home or studio networks only.",
-  "screenshot": "https://raw.githubusercontent.com/zay2001-beatsbylonza/GPP-Link/v1.0.0/docs/screenshot.png"
+  "screenshot": "https://raw.githubusercontent.com/zay2001-beatsbylonza/GPP-Link/9b75e9a72bb4c2fc4dd1fcff16b85fd4c2b02c95/docs/screenshot-light.png"
 }
