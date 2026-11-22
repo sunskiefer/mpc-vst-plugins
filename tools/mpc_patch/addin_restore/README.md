@@ -8,7 +8,7 @@ On MPC OS 3.10, addins load through a systemd drop-in in `/run` (tmpfs). After e
 
 ## What this patch does
 
-Installs a Lua device script on the persistent content drive (`/nvme` on a Live III, `/sdcard` on others). MPC loads device scripts from `MPC Documents/Devices/` at every start. The script:
+Installs a Lua device script on the persistent content drive (`/nvme` on a Live III, `/sdcard` on others, `/storage` on a Gen2 unit without NVMe such as an MPC One or Key 37; tried in that order). MPC loads device scripts from `MPC Documents/Devices/` at every start. The script:
 
 1. Checks `/data/mpc-addins/` for installed addins
 2. Checks MPC's `LD_PRELOAD` to see if they are loaded
@@ -52,7 +52,9 @@ Or install through the Plugin Manager app's patches section.
 
 ## Requirements
 
-- Gen2 device (aarch64): Live III, One G2, Key G2, XL. Tested on a Live III.
+- Gen2 device (aarch64): Live III, One G2, Key G2, XL. Tested on a Live III. On an MPC One G2 `status` finds the content drive
+  at `/storage` (reported on a device in #1040, with the same probe order); `install` and the restore after a reboot are not
+  tested there, nor whether MPC 3.10 on that model scans `/storage/MPC Documents/Devices` for device scripts.
 - Gen1 device (armv7): Live, Live II, One, X, Key 61/37, Force. Since 1.1.0 the script carries an armv7 build of the same
   `addin_restore.c` and picks it by `uname -m`; checked offline only. The catalog entry still lists `aarch64` until a Gen1 device
   on MPC OS 3.10.1 has run it (one reboot, addins restored).

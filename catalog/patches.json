@@ -61,11 +61,11 @@
       "license": "MIT",
       "docs": "tools/mpc_patch/addin_restore/README.md",
       "script": {
-        "url": "https://raw.githubusercontent.com/open-mpc/mpc-vst-plugins/6fb514d0e553f8cd1872c91cf7d13caae061193f/tools/mpc_patch/addin_restore/addin-restore-patch.sh",
-        "sha256": "7cc1a2901f57b634874c28e5d2cb8912223ca5e489075031c5df5656218e2d20"
+        "url": "https://raw.githubusercontent.com/open-mpc/mpc-vst-plugins/81569de28c9eb9bef29be06ccce721f5f520b0dc/tools/mpc_patch/addin_restore/addin-restore-patch.sh",
+        "sha256": "a87cc4f74642f6b1240584dce62698d0adb61555daa8ee6fab50c20dcc488e12"
       },
-      "supports": {"os": "MPC OS 3.10 Gen2 (tested on Live III, 2026-11-03)", "arch": "aarch64"},
-      "modifies": ["/nvme/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/nvme/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/nvme/MPC Documents/Devices/Addin Restore/addin_restore.so", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.so"],
+      "supports": {"os": "MPC OS 3.10 Gen2 (tested on Live III, 2026-11-03; MPC One G2: finds its content drive at /storage, install untested)", "arch": "aarch64"},
+      "modifies": ["/nvme/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/nvme/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/nvme/MPC Documents/Devices/Addin Restore/addin_restore.so", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/sdcard/MPC Documents/Devices/Addin Restore/addin_restore.so", "/storage/MPC Documents/Devices/Addin Restore/addin_restore.ini", "/storage/MPC Documents/Devices/Addin Restore/addin_restore.lua", "/storage/MPC Documents/Devices/Addin Restore/addin_restore.so"],
       "backup": "none (files are new, nothing overwritten)",
       "restarts_mpc": false,
       "reversible": true

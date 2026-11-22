@@ -7,7 +7,7 @@
 # sees one automatic restart after a reboot; after that, all addins work. Since 1.2.0 it also brings back the 16-pad drum
 # layout patch on Gen2 (its patched copy of MPC runs through a /run drop-in too), with the same single restart.
 #
-# The device script lives on persistent storage (the content drive: /nvme or /sdcard), so it survives reboots and
+# The device script lives on persistent storage (the content drive: /nvme, /sdcard or /storage), so it survives reboots and
 # firmware updates. It does not modify the system image.
 #
 #   sh addin-restore-patch.sh status                  what state the device is in
@@ -27,7 +27,9 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 usage() { sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 find_content_root() {
-    for r in /nvme /sdcard /data/UserData; do
+    # /storage last: the loopback content drive of a Gen2 unit without NVMe (an MPC One, a Key 37), so a device that resolves
+    # /nvme, /sdcard or /data/UserData today resolves to the same one
+    for r in /nvme /sdcard /data/UserData /storage; do
         [ -d "$r/MPC Documents" ] && echo "$r" && return 0
     done
     return 1
@@ -57,7 +59,7 @@ done
 need_device() {
     [ "$(id -u)" = 0 ] || die "run as root on the device"
     case "$(uname -m)" in aarch64|armv7*) ;; *) die "this patch is for MPC devices (aarch64 or armv7); this one is $(uname -m)" ;; esac
-    find_content_root >/dev/null || die "cannot find content root (no MPC Documents folder in /nvme, /sdcard or /data/UserData)"
+    find_content_root >/dev/null || die "cannot find content root (no MPC Documents folder in /nvme, /sdcard, /data/UserData or /storage)"
 }
 
 addins_installed() {
