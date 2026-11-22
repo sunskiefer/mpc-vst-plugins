@@ -1,0 +1,5 @@
+{ "id": "variant", "name": "VARIANT", "author": "L'Cronx", "repo": "sunskiefer/VARIANT",
+  "kind": "instrument", "role": "midi", "style": "generative", "tags": ["generative", "midi", "sequencer", "randomizer", "chain", "scales", "ratchet", "probability"],
+  "license": "PolyForm-Noncommercial-1.0.0", "source_available": true, "asset_pattern": "*-mpc-armv7.zip",
+  "screenshot": "https://raw.githubusercontent.com/sunskiefer/VARIANT/v0.1.2/docs/img/page1_sequencer.png",
+  "summary": "MIDI-only dual generative 8-step sequencer: two self-mutating sequences with a bit pattern per step, randomizer with seeds, undo/redo and evolve, 16 scales, chain mode, pattern buffer, probability, ratchet and swing. Plays other tracks over its own MIDI port. 128 presets, 3 pages. MPC OS 3.x." }
