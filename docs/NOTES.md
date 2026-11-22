@@ -2806,3 +2806,5 @@ runs on `ubuntu-latest` again (the `ubuntu-24.04` pin of #1086 is gone). The dev
 `catalog/patches.json` and works on BusyBox and GNU; its portable form, for the next script version, is `dd of="$F" bs=1 seek=N conv=notrunc`.
 **Not verified:** that BusyBox 1.36.1 on a device accepts `of=`/`conv=notrunc` (BusyBox documents both; not run there), and whether other uutils
 `dd` cases differ.
+
+- **Catalog build: download cap raised to 128 MiB (2026-11-22, CI log + release API; fix tested offline only).** The `g2-stick-v2.0.0` stick zip is 72,916,787 bytes, over the 64 MiB cap in `tools/site_downloads.py`, so "Copy the Install page's downloads" failed on every push to main (PR runs skip that step, so they stayed green). Both that cap and the Install page reader (`drivewrite.js`) are now 128 MiB. Not yet checked on a real stick or in the deployed Chrome page.
