@@ -13,5 +13,5 @@
   ],
   "license": "LGPL-2.1-or-later",
   "summary": "Sean Costello's 8-line FDN reverb (Soundpipe revsc, as in AudioKit's CostelloReverb), bit-identical to the original, with low cut, high cut, verb size, mix and output.",
-  "screenshot": "https://raw.githubusercontent.com/biloo77-cell/mpc-vst-costello-reverb/68627aa32f94dfbbdb53815cafa6615b2f6d0bff/docs/img/costello-reverb.png"
+  "screenshot": "https://raw.githubusercontent.com/biloo77-cell/mpc-vst-costello-reverb/d7ed7c4da2f092a25fe248ff71ad27defb066c5b/docs/img/costello-reverb.png"
 }
