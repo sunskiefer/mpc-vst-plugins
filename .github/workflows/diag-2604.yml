@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Environment and the dd idiom (shell: sh, as the script)
+      - name: "Environment and the dd idiom (sh, as the script)"
         shell: sh
         run: |
           head -3 /etc/os-release
