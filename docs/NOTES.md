@@ -2772,3 +2772,20 @@ took `file=` from the old MPC.settings entry (`openmpc_pm_g2.so`), wrote that na
 Manager. `--json` now keeps a plugin.json whose binary for this CPU is in the folder, and never writes a name that is not there
 (it exits 1 and leaves plugin.json as it was). The Plugin Manager also runs it only after a successful install now. Tested offline
 (the Plugin Manager's vst2 test section); not yet on a device.
+
+## 2026-11-22: Addin Restore did not find the content drive of an MPC One G2 (device report, #1040; the fix offline only)
+
+Reported by a user on an MPC One (Gen 2, MPC OS 3.10.1.12, aarch64): `addin-restore-patch.sh` 1.2.0 `status` said
+`unsupported supported=0 reason=no-root` and `install` refused, because `find_content_root()` only tried `/nvme`, `/sdcard` and
+`/data/UserData`. On that unit `/nvme` and `/sdcard` are empty directories on the read-only root (their `.mount` units need the
+`inmusic,nvme-fitted` / `inmusic,internal-sd-fitted` device-tree flags, which are absent) and `/data` holds only the loopback image;
+`MPC Documents` is on `/storage` (`/dev/loop0p1`, exfat, from `storage.mount`, flag `inmusic,acvs-loopback-content`). It also blocked
+the 16-pad drum layout patch, which lists addin-restore under `also_installs` on aarch64. The script now tries `/storage` last, so a
+device that resolves `/nvme`, `/sdcard` or `/data/UserData` today keeps the same root; `catalog/patches.json` pins the new script.
+**Verified:** on the reporter's unit, with the one-line change, `status` returned `/storage` and `supported=1` (their report). Offline
+here: the old script gives `no-root` on a simulated `/storage`-only layout and the new one `stock supported=1`, installs under
+`/storage/MPC Documents/Devices/Addin Restore`, is idempotent and uninstalls; with several roots present `/nvme` wins, then `/sdcard`.
+**Not verified:** `install` and the restore after a reboot on a One G2, and whether MPC 3.10 on that model scans `/storage/MPC
+Documents/Devices` for device scripts (if it does not, the patch installs and never runs). The Lua fallback list (`/nvme`, `/sdcard`,
+`/data/UserData`) is unchanged: it is only used when `debug.getinfo` is missing, and the `.ini` `checksum=` (unchanged since the first
+script) is not the sha256 of the Lua, so it cannot be regenerated here. `test_script.sh` has a `/storage` case (needs Docker; not run).
