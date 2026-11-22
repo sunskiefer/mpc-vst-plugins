@@ -10,7 +10,9 @@ permissions:
   contents: read
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # Not ubuntu-latest: from 2026-11-22 that is Ubuntu 26.04 (Rust coreutils), where the drum-pad script's byte writes do not land
+    # and test_patches.py fails. The device runs BusyBox, so see issue #1085 for running these tests with BusyBox tools instead.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
