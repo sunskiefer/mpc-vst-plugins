@@ -11,7 +11,7 @@ trap 'rm -rf "$old"' EXIT
 docker run --rm -v "$PWD":/t:ro -v "$old":/old:ro gcc:12 sh -euc '
 fail() { echo "FAIL $*"; exit 1; }
 for arch in aarch64 armv7l; do
-  rm -rf /nvme /data /tmp/shim; mkdir -p "/nvme/MPC Documents" /tmp/shim
+  rm -rf /nvme /storage /data /tmp/shim; mkdir -p "/nvme/MPC Documents" /tmp/shim
   printf "#!/bin/sh\necho $arch\n" > /tmp/shim/uname; chmod +x /tmp/shim/uname
   export PATH=/tmp/shim:$PATH
   # the devices BusyBox 1.36.1 has no head -c and no od -A (device, 2026-11-15): the script must not use them
@@ -36,5 +36,15 @@ for arch in aarch64 armv7l; do
   sh $S install --confirmed >/dev/null && sh $S status | grep -qx "STATE state=patched supported=1" || fail "$arch: 1.1.0 not updated"
   grep -q "^device=Addin Restore" "$D/addin_restore.ini" || fail "$arch: ini"
   sh $S uninstall --confirmed >/dev/null
-  echo "ok   $arch: status, install, older install updated, uninstall, 1.1.0 updated in place"
+  # a Gen2 unit without NVMe (an MPC One, a Key 37) keeps its content on the loopback drive at /storage (issue #1040): it is the
+  # last root tried, so a device with /nvme or /sdcard keeps its old one
+  mkdir -p "/storage/MPC Documents"
+  sh $S install --confirmed >/dev/null; [ -f "$D/addin_restore.so" ] || fail "$arch: with /nvme and /storage, /nvme must win"
+  [ ! -d "/storage/MPC Documents/Devices" ] || fail "$arch: /storage was used although /nvme has MPC Documents"
+  sh $S uninstall --confirmed >/dev/null; rm -rf /nvme
+  sh $S status | grep -qx "STATE state=stock supported=1" || fail "$arch: /storage not found as the content root"
+  sh $S install --confirmed >/dev/null || fail "$arch: install on /storage"
+  [ -f "/storage/MPC Documents/Devices/Addin Restore/addin_restore.so" ] || fail "$arch: files not under /storage"
+  sh $S uninstall --confirmed >/dev/null
+  echo "ok   $arch: status, install, older install updated, uninstall, 1.1.0 updated in place, /storage as the content root"
 done'
