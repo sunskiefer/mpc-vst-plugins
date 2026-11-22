@@ -50,24 +50,13 @@ jobs:
           print('--- last stderr lines (dd errors show here)'); print('\n'.join([l for l in err if 'dd' in l or 'rror' in l or 'write' in l][:20]))
           print('final md5 == patched?', hashlib.md5(open(d+'/stock','rb').read()).hexdigest()==pm)
           EOF
-      - name: The other three patch test scripts on this image
+      - name: The other three patch test scripts on this image (failures shown)
         shell: bash
         continue-on-error: true
         run: |
-          python3 tools/test_hwremap_patch.py 2>&1 | grep -v ResourceWarning | tail -4
-          sudo python3 tools/test_drive_exec.py 2>&1 | grep -v ResourceWarning | tail -6
-          sudo python3 tools/test_auto_exec.py 2>&1 | grep -v ResourceWarning | tail -6
-  with-gnu-coreutils:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Switch to GNU coreutils, then the patch tests
-        shell: bash
-        run: |
-          apt-cache policy coreutils-from-gnu 2>&1 | head -3
-          sudo apt-get install -y coreutils-from-gnu 2>&1 | tail -2 || true
-          dd --version 2>&1 | head -1
-          python3 tools/test_patches.py 2>&1 | grep -v ResourceWarning | tail -6
+          python3 tools/test_hwremap_patch.py 2>&1 | grep -v ResourceWarning | tail -3
+          sudo python3 tools/test_drive_exec.py 2>&1 | grep -v ResourceWarning | tail -3
+          sudo python3 tools/test_auto_exec.py 2>&1 | grep -v ResourceWarning | grep -v "^  *\(open\|self\|index\|overview\)" | head -60
   with-busybox:
     runs-on: ubuntu-latest
     steps:
@@ -80,4 +69,5 @@ jobs:
           B=$(mktemp -d); for a in sh dd od md5sum cat cut tr df awk sed grep mktemp mkdir mv rm cp ls date sleep head tail wc sort uniq stat; do ln -s "$(command -v busybox)" "$B/$a"; done
           export PATH="$B:$PATH"
           command -v dd; dd --help 2>&1 | head -1
-          python3 tools/test_patches.py 2>&1 | grep -v ResourceWarning | tail -6
+          for t in tools/test_patches.py tools/test_hwremap_patch.py; do echo "== $t"; python3 $t 2>&1 | grep -v ResourceWarning | tail -3; done
+          for t in tools/test_drive_exec.py tools/test_auto_exec.py; do echo "== $t (sudo, BusyBox first on PATH)"; sudo env "PATH=$PATH" python3 $t 2>&1 | grep -v ResourceWarning | tail -3; done
