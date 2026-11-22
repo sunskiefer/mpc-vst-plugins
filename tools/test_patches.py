@@ -24,11 +24,42 @@ import patch_check  # noqa: E402
 SCRIPT = os.path.join(ROOT, "tools", "mpc_patch", "mpc-drum-pad-patch.sh")
 SH = shutil.which("dash") or shutil.which("sh")
 
+# The MPC runs these scripts with BusyBox (1.36.1), not with the coreutils of whatever machine runs the tests. The drum-pad script
+# writes its patch bytes with `printf ... | dd bs=1 seek=N 1<>file`: BusyBox and GNU dd leave the rest of the file alone, but uutils' dd
+# (the Rust coreutils of Ubuntu 26.04, so of `ubuntu-latest` from 2026-11-22) truncates it at the end of the write, the md5 check then
+# fails, and the script restores the original and exits 0 (issue #1085). So the script runs with BusyBox's applets first on PATH when
+# BusyBox is installed (CI installs busybox-static); without it, uutils is detected and the test is skipped instead of failing.
+DEVICE_APPLETS = ("dd od md5sum cat cut tr df awk sed grep mkdir mv rm cp ln ls head tail wc date sleep sync stat chmod touch mktemp "
+                  "sort uniq expr basename dirname readlink cmp tee").split()
+
+
+def busybox_dir(parent):
+    """A directory under parent with links to BusyBox for the applets the device scripts use (those this BusyBox has), or None."""
+    bb = shutil.which("busybox")
+    if not bb:
+        return None
+    r = subprocess.run([bb, "--list"], capture_output=True, text=True)
+    have = set(r.stdout.split()) if r.returncode == 0 else set()
+    d = os.path.join(parent, "busybox-bin")
+    os.makedirs(d, exist_ok=True)
+    for a in DEVICE_APPLETS:
+        if a in have:
+            os.symlink(bb, os.path.join(d, a))
+    return d
+
+
+def dd_is_uutils(env):
+    r = subprocess.run(["dd", "--version"], env=env, capture_output=True, text=True)
+    return "uutils" in (r.stdout + r.stderr)
+
 
 class ScriptContract(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dir = tempfile.mkdtemp()
+        cls.bb = busybox_dir(cls.dir)
+        cls.path = (cls.bb + os.pathsep + os.environ["PATH"]) if cls.bb else os.environ["PATH"]
+        cls.uutils_dd = not cls.bb and dd_is_uutils(dict(os.environ, PATH=cls.path))
         src = open(SCRIPT).read()
         regs = [l.split() for l in re.search(r"PATCH_DATA='(.*?)'\n", src, re.S).group(1).splitlines() if l.strip()]
         size = max(int(o, 16) + len(h) // 2 for o, h in regs) + 64
@@ -50,12 +81,15 @@ class ScriptContract(unittest.TestCase):
         shutil.rmtree(cls.dir, ignore_errors=True)
 
     def setUp(self):
+        if self.uutils_dd:
+            self.skipTest("this machine's dd is uutils', which truncates `dd 1<>file`, and there is no busybox to run the script "
+                          "with the device's tools: install busybox-static (issue #1085)")
         self.work = os.path.join(self.dir, "work-" + self.id().split(".")[-1])
         self.bk = self.work + "-bk"
         shutil.copy(self.stock, self.work)
 
     def run_script(self, *args, target=None):
-        env = dict(os.environ, MPC_PATCH_TEST=target or self.work, MPC_PATCH_BACKUP=self.bk)
+        env = dict(os.environ, PATH=self.path, MPC_PATCH_TEST=target or self.work, MPC_PATCH_BACKUP=self.bk)
         r = subprocess.run([SH, self.script, *args], env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=120)
         return r.returncode, r.stdout + r.stderr
 
