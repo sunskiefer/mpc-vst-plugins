@@ -1,0 +1,17 @@
+{
+  "id": "rev-246",
+  "name": "REV-246",
+  "author": "ikloX",
+  "repo": "biloo77-cell/mpc-vst-rev246",
+  "kind": "effect",
+  "style": "reverb",
+  "tags": [
+    "reverb",
+    "vintage",
+    "digital",
+    "stereo"
+  ],
+  "license": "AGPL-3.0-only",
+  "summary": "tehguitarist's REV-246, a vintage mid-80s style digital reverb: five programmes, 16-bit storage, transformer, ducker, true stereo or the original mono-in routing.",
+  "screenshot": "https://raw.githubusercontent.com/biloo77-cell/mpc-vst-rev246/5c3ecbbd3719a756dee9172c25d3afb3f7b45a18/docs/img/rev246-reverb.png"
+}
