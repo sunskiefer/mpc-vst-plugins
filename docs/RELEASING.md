@@ -166,7 +166,7 @@ It is not shipped in the release zips yet; the device-side store script (docs/CA
 `plugin.json`). Users on 3.10.1 unzip it and copy the folder into `VST2 Plugins`. The Plugin Manager release carries
 `OpenMPC-Plugin-Manager-<ver>-Gen1.zip` / `-Gen2.zip` made this way, next to the normal zips. Tests: `tools/test_folder_zip.py`.
 
-**SDK-format zip (Akai's plugin folder, 2026-11-03, offline; not yet loaded on a device).** The reusable release workflow
+**SDK-format zip (Akai's plugin folder, 2026-11-03; first loaded on a device 2026-11-23, Gen1 on MPC OS 3.10.1, docs/NOTES.md).** The reusable release workflow
 (`vst-release.yml`) also attaches `<Name>-<ver>-mpc-sdk.zip`, made by `tools/sdk_zip.py OUT.zip <armv7 zip> [<aarch64 zip>]`: one
 folder for every MPC, `plugin.json` with both `file32` and `file64`. The binaries are `<slug>-arm32.so` / `<slug>-arm64.so` at the
 folder root, not in the SDK's `VST/` subfolder (allowed: `plugin.json` gives the path), because our plugins take their own folder
