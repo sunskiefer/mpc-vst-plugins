@@ -2,7 +2,7 @@
   "id": "noxed-prism-wave",
   "name": "Prism Wave",
   "author": "NOXED",
-  "repo": "molgino/noxed-mpc-plugins",
+  "repo": "molgino/noxend-mpc-plugins",
   "kind": "instrument",
   "license": "MIT",
   "summary": "Eight-voice wavetable synthesizer with two oscillators, unison, sub/noise, envelopes, LFOs, a modulation matrix, chorus, delay and WAV wavetable import. Includes eight presets.",
@@ -12,7 +12,7 @@
     "wavetable"
   ],
   "asset_pattern": "noxed-prism-wave-*-mpc-armv7.zip",
-  "screenshot": "https://raw.githubusercontent.com/molgino/noxed-mpc-plugins/40832b26596b1c0228eb97e0dc81c257547a2d1a/docs/screenshots/prism-wave-osc.png",
+  "screenshot": "https://raw.githubusercontent.com/molgino/noxend-mpc-plugins/40832b26596b1c0228eb97e0dc81c257547a2d1a/docs/screenshots/prism-wave-osc.png",
   "tip": "https://ko-fi.com/noxend",
   "min_os": "3.10.1",
   "collection": "noxed-mpc-plugins"

@@ -118,7 +118,10 @@ Run on the device as root (`sh install.sh [-y] [-n] [-t <synths-dir>]`):
    `-n` (also on `uninstall.sh`) defers this to the caller: the script neither stops nor starts MPC and refuses to run while MPC is
    running. A batch installer stops MPC once, runs every plugin's `install.sh -y -n`, then starts MPC once. The caller must
    start MPC again even if one install fails.
-3. Copies `portable/<skin>/` next to its target (`/sdcard/Synths`, or `-t <folder>`), carries over the files the user
+3. Copies `portable/<skin>/` next to its target (`-t <folder>`; without it, the folder this MPC OS loads from: an existing
+   copy in `<drive>/VST2 Plugins`, then on MPC OS 3.10.1+ `<drive>/VST2 Plugins` on the first drive that has that folder,
+   otherwise `/sdcard/Synths`, or the internal drive's Synths folder on Gen2; it prints the one it picks. The generated
+   `INSTALL.md` says the same since 2026-11-22), carries over the files the user
    added (the manifest's `user_data`, see `--user-data`), and swaps the new folder in.
    Then it puts back executable bits and symlinks from the package's `MODES` file (written by `release.py`): a zip unpacked
    on Windows, or copied file by file, loses both, and an engine that bundles binaries (yt-dlp, ffmpeg, a private Python) then fails.
