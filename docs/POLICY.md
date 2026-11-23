@@ -15,11 +15,21 @@ suggestion; nothing here is in force until the owners adopt it (a PR that remove
   MPC and installers run as root on the device, so the checks below exist to limit damage, not to guarantee safety.
 
 ## What can be listed
-- **Open source only**, under an SPDX open licence. `source_available` is not accepted.
+- **Public source, under an SPDX open licence.** A licence that limits use (for example non-commercial) is accepted only as
+  `"source_available": true`: the source must be public, and the card shows a "Restricted use" badge so nobody mistakes it
+  for open source. This is what the catalog already does (`tools/catalog_build.py`, `catalog/README.md`; the JV-880's MAME
+  licence is the example); an earlier draft of this file said `source_available` was not accepted, which did not match.
+  Build-yourself entries still need a true open licence. A restricted licence gives the author a basis to object to resale;
+  it does not prevent it. **DECIDE:** adopt this wording (suggested: yes).
 - **No closed binaries and no copyrighted ROMs or firmware.** A plugin that needs the user's own ROMs says so (`user_files`) and
   ships none; a port that needs the user's own firmware to build lists as *build-yourself*: source and a build command, no download.
 - **No other company's branding** in skins, screenshots or plugin names: no manufacturer names, logos or wordmarks, no
   logo-bearing panel art. "X-style" is fine; implying the maker's endorsement is not.
+- **Lighter checks where the install is only a folder copy (MPC OS 3.10.1+).** On 3.10.1 a plugin installs as a
+  `VST2 Plugins/<Manufacturer> - VST - <Name>/` folder with no `install.sh` and no `MPC.settings` edit (NOTES.md, 2026-10-31,
+  device). For entries installed only that way the root-installer checks (canonical `install.sh`) need not apply. Public source,
+  licence, branding, a shown checksum and yanking apply to every entry; the Force, MPC OS 2.x and MockbaMod still use the
+  installer. **DECIDE:** whether to relax those checks (suggested: yes, for open-source entries).
 - **A release must be catalog-conformant** (`mpc-plugin.json` from `tools/release.py`, `catalog_check.py` OK). Releases made with
   the shared release workflow are; a plugin made with Akai's SDK is listed through the same checks.
 - Authors keep their own repos. Listing does not require moving a repo into the organization.
