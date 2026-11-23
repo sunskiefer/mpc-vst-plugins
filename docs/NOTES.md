@@ -2808,3 +2808,16 @@ runs on `ubuntu-latest` again (the `ubuntu-24.04` pin of #1086 is gone). The dev
 `dd` cases differ.
 
 - **Catalog build: download cap raised to 128 MiB (2026-11-22, CI log + release API; fix tested offline only).** The `g2-stick-v2.0.0` stick zip is 72,916,787 bytes, over the 64 MiB cap in `tools/site_downloads.py`, so "Copy the Install page's downloads" failed on every push to main (PR runs skip that step, so they stayed green). Both that cap and the Install page reader (`drivewrite.js`) are now 128 MiB. Not yet checked on a real stick or in the deployed Chrome page.
+
+## 2026-11-23: an SDK-format zip from `tools/sdk_zip.py` loads on MPC OS 3.10.1 by folder copy (device, MPC Live Gen1, MPC OS 3.10.1)
+
+Nepenthe 1.0.2's `-mpc-sdk.zip`, made by `tools/sdk_zip.py` from the release's armv7 and aarch64 zips, was unpacked in place of the
+per-build folder at `/sdcard/VST2 Plugins/ikloX - VST - Nepenthe/` with MPC stopped and no settings edit (root was used only to do the
+swap). The folder held `nepenthe-arm32.so` and `nepenthe-arm64.so` at its root, a `plugin.json` with both `file32` and `file64`, and no
+`plugin-meta.xml`. After MPC restarted the plugin was listed, loaded and worked with its skin drawn (owner's check on the screen), and MPC
+left `MPC.settings` byte-identical to a copy taken before the swap. The per-build folder was put back afterwards.
+
+So on a Gen1 unit on 3.10.1, MPC takes the `file32` binary from a folder that holds both, and binaries at the folder root (not in the SDK's
+`VST/`) load, as `sdk_zip.py` assumes. This is the first device result for the format, which RELEASING.md described as offline only.
+**Not verified:** Gen2 (`file64`), the Force, other plugins (REV-246 and Costello Reverb's SDK zips pass `catalog_build.sdk_check` but
+were not loaded), a project saved with the per-build folder reopening on the SDK one, and the catalog site's hand-copy download.
