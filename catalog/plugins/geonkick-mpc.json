@@ -1,0 +1,14 @@
+{
+  "id": "geonkick-mpc",
+  "name": "GeonKick",
+  "author": "303inmyheart",
+  "repo": "303inmyheart/OpenMPC-Geonkick",
+  "kind": "instrument",
+  "license": "GPL-3.0-or-later",
+  "summary": "Gen2 MPC percussion synth with 16 pad sounds, nine oscillators per sound, touch-editable envelopes, WAV import and preview, and 118 native presets/kits. Hardware tested on Live III; MPC OS 3.10.1 or newer.",
+  "style": "drum-machine",
+  "tags": ["drums", "percussion", "synth", "sampler", "gen2"],
+  "screenshot": "https://raw.githubusercontent.com/303inmyheart/OpenMPC-Geonkick/geonkick-mpc-v1.0.0/docs/screenshots/synth.png",
+  "asset_pattern": "Geonkick-MPC-*-mpc-aarch64.zip",
+  "min_os": "3.10.1"
+}
