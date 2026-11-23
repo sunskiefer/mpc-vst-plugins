@@ -30,6 +30,10 @@ Run it in order: the first items are mechanical and catch most problems.
    If the failure is in files the PR doesn't touch, say so: the branch was cut before a registry-wide change, it isn't
    the author's error, and merging `main` in fixes it (#890, #892). A job that shows `failure` with no jobs and no log
    is a CI hiccup: re-run it before judging (#1052, #1015).
+   **`--require-portable` errors on entries the PR doesn't touch, right after another PR changed them on `main`**: before
+   2026-11-23 the step compared the PR with the tip of `main` instead of the base it was merged with, so a listing merged while
+   the run was queued looked changed by the PR (#1094, #1096, #1099 after #1101). Fixed in `catalog.yml`; for a run from before
+   the fix, update the branch (a re-run reuses the old merge commit).
    **`expected one asset matching X-*, found 0` in a repo with several entries**, while the author's asset is on its release, is
    release selection: another entry's newer release was judged as this one's. A tag that starts with a digit (`8x8-vst-v1.0.0`)
    and `--require-portable` building only the entry under review used to cause it (#1041, fixed 2026-11-21 in `catalog_build.py`).
