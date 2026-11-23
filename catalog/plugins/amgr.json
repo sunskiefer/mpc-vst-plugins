@@ -1,5 +1,5 @@
 { "id": "amgr", "name": "AMGR", "author": "L'Cronx", "repo": "sunskiefer/AMGR",
   "kind": "instrument", "style": "sampler-rompler", "tags": ["granular", "sampler", "waveform", "grains", "touch", "stretch"],
-  "license": "PolyForm-Noncommercial-1.0.0", "source_available": true,
+  "license": "PolyForm-Noncommercial-1.0.0", "source_available": true, "asset_pattern": "*-mpc-armv7.zip",
   "screenshot": "https://raw.githubusercontent.com/sunskiefer/AMGR/v0.2.5/docs/img/waves.png",
   "summary": "Four-layer granular sample mangler in the spirit of the Tasty Chips GR-2, aimed at much lower resource consumption. Touch a layer's waveform to set where its grains spawn from: per-layer ADSR, density/size/spread/jitter/reverse, a CPU-safety governor, a file browser per layer, a factory bank that varies every parameter, delay and reverb." }
