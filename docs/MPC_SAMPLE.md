@@ -75,6 +75,12 @@ the screen notes 12/13/14, dial CC 100 (relative, 1 = +1, 127 = -1) and press no
 5. Test on the device with the plugin in a project, MPC stopped while you edit the working copy, `.rack-backup` kept.
 6. Back up `MPC Sample.settings` with MPC stopped before touching it, and stage files as `x.new` then `mv` (repo rule).
 
+### 7. Replacing the stock app instead
+
+A standalone app that takes over from the stock MPC Sample app (an alternative OS) is not a plugin. The catalog lists those on the
+MPC Sample OS tab with stricter rules (device report, stock firmware hash check, nothing written to the system, declared flags):
+`docs/CATALOG_SPEC.md`, "Alternative OS" (2026-11-22).
+
 ## What the source adds beyond our device notes
 
 - **`&gpu` disabled** in the AC50 device tree: GPU absence is by design, not a driver bug.
