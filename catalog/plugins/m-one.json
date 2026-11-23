@@ -1,4 +1,4 @@
 { "id": "m-one", "name": "M-One", "author": "Fullban", "repo": "fullbann/mpc-vst-m-one",
-  "kind": "instrument", "style": "workstation", "tags": ["rompler", "workstation", "m1", "korg", "90s", "house"], "license": "GPL-3.0-or-later",
+  "kind": "instrument", "style": "sampler-rompler", "tags": ["rompler", "workstation", "m1", "korg", "90s", "house"], "license": "GPL-3.0-or-later",
   "summary": "Korg M1-style ROM workstation built on the PicoFaceM1 engine: 100 programs, 100 combinations and the M1's 33 effects from your own M1 ROM set (none included), quick-edit knobs, an FX page for both effects and a Library of SysEx banks with ten original Fullban sounds.",
   "screenshot": "https://raw.githubusercontent.com/fullbann/mpc-vst-m-one/3671aa20119840df2ed7d3ac492705adf6932c6f/docs/catalog-thumbnail.png" }

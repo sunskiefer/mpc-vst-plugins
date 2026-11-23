@@ -4,7 +4,7 @@
   "author": "saustin2010",
   "repo": "saustin2010/mpc-vst-chordism",
   "kind": "instrument",
-  "style": "synth",
+  "style": "fm",
   "tags": [
     "chords",
     "arpeggiator",

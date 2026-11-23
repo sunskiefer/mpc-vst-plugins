@@ -4,7 +4,7 @@
   "author": "jacob-sabella",
   "repo": "jacob-sabella/mpc-addin-commander",
   "kind": "addin",
-  "style": "utility",
+  "style": "control",
   "tags": [
     "desktop",
     "plugins",

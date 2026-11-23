@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "MIT",
   "summary": "Analog-inspired bass, keys, leads and pads with dual oscillators/LFOs and 16 chord slots. UI and current pad policy checked on MPC XL OS3.10.1.12; other models not tested for this release. Requires OS3.10.1+.",
-  "style": "synth",
+  "style": "polysynth",
   "tags": [
     "synth",
     "analog",

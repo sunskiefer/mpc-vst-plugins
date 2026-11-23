@@ -1,5 +1,5 @@
 { "id": "mantra", "name": "MANTRA", "author": "L'Cronx", "repo": "sunskiefer/MANTRA",
-  "kind": "effect", "style": "multi-fx", "tags": ["multi-fx", "gate", "filter", "delay", "glitch", "lo-fi", "sequencer", "sound-design"],
+  "kind": "effect", "style": "glitch-performance", "tags": ["multi-fx", "gate", "filter", "delay", "glitch", "lo-fi", "sequencer", "sound-design"],
   "license": "PolyForm-Noncommercial-1.0.0", "source_available": true, "asset_pattern": "*-mpc-armv7.zip",
   "screenshot": "https://raw.githubusercontent.com/sunskiefer/MANTRA/v0.2.0/docs/screenshots/page_0.png",
   "summary": "A rhythmic multi-effect: a pattern chops, filters, crushes, delays and glitches the sound in time with the song. Two layers of six effects (filter, distortion, delay, lo-fi, flanger, glitch) in any order, eight 32-step modulators locked to the song, a 24-slot matrix, per-page randomiser, 419 factory presets plus unlimited own. MPC OS 3.x." }

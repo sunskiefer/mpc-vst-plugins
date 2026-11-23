@@ -1826,6 +1826,46 @@ class ListingsTest(unittest.TestCase):
         self.assertIn("https://open-mpc.github.io/other-sources.html", open(os.path.join(out, "other-sources.html")).read())
 
 
+
+class StyleMapTest(unittest.TestCase):
+    """tools/style_map.py and catalog/styles.json: the fixed styles per kind."""
+
+    def test_styles_file_is_well_formed(self):
+        import style_map
+        styles = json.load(open(os.path.join(os.path.dirname(HERE), "catalog", "styles.json")))["styles"]
+        self.assertEqual(sorted(styles), ["addin", "effect", "instrument", "midi"])
+        for kind, items in styles.items():
+            ids = [x["id"] for x in items]
+            self.assertEqual(len(ids), len(set(ids)), kind)
+            froms = [f for x in items for f in x["from"]]
+            self.assertEqual(len(froms), len(set(froms)), kind)   # an old style maps to one new style
+        for k, v in style_map.OVERRIDES.items():
+            self.assertTrue(any(v in {x["id"] for x in items} for items in styles.values()), (k, v))
+
+    def test_propose(self):
+        import style_map
+        styles = json.load(open(os.path.join(os.path.dirname(HERE), "catalog", "styles.json")))["styles"]
+        p = lambda **e: style_map.propose(dict({"id": "x", "kind": "instrument", "tags": []}, **e), styles)[0]
+        self.assertEqual(p(style="electric-piano"), "keys-organ")                 # from an old style
+        self.assertEqual(p(style="synth", tags=["wavetable", "polyphonic"]), "wavetable")   # tags, first rule wins
+        self.assertEqual(p(style="synth", tags=["acid"]), "mono-bass")
+        self.assertEqual(p(style="synth"), None)                                  # needs a decision
+        self.assertEqual(p(kind="effect", style="saturation"), "distortion")
+        self.assertEqual(p(kind="instrument", role="midi", style="sequencer", tags=["euclidean"]), "generative")
+        self.assertEqual(p(id="roads", style="synth", tags=["polyphonic"]), "keys-organ")   # a reviewed override wins
+
+    def test_every_live_entry_is_on_the_list(self):
+        import style_map
+        entries, problems = catalog_build.load_registry(os.path.join(os.path.dirname(HERE), "catalog", "plugins"))
+        self.assertEqual([m for _, m in problems if "styles.json" in m], [])
+
+    def test_site_shows_labels(self):
+        import catalog_site
+        labels = json.loads(catalog_site.style_labels())
+        self.assertEqual(labels["mono-bass"], "Mono & bass")
+        self.assertNotIn("utility", labels)   # different labels per kind: left to the slug ("Utility")
+
+
 class IssuesTest(unittest.TestCase):
     T = "Catalog: a %s failed validation"
 
@@ -1998,7 +2038,10 @@ class SiteTest(unittest.TestCase):
     def test_registry_style_and_source_available(self):
         e = dict(BuildTest.ENTRY, license="MAME license")
         self.assertTrue(catalog_build.check_entry(e))
-        self.assertEqual(catalog_build.check_entry(dict(e, source_available=True, style="rompler", tags=["jv-880"])), [])
+        self.assertEqual(catalog_build.check_entry(dict(e, source_available=True, style="sampler-rompler", tags=["jv-880"])), [])
+        self.assertTrue(any("catalog/styles.json" in x for x in catalog_build.check_entry(dict(BuildTest.ENTRY, style="rompler"))))   # not on the fixed list
+        self.assertEqual(catalog_build.check_entry(dict(BuildTest.ENTRY, kind="effect", style="reverb")), [])
+        self.assertTrue(catalog_build.check_entry(dict(BuildTest.ENTRY, kind="effect", style="polysynth")))   # an instrument style on an effect
         self.assertTrue(catalog_build.check_entry(dict(BuildTest.ENTRY, style="Bad Style")))
 
     def test_registry_license_expression(self):

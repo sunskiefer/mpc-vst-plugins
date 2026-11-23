@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "Stereo tape colour and digital degradation, expressive Wow/Flutter, twelve tone profiles, crackle, stereo spread, independent noise textures and Silence Gate. Fifteen presets and touchscreen Q-Links.",
-  "style": "effect",
+  "style": "lofi-tape",
   "tags": [
     "tape",
     "lo-fi",

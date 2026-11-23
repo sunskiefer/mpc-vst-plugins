@@ -4,7 +4,7 @@
   "author": "3dthc",
   "repo": "3dthc/mpc-addin-nova-audio",
   "kind": "addin",
-  "style": "utility",
+  "style": "audio",
   "tags": [
     "audio-input",
     "hardware-synth",

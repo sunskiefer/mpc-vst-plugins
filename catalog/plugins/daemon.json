@@ -5,7 +5,7 @@
   "repo": "sd88me/mpc-vst-daemon",
   "kind": "instrument",
   "role": "midi",
-  "style": "sequencer",
+  "style": "generative",
   "tags": [
     "generative",
     "ai",

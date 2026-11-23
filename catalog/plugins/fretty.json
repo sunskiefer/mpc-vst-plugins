@@ -3,7 +3,7 @@
   "name": "Fretty",
   "author": "3dthc",
   "repo": "3dthc/fretty-mpc",
-  "kind": "instrument",
+  "kind": "instrument", "style": "sampler-rompler",
   "license": "MIT",
   "summary": "A guitar instrument with an animated fretboard: acoustic, electric, bass, harp, violin, zither and folk sounds with a synth layer, chorus and distortion. 110 presets with a browser page by category. Also a VST3 for Mac and Windows and an Audio Unit for Mac.",
   "screenshot": "https://raw.githubusercontent.com/3dthc/fretty-mpc/main/docs/images/play_sunburst.png",

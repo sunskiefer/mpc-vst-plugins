@@ -1,5 +1,5 @@
 { "id": "je8086", "name": "JE-8086", "author": "sd88me", "repo": "sd88me/mpc-vst-je8086",
-  "kind": "instrument", "style": "synth", "tags": ["emulation", "virtual-analog", "rompler-free", "gen2"], "license": "GPL-3.0-only",
+  "kind": "instrument", "style": "polysynth", "tags": ["emulation", "virtual-analog", "rompler-free", "gen2"], "license": "GPL-3.0-only",
   "summary": "An emulation of the Roland JP-8000's original firmware (gearmulator's JE-8086 core) as a native instrument for Gen2 MPC devices, with a touchscreen skin in the JP-8000's look, envelope graphs, named favourites, RANDOM and INIT, tempo sync and Q-Link control. Gen2 (aarch64) only; you need your own JP-8000 ROM.",
   "asset_pattern": "*-mpc-aarch64.zip",
   "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-je8086/v1.0.0/docs/screenshots/main.png",

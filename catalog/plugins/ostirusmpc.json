@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "GPL-3.0-only",
   "summary": "Virus TI Snow hardware emulation for Gen2 MPC standalone, running the user's own compatible firmware. Eight touch pages, Q-Link maps, USER A-D banks, and Single-patch SysEx/MIDI file exchange. No firmware is included.",
-  "style": "synth",
+  "style": "polysynth",
   "tags": ["synth", "virtual-analog", "emulation"],
   "asset_pattern": "OsTirusMPC-[0-9]*-mpc-aarch64.zip",
   "homepage": "https://github.com/dnkkit/OsTirusMPC",

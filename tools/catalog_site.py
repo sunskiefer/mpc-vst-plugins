@@ -180,6 +180,14 @@ def render_page(page, pages):
     return tpl
 
 
+def style_labels(path=os.path.join(os.path.dirname(HERE), "catalog", "styles.json")):
+    """{style id: label} from catalog/styles.json, as JSON for the page ("{}" without the file). One id has one label in every kind."""
+    if not os.path.isfile(path):
+        return "{}"
+    labels = {s["id"]: s["label"] for kind in json.load(open(path, encoding="utf-8"))["styles"].values() for s in kind if s["id"] != "utility"}
+    return json.dumps(labels, separators=(",", ":"), ensure_ascii=False).replace("<", "\\u003c")
+
+
 def render(catalog, pages=(), helper_hashes=None, patches_html="", apps_html="", n_patches=0, n_apps=0, fw_html="", n_fw=0, listings_doc=None):
     """The catalog page HTML for a catalog dict. The JSON is embedded in a <script type=application/json>, so '<' is escaped."""
     data = json.dumps(catalog, separators=(",", ":"), ensure_ascii=False).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
@@ -195,6 +203,7 @@ def render(catalog, pages=(), helper_hashes=None, patches_html="", apps_html="",
         .replace("/*ALT_OS_HTML*/", fw_html) \
         .replace("<!--OTHER_TAB-->", site_listings.tab_html() if listings_doc else "") \
         .replace("<!--OTHER_PANEL-->", site_listings.panel_html(listings_doc) if listings_doc else "") \
+        .replace("/*STYLE_LABELS*/", style_labels()) \
         .replace("/*LISTINGS_JSON*/", site_listings.data_json(listings_doc) if listings_doc else "[]").replace(marker, data)
 
 

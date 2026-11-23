@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "GPL-3.0-only",
   "summary": "Pultec-style WDF EQ with tube warmth, AIR, stereo VU meters and four-band side EQ.",
-  "style": "eq",
+  "style": "filter-eq",
   "tags": [
     "eq",
     "pultec",

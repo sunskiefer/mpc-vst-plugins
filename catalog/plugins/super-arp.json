@@ -5,7 +5,7 @@
   "repo": "saustin2010/mpc-vst-superarp",
   "kind": "instrument",
   "role": "midi",
-  "style": "sequencer",
+  "style": "arp-chord",
   "tags": [
     "arpeggiator",
     "midi",

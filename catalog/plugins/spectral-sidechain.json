@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "One-band sidechain dynamic EQ: the kick ducks the bass frequencies, with a live spectrum display and a touchscreen skin.",
-  "style": "eq",
+  "style": "filter-eq",
   "tags": [
     "sidechain",
     "dynamic-eq",

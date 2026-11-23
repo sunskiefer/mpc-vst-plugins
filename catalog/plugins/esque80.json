@@ -1,4 +1,4 @@
 { "id": "esque80", "name": "ESQUE80", "author": "Lichthaus", "repo": "lichthaus/mpc-vst-esque80",
-  "kind": "instrument", "style": "synth", "tags": ["emulation", "wavetable", "sq-80"], "license": "MIT",
+  "kind": "instrument", "style": "wavetable", "tags": ["emulation", "wavetable", "sq-80"], "license": "MIT",
   "summary": "An 8-voice cross-wave synthesizer modelled on the Ensoniq SQ-80: three wavetable oscillators per voice, a 4-pole low-pass filter, four envelopes with touch-editable displays, three LFOs and a 15-source mod matrix, on an eleven-page skin with Q-Link banks per panel. Plays on built-in stand-in waves; add your own wave ROM for the original sound.",
   "screenshot": "https://raw.githubusercontent.com/lichthaus/mpc-vst-esque80/v0.9.1/docs/screenshots/esque80-card.png" }

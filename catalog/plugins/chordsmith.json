@@ -5,7 +5,7 @@
   "repo": "jacob-sabella/mpc-vst-chordsmith",
   "kind": "instrument",
   "role": "midi",
-  "style": "utility",
+  "style": "arp-chord",
   "tags": [
     "chords",
     "midi",

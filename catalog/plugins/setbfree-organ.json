@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "GPL-2.0-or-later",
   "summary": "Tonewheel organ with drawbars, selectable generator foldback, percussion, scanner, editable Leslie and keyboard splits.",
-  "style": "organ",
+  "style": "keys-organ",
   "tags": [
     "tonewheel",
     "drawbar",

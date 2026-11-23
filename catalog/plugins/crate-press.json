@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "Stereo character and three-band ducking compressor with eight latched/momentary effects and sound Dice. UI checked on MPC XL OS3.10.1.12; current physical controls/audio not certified. Requires MPC OS3.10.1+.",
-  "style": "compressor",
+  "style": "dynamics",
   "tags": [
     "compressor",
     "multiband",

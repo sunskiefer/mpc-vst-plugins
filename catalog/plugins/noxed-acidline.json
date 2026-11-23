@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "MIT",
   "summary": "Monophonic acid bass synth with accent, slide, a transport-synced 16-step pitch/time sequencer and an optional Open303 sound model. Includes six presets.",
-  "style": "synth",
+  "style": "mono-bass",
   "tags": [
     "synth",
     "acid",

@@ -5,7 +5,7 @@
   "repo": "saustin2010/mpc-vst-stevequencer16",
   "kind": "instrument",
   "role": "midi",
-  "style": "sequencer",
+  "style": "step-sequencer",
   "tags": [
     "step-sequencer",
     "midi",

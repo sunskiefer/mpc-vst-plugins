@@ -1,5 +1,5 @@
 { "id": "twenty", "name": "Twenty", "author": "Stampman3000", "repo": "stampman3000-jpg/twenty",
-  "kind": "instrument", "style": "synth", "tags": ["synth"], "license": "AGPL-3.0-or-later",
+  "kind": "instrument", "style": "mono-bass", "tags": ["synth"], "license": "AGPL-3.0-or-later",
   "summary": "Semi-modular MS-20-style synth with a 35-jack patchbay. Ported to MPC by Stampman3000; all synthesis DSP is Audio Tools' AT20V, unchanged.",
   "screenshot": "https://raw.githubusercontent.com/stampman3000-jpg/twenty/v1.0.0/screenshots/twenty.png",
   "asset_pattern": "Twenty-[0-9]*-mpc-armv7.zip" }

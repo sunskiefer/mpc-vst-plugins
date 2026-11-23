@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "MIT",
   "summary": "8-voice subtractive synth: two oscillators plus sub, SVF filter, drift, stereo chorus and a six-barrel rotary gate. 14 sounds.",
-  "style": "synth",
+  "style": "polysynth",
   "tags": [
     "subtractive",
     "polyphonic",

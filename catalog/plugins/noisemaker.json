@@ -4,7 +4,7 @@
   "author": "saustin2010",
   "repo": "saustin2010/mpc-vst-noisemaker",
   "kind": "instrument",
-  "style": "synth",
+  "style": "polysynth",
   "tags": [
     "tal",
     "virtual-analog",

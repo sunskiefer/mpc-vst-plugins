@@ -1,0 +1,47 @@
+{
+ "_comment": "One fixed list of styles per kind (adopted 2026-11-23): an entry's style must be one of its kind's ids (catalog_build.check_entry; midi = an instrument with role midi). label is what the site shows; from lists the old free-form styles each replaced (tools/style_map.py). Add a style here in a PR.",
+ "schema": 1,
+ "styles": {
+  "instrument": [
+   {"id": "polysynth", "label": "Polysynth", "from": []},
+   {"id": "mono-bass", "label": "Mono & bass", "from": ["bass-synth"]},
+   {"id": "wavetable", "label": "Wavetable", "from": []},
+   {"id": "fm", "label": "FM", "from": ["fm-synth"]},
+   {"id": "macro-hybrid", "label": "Macro & hybrid", "from": []},
+   {"id": "physical-modeling", "label": "Physical modelling", "from": ["physical-modeling"]},
+   {"id": "keys-organ", "label": "Keys & organ", "from": ["electric-piano", "organ"]},
+   {"id": "drum-machine", "label": "Drum machine", "from": ["drum-machine"]},
+   {"id": "sampler-rompler", "label": "Sampler & rompler", "from": ["sampler", "rompler", "workstation"]},
+   {"id": "groovebox", "label": "Groovebox", "from": ["groovebox"]},
+   {"id": "experimental", "label": "Experimental & drone", "from": ["modular", "radio-granular", "sequencer"]},
+   {"id": "dj-players", "label": "DJ & players", "from": ["dj", "sample-browser"]},
+   {"id": "utility", "label": "Utility", "from": ["utility", "editor"]}
+  ],
+  "midi": [
+   {"id": "step-sequencer", "label": "Step sequencer", "from": []},
+   {"id": "generative", "label": "Generative", "from": []},
+   {"id": "arp-chord", "label": "Arps & chords", "from": []},
+   {"id": "utility", "label": "Utility & modulation", "from": ["utility", "modulation"]}
+  ],
+  "effect": [
+   {"id": "reverb", "label": "Reverb", "from": ["reverb"]},
+   {"id": "delay", "label": "Delay & echo", "from": ["delay"]},
+   {"id": "modulation", "label": "Modulation", "from": ["chorus", "modulation"]},
+   {"id": "distortion", "label": "Distortion & saturation", "from": ["saturation", "distortion", "amp-sim"]},
+   {"id": "lofi-tape", "label": "Lo-fi & tape", "from": ["tape", "bitcrusher"]},
+   {"id": "dynamics", "label": "Dynamics", "from": ["compressor", "dynamics"]},
+   {"id": "filter-eq", "label": "Filter & EQ", "from": ["filter", "eq"]},
+   {"id": "granular", "label": "Granular & spectral", "from": ["granular", "resonator"]},
+   {"id": "pitch-vocal", "label": "Pitch & vocal", "from": ["pitch", "vocoder"]},
+   {"id": "glitch-performance", "label": "Glitch & performance", "from": ["glitch", "looper", "dj", "sampler"]},
+   {"id": "multi-fx", "label": "Multi-FX", "from": ["multi-fx", "multi-effect", "effect", "modular"]},
+   {"id": "mixing", "label": "Mixing & mastering", "from": ["mixing"]},
+   {"id": "utility", "label": "Utility & routing", "from": ["utility"]}
+  ],
+  "addin": [
+   {"id": "audio", "label": "Audio & recording", "from": ["audio-interface", "network-audio"]},
+   {"id": "control", "label": "Control & remote", "from": []},
+   {"id": "utility", "label": "Utility", "from": ["utility"]}
+  ]
+ }
+}

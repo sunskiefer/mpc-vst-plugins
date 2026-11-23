@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "GPL-3.0-only",
   "summary": "Live buffer manipulation, rhythmic stutter and generative glitch with independent and combined Random Repeat modes.",
-  "style": "glitch",
+  "style": "glitch-performance",
   "tags": [
     "buffer",
     "stutter",

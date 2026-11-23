@@ -7,7 +7,7 @@
   "kind": "instrument",
   "license": "GPL-3.0-or-later",
   "screenshot": "https://raw.githubusercontent.com/Eurikon/mpc-vst-plugins/0b9a58444c7d84a78e38d95818eeb53172195782/media/monoslide.png",
-  "style": "synth",
+  "style": "mono-bass",
   "tags": [
     "303",
     "acid",

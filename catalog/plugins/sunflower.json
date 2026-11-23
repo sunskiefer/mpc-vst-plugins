@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "MIT",
   "summary": "Fibonacci sequencer: two arms step a sunflower lattice at the golden angle over a self-sounding percussion bed. 14 modes, live playhead.",
-  "style": "sequencer",
+  "style": "experimental",
   "tags": ["fibonacci", "generative", "sequencer", "golden-angle", "percussion"],
   "screenshot": "https://raw.githubusercontent.com/Luminous-Works/mpc-vst-sunflower/v1.0.0/docs/screenshots/spiral.png"
 }

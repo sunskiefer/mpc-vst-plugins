@@ -25,10 +25,15 @@ Design: `docs/CATALOG.md`. Formats: `docs/CATALOG_SPEC.md`.
    ```json
    { "id": "my-synth", "name": "My Synth", "author": "Your name", "repo": "you/my-synth-vst",
      "kind": "instrument", "license": "MIT", "summary": "One line.",
-     "style": "sampler", "tags": ["rompler"], "screenshot": "optional https URL", "youtube": "optional https://youtu.be/... link", "asset_pattern": "*-mpc-armv7.zip" }
+     "style": "sampler-rompler", "tags": ["rompler"], "screenshot": "optional https URL", "youtube": "optional https://youtu.be/... link", "asset_pattern": "*-mpc-armv7.zip" }
    ```
-   `style` and `tags` (lowercase slugs) feed the site's Style filter and search; pick a short, common word such as
-   `synth`, `sampler`, `drum-machine`, `reverb`, `delay`, `utility`. If your license is not on the open-source list but
+   `style` is one of the fixed styles for your plugin's kind (`catalog/styles.json`, which also has their labels; CI refuses any
+   other); `tags` are free lowercase slugs. Both feed the site's chips and search. The styles:
+   - Instruments: `polysynth`, `mono-bass`, `wavetable`, `fm`, `macro-hybrid`, `physical-modeling`, `keys-organ`, `drum-machine`, `sampler-rompler`, `groovebox`, `experimental`, `dj-players`, `utility`
+   - MIDI (`role: "midi"`): `step-sequencer`, `generative`, `arp-chord`, `utility`
+   - Effects: `reverb`, `delay`, `modulation`, `distortion`, `lofi-tape`, `dynamics`, `filter-eq`, `granular`, `pitch-vocal`, `glitch-performance`, `multi-fx`, `mixing`, `utility`
+   - Addins: `audio`, `control`, `utility`
+   If none fits, propose one in your PR (an entry in `catalog/styles.json`). If your license is not on the open-source list but
    the source is public, add `"source_available": true`: the plugin is listed with a "Restricted use" badge and
    its own license text shown. `screenshot` is an `https://` link to an image (a raw GitHub link to a PNG/JPG in your
    repo, pinned to a tag or commit); the card shows it in a 2:1 frame, cropping other shapes. Anything but `https://` is ignored.

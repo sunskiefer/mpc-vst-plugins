@@ -1,5 +1,5 @@
 { "id": "padstep-16", "name": "PadStep 16", "author": "Benoit", "repo": "frere12/padstep-16-mpc",
-  "kind": "instrument", "role": "midi", "style": "sequencer", "tags": ["step-sequencer", "midi", "pads", "303", "ratchet"],
+  "kind": "instrument", "role": "midi", "style": "step-sequencer", "tags": ["step-sequencer", "midi", "pads", "303", "ratchet"],
   "license": "MIT",
   "summary": "16-step mono MIDI step sequencer played from the MPC pads: per-step tie, slide, ratchet and chance, velocity shapes, 16 slots and song-locked chains.",
   "screenshot": "https://raw.githubusercontent.com/frere12/padstep-16-mpc/v0.6.0/docs/screenshots/padstep-16.png" }

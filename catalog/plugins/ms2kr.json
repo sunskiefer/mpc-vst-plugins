@@ -1,5 +1,5 @@
 { "id": "ms2kr", "name": "MS2KR", "author": "sd88me", "repo": "sd88me/mpc-vst-ms2kr",
-  "kind": "instrument", "style": "synth", "tags": ["emulation", "virtual-analog", "vocoder", "gen2"], "license": "GPL-3.0-only",
+  "kind": "instrument", "style": "polysynth", "tags": ["emulation", "virtual-analog", "vocoder", "gen2"], "license": "GPL-3.0-only",
   "summary": "An emulation of the MS2000R analog-modeling synth's own firmware (ms2000r-emu) as a native instrument for Gen2 MPC devices, with a six-page touchscreen skin laid out like the front panel, live LCD, favourites and Q-Link control. Gen2 (aarch64) only; you need your own ROM dumps.",
   "asset_pattern": "*-mpc-aarch64.zip",
   "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-ms2kr/v0.1.0/docs/screenshots/play.png",

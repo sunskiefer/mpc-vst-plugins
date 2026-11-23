@@ -4,7 +4,7 @@
   "author": "gmorb",
   "repo": "gmorb/mpc-vst-liminal-amp",
   "kind": "effect",
-  "style": "amp-sim",
+  "style": "distortion",
   "license": "MIT",
   "tags": [
     "nam",

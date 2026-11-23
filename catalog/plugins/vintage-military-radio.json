@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "Eight stereo tape-performance effects with six procedural noise layers and native chrome controls.",
-  "style": "tape",
+  "style": "lofi-tape",
   "tags": [
     "tape",
     "lo-fi",

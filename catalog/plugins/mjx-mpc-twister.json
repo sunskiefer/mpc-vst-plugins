@@ -6,7 +6,7 @@
   "kind": "addin",
   "license": "MIT",
   "summary": "MPC Live III on MPC OS 3.10.1.12 only. Turn your Twister knobs to reach all 16 Q-Links without changing banks. Press a knob to jump to a track or open a shortcut. The lights follow your settings and track selection. Installation needs root access, writes to internal storage, and restarts the MPC app.",
-  "style": "utility",
+  "style": "control",
   "tags": ["midi", "controller", "qlink"],
   "asset_pattern": "MJX-MPC-Twister-*-mpc-aarch64.zip",
   "min_os": "3.10.1"

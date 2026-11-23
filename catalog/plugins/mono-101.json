@@ -1,5 +1,5 @@
 { "id": "mono-101", "name": "Mono-101", "author": "sd88me", "repo": "sd88me/mpc-vst-mono101",
-  "kind": "instrument", "style": "synth", "tags": ["101", "mono", "bass", "lead", "circuit-model", "circuit-bent", "gen2"], "license": "AGPL-3.0-only",
+  "kind": "instrument", "style": "mono-bass", "tags": ["101", "mono", "bass", "lead", "circuit-model", "circuit-bent", "gen2"], "license": "AGPL-3.0-only",
   "summary": "A circuit-modelled SH-101 mono synth: a port of the Lemus engine, which solves the original schematic part by part, modified for the MPC. The manual's 40 sample sounds, user presets named on screen, and a Circuit Bent page based on Nova-mod and more (PWM, triangle VCO, overdrive, VCF FM, LFO range, key trigger, tempo sync). Gen2 only, CPU heavy.",
   "asset_pattern": "*-mpc-aarch64.zip",
   "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-mono101/v0.5.0/docs/screenshots/vco-tab.png",

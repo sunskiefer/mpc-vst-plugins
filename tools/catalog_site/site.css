@@ -402,20 +402,21 @@ details.more > dl.meta { margin-top: 4px; }
 .card .folds > details.fold > dl.meta { margin: 0; padding-top: 0; border-top: 0; }
 
 /* Device switch at the top of the filters: MPC / Force or MPC Sample, as two big buttons with counts like the tabs. */
-.plat { margin: 0 0 0 auto; display: flex; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: max-content; max-width: 100%; }
-.plat button { font: 700 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--panel);
-  border: 0; padding: 9px 14px; cursor: pointer; white-space: nowrap; }
-.plat button + button { border-left: 1px solid var(--line); }
-.plat button:hover { color: var(--fg); }
-.plat button[aria-pressed=true] { color: #fff; background: var(--accent); }
-.plat .n { font: 500 12px var(--text); letter-spacing: 0; margin-left: 6px; opacity: .8; }
-.plat .plat-l { font: 600 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--panel-2);
-  border-right: 1px solid var(--line); padding: 0 12px; display: flex; align-items: center; }
-@media (max-width: 520px) { .plat { width: 100%; margin: 0; } .plat button { flex: 1; padding: 10px 8px; } .plat .plat-l { padding: 0 8px; } }
+/* Device switch: the same look as the kind tabs beside it, with a small label (2026-11-23) */
+.plat { margin: 0 0 0 auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.plat .plat-l { font: 600 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.plat button { font: 700 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 13px; cursor: pointer; white-space: nowrap; }
+.plat button:hover { border-color: var(--fg); }
+.plat button[aria-pressed=true] { color: var(--lcd-fg); background: var(--lcd-bg); border-color: var(--lcd-bg); }
+.plat .n { font: 500 12px var(--text); letter-spacing: 0; margin-left: 4px; opacity: .7; }
+@media (max-width: 520px) { .plat { width: 100%; margin: 0; } .plat button { flex: 1; } }
 /* Plugin kinds: a second, lighter row of tabs inside the Plugins section */
 /* A section's first row: kinds on the left (Plugins, Other sources), the device switch on the right */
 .secbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 12px 0 10px; }
 .secbar:empty { display: none; }
+.secbar .tabintro { flex: 1 1 360px; margin: 0; }   /* a section without kinds: its intro shares the row with the device switch */
+#panel-patches > blockquote { display: none; }   /* the tab's own intro says the same; patches.html keeps it */
 .kinds { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .kinds [role=tab] { font: 700 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); background: var(--panel);
   border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 13px; cursor: pointer; }
