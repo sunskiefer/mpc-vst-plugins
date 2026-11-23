@@ -804,7 +804,15 @@ class AddinTest(Base):
 
     def test_installer_shell_tests(self):
         """tools/test_addin.sh: the LD_PRELOAD installer against scratch systemd trees."""
-        r = subprocess.run(["bash", os.path.join(HERE, "test_addin.sh")], capture_output=True, text=True)
+        # It fakes a read-only root with file permissions, which root ignores: as root, run it as an unprivileged user (as CI does).
+        drop = []
+        if hasattr(os, "geteuid") and os.geteuid() == 0 and shutil.which("setpriv"):
+            import pwd
+            try:
+                pwd.getpwnam("nobody"); drop = ["setpriv", "--reuid=nobody", "--regid=nogroup", "--clear-groups"]
+            except KeyError:
+                pass
+        r = subprocess.run(drop + ["bash", os.path.join(HERE, "test_addin.sh")], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-2000:])
 
 
@@ -2748,13 +2756,15 @@ class InstallerTest(Base):
                    MPC_TEST_LOG=os.path.join(self.tmp, "mpc_ctl.log"), MPC_MOUNTS=self.mounts)
         return subprocess.run(["sh", os.path.join(self.top, script), "-y", *args], cwd=self.top, env=env, capture_output=True, text=True)
 
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "as root the install really writes into /media/<card>/Synths on this "
+                     "machine (card paths must be under /media); CI runs as a normal user, where the copy is refused after the folder is chosen")
     def test_on_an_mpc_sample_no_t_means_the_sd_card(self):
         """The MPC Sample has a read-only root: without -t the installer takes its card's Synths folder (the one MPC lists, on a card
         that is mounted), never /sdcard/Synths, and says when no card is in."""
         self.sample_device(["/usr/share/x/Synths", "/media/OLD CARD/Synths", "/media/MY CARD/Synths"], ["/media/MY CARD", "/media/az01-internal"])
         r = self.run_default("install.sh")
         self.assertIn("using /media/MY CARD/Synths (the MPC Sample's SD card)", r.stdout)
-        self.assertNotIn("/sdcard", r.stdout + r.stderr)
+        self.assertNotIn("/sdcard/Synths", r.stdout + r.stderr)   # never the internal Synths folder (removing an old /sdcard/vst copy is fine)
         self.sample_device([], ["/media/SD2"])           # MPC has not listed it yet: the mounted card
         self.assertIn("using /media/SD2/Synths", self.run_default("install.sh").stdout)
         self.sample_device(["/media/MPCSD/Synths"], [])  # no card in
