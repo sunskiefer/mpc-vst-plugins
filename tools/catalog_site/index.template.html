@@ -62,6 +62,7 @@
     <button type="button" role="tab" id="tab-addin" aria-controls="panel-plugins" aria-selected="false" data-tab="addin" tabindex="-1">Addins <span class="n" id="n-addin"></span></button>
     <button type="button" role="tab" id="tab-patches" aria-controls="panel-patches" aria-selected="false" data-tab="patches" tabindex="-1">Device patches <span class="n">/*N_PATCHES*/</span></button>
     <button type="button" role="tab" id="tab-apps" aria-controls="panel-apps" aria-selected="false" data-tab="apps" tabindex="-1">Companion apps <span class="n">/*N_APPS*/</span></button>
+    <button type="button" role="tab" id="tab-altos" aria-controls="panel-altos" aria-selected="false" data-tab="altos" tabindex="-1"><span id="l-altos">Alt OS</span> <span class="n" id="n-altos"></span></button>
   </div>
 
   <div role="tabpanel" id="panel-plugins" aria-labelledby="tab-all">
@@ -137,6 +138,12 @@
     </div>
     <div class="grid" id="apps">/*APPS_HTML*/</div>
     <p class="empty" id="a-empty" hidden>No companion apps match.</p>
+  </div>
+
+  <div role="tabpanel" id="panel-altos" aria-labelledby="tab-altos" hidden>
+    <p class="tabintro">Alternative OS: standalone apps that run on the device's own system and take the place of the stock <span id="os-dev">MPC</span> app while they run. They don't replace the firmware. Not plugins, and the catalog installs none of them. Each one listed has a device report, starts only on the stock firmware it lists, writes nothing to the system, and gives you the stock device back when you boot without its card or drive. Read its flags before you install.</p>
+    <div class="grid" id="altos">/*ALT_OS_HTML*/</div>
+    <p class="empty" id="os-empty" hidden></p>
   </div>
 
   <footer>Community-provided software. Installing runs a script as root on your device: check the source and the checksum first. Not affiliated with or endorsed by Akai Professional. Use at your own risk, with no warranty: a plugin or patch can crash MPC, lose unsaved work or, at worst, leave the device needing a reinstall of its OS. Back up first.<br>
@@ -576,6 +583,14 @@ function render() {
   $("n-plat-sample").textContent = P.filter(function (p) { return platOk(p, "sample"); }).length;
   document.querySelectorAll("[data-plat]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-plat") === state.plat)); });
   $("l-gen").hidden = state.plat === "sample";
+  /* the Alt OS tab follows the device switch: MPC Sample OS under MPC Sample, Alt OS (standalone MPCs and Force) otherwise */
+  var fwDev = state.plat === "sample" ? "mpc-sample" : "mpc", fwN = 0;
+  document.querySelectorAll("#altos [data-device]").forEach(function (c) { var on = c.getAttribute("data-device") === fwDev; c.hidden = !on; fwN += on ? 1 : 0; });
+  $("l-altos").textContent = state.plat === "sample" ? "MPC Sample OS" : "Alt OS";
+  $("os-dev").textContent = state.plat === "sample" ? "MPC Sample" : "MPC";
+  $("n-altos").textContent = fwN;
+  $("os-empty").hidden = fwN > 0;
+  $("os-empty").textContent = state.plat === "sample" ? "No MPC Sample operating systems are listed yet." : "No alternative OS for the standalone MPCs is listed yet.";
   PLUGIN_TABS.forEach(function (k) { $("n-" + k).textContent = P.filter(function (p) { return inTabKind(p, k) && platOk(p); }).length; });   /* tab counts follow the device switch */
   var inTab = P.filter(function (p) { return (PLUGIN_TABS.indexOf(state.tab) < 0 || inTabKind(p, state.tab)) && platOk(p); }).length;
   $("count").textContent = nOut + " of " + inTab + " " + (state.tab === "midi" ? "MIDI plugins" : state.tab === "all" ? "plugins" : (KINDS[state.tab] || "plugins").toLowerCase());
@@ -615,13 +630,13 @@ function load() {
   }
 }
 /* Tabs: Instruments, Effects and Addins share the filter bar and grid (the tab is the kind); Device patches and Companion apps are their own panels. The tab is part of the URL hash. */
-var TABS = ["all", "instrument", "midi", "effect", "addin", "patches", "apps"];
+var TABS = ["all", "instrument", "midi", "effect", "addin", "patches", "apps", "altos"];
 function showTab(t, focus) {
   state.tab = t;
   TABS.forEach(function (n) {
     var on = n === t;
     $("tab-" + n).setAttribute("aria-selected", on ? "true" : "false"); $("tab-" + n).tabIndex = on ? 0 : -1;
-    if (n === "patches" || n === "apps") $("panel-" + n).hidden = !on;
+    if (n === "patches" || n === "apps" || n === "altos") $("panel-" + n).hidden = !on;
     if (on && focus) $("tab-" + n).focus();
   });
   $("panel-plugins").hidden = PLUGIN_TABS.indexOf(t) < 0;
@@ -630,10 +645,10 @@ function showTab(t, focus) {
 }
 document.querySelector(".tabs").addEventListener("click", function (e) { var b = e.target.closest("[data-tab]"); if (b) showTab(b.getAttribute("data-tab")); });
 document.querySelector(".tabs").addEventListener("keydown", function (e) {
-  var i = TABS.indexOf(state.tab), d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-  if (e.key === "Home") d = -i; else if (e.key === "End") d = TABS.length - 1 - i;
+  var T = TABS, i = T.indexOf(state.tab), d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+  if (e.key === "Home") d = -i; else if (e.key === "End") d = T.length - 1 - i;
   if (d === undefined) return;
-  e.preventDefault(); showTab(TABS[(i + d + TABS.length) % TABS.length], true);
+  e.preventDefault(); showTab(T[(i + d + T.length) % T.length], true);
 });
 addEventListener("hashchange", function () { load(); sync(); render(); showTab(state.tab); modal(); });
 /* Plugin popup: the screenshot opens the card over a dark backdrop. Its link is the page's hash plus p=<catalog id> (ids never

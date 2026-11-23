@@ -110,6 +110,16 @@ An addin (a library MPC loads when it starts, through `LD_PRELOAD`) is listed th
 entry. Package it with `tools/release_addin.py` instead of `release.py`: see `docs/ADDINS.md`. If your library replaces a function
 another addin also replaces and either of you doesn't pass the call on (no `dlsym`/`dlvsym` lookup), both cards say so: docs/ADDINS.md.
 
+## Alternative OS
+An app that replaces the stock MPC app at boot is listed from `catalog/alt_os.json` on the site's Alt OS tab: **MPC Sample OS** under
+the MPC Sample switch (`"device": "mpc-sample"`), **Alt OS** under MPC / Force (`"device": "mpc"` plus the `models` it runs on).
+Open a PR adding one object to `systems` (fields: docs/CATALOG_SPEC.md, "Alternative OS"). Before you do, you need: a device report
+on a real device for the version you list (first boot, normal use, returning to the stock app, uninstall), a check of the stock binary's
+hash before starting, nothing written to the root filesystem, the stock device back when booting without your card or drive, a way to skip
+it at boot, the stock app's data left alone, full source (kernel modules too) and no third-party content or manufacturer branding you lack
+permission for. Root, kernel modules, USB gadget changes and network services are fine but must be declared in `flags`; a maintainer
+reviews them and adds `flags_reviewed`, and the card shows them. `python3 tools/alt_os_check.py` checks the file.
+
 ## Companion apps
 A desktop tool that works with a standalone MPC but is not a plugin (for example MPC Link) is listed on the site's **Companion apps**
 tab from `catalog/apps.json`, not from `catalog/plugins/`. Open a PR adding one object to `apps`: `id`, `title`, `summary`, `author`,

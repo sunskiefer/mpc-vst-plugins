@@ -47,6 +47,8 @@ jobs:
           [ -z "$ids" ] || python3 tools/catalog_build.py --require-portable $ids
       - name: Validate the companion apps
         run: python3 tools/app_check.py
+      - name: Validate the alternative OSes
+        run: python3 tools/alt_os_check.py
       - name: Build the catalog
         if: ${{ github.event_name != 'pull_request' }}
         env:

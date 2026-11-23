@@ -15,6 +15,7 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import app_check  # noqa: E402
+import alt_os_check  # noqa: E402
 import catalog_check  # noqa: E402
 import deps  # noqa: E402
 
@@ -3329,6 +3330,109 @@ class AppResolveTest(unittest.TestCase):
         self.assertEqual(len(app_check.check(bad)[0]), 1)
         no_source = self.doc(); del no_source["apps"][0]["release"]; del no_source["apps"][0]["assets"]
         self.assertIn("needs 'release'", app_check.check(no_source)[0][0])
+
+
+class AltOsTest(unittest.TestCase):
+    """tools/alt_os_check.py and the Alt OS tab (MPC Sample OS / Alt OS): entry requirements agreed in issue #958."""
+
+    SHA = "ab" * 32
+
+    def doc(self):
+        return {"schema": 1, "systems": [{
+            "id": "test-os", "title": "Test OS", "device": "mpc-sample", "summary": "A groovebox OS.", "author": "Someone", "license": "AGPL-3.0-only",
+            "repo": "o/test-os", "release": "https://github.com/o/test-os/releases/tag/v1.0.0", "version": "1.0.0",
+            "download": {"url": "https://github.com/o/test-os/releases/download/v1.0.0/test-os-sd.zip", "sha256": self.SHA},
+            "stock_firmware": [{"version": "1.3.0.12", "binary_hash": "cd" * 16}],
+            "tested": [{"by": "tester", "date": "2026-11-20", "version": "1.0.0", "firmware": "1.3.0.12",
+                        "covered": ["first-boot", "normal-use", "return-to-stock", "uninstall"]}],
+            "footprint": {"rootfs_writes": False, "without_media": "stock", "uninstall": "Delete the TestOS folder from the card."},
+            "boot_skip": "Answer No at the stock autorun prompt.",
+            "user_data": {"changes_stock_data": False, "writes_outside": []},
+            "content": {"source_complete": True, "third_party_cleared": True, "no_manufacturer_branding": True},
+            "flags": {"root": True, "kernel_modules": False, "usb_gadget": False,
+                      "network": [{"port": 80, "auth": False, "purpose": "web upload over USB"}]},
+            "flags_reviewed": {"by": "a-maintainer", "date": "2026-11-21", "flags": ["root", "network"]}}]}
+
+    def errs(self, doc):
+        return alt_os_check.check(doc)[0]
+
+    def test_repo_file_and_valid_entry(self):
+        root = os.path.dirname(HERE)
+        self.assertEqual(alt_os_check.check(json.load(open(os.path.join(root, "catalog", "alt_os.json"))))[0], [])
+        self.assertEqual(self.errs(self.doc()), [])
+
+    def test_device_report_must_cover_everything_for_the_listed_version(self):
+        d = self.doc(); d["systems"][0]["tested"][0]["covered"].remove("return-to-stock")
+        self.assertTrue(any("missing return-to-stock" in x for x in self.errs(d)))
+        d = self.doc(); d["systems"][0]["tested"][0]["version"] = "0.9.0"
+        self.assertTrue(any("no complete device report" in x for x in self.errs(d)))
+        d = self.doc(); d["systems"][0]["tested"] = []
+        self.assertTrue(any("at least one device report" in x for x in self.errs(d)))
+        d = self.doc(); d["systems"][0]["tested"][0]["firmware"] = "2.0"
+        self.assertTrue(any("stock_firmware's versions" in x for x in self.errs(d)))
+
+    def test_system_and_user_data_left_alone_and_content_cleared(self):
+        for path, val, msg in ((("footprint", "rootfs_writes"), True, "rootfs_writes"), (("footprint", "without_media"), "custom", "without_media"),
+                               (("user_data", "changes_stock_data"), True, "changes_stock_data"), (("content", "third_party_cleared"), False, "third_party_cleared"),
+                               (("content", "no_manufacturer_branding"), None, "no_manufacturer_branding")):
+            d = self.doc(); d["systems"][0][path[0]][path[1]] = val
+            self.assertTrue(any(msg in x for x in self.errs(d)), msg)
+        d = self.doc(); d["systems"][0]["download"]["sha256"] = "x"
+        self.assertTrue(any("download needs" in x for x in self.errs(d)))
+        d = self.doc(); del d["systems"][0]["boot_skip"]
+        self.assertIn("systems[0]: missing 'boot_skip'", self.errs(d))
+
+    def test_flags_need_a_matching_maintainer_review(self):
+        d = self.doc(); d["systems"][0]["flags"]["kernel_modules"] = True
+        self.assertTrue(any("flags_reviewed" in x and "kernel_modules" in x for x in self.errs(d)))
+        d = self.doc(); del d["systems"][0]["flags_reviewed"]
+        self.assertTrue(any("flags_reviewed" in x for x in self.errs(d)))
+        d = self.doc(); s = d["systems"][0]; s["flags"] = {"root": False, "kernel_modules": False, "usb_gadget": False, "network": []}; del s["flags_reviewed"]
+        self.assertEqual(self.errs(d), [])
+        d = self.doc(); del d["systems"][0]["flags"]["usb_gadget"]
+        self.assertTrue(any("flags must say" in x for x in self.errs(d)))
+
+    def test_bundled_plugins_are_pinned_catalog_entries(self):
+        d = self.doc(); d["systems"][0]["bundled_plugins"] = [{"id": "no-such-plugin", "version": "1.0.0", "sha256": self.SHA}]
+        self.assertEqual(self.errs(d), [])
+        plugins = os.path.join(os.path.dirname(HERE), "catalog", "plugins")
+        self.assertTrue(any("not a catalog plugin" in x for x in alt_os_check.check(d, plugins)[0]))
+        d["systems"][0]["bundled_plugins"][0]["sha256"] = ""
+        self.assertTrue(any("bundled_plugins[0]" in x for x in self.errs(d)))
+
+    def test_device_and_models(self):
+        d = self.doc(); d["systems"][0]["device"] = "force"
+        self.assertTrue(any("device must be one of" in x for x in self.errs(d)))
+        d = self.doc(); s = d["systems"][0]; s["device"] = "mpc"
+        self.assertTrue(any("models must list" in x for x in self.errs(d)))
+        s["models"] = ["MPC Live II", "MPC One"]
+        self.assertTrue(any("device must be one of the entry's models" in x for x in self.errs(d)))
+        s["tested"][0]["device"] = "MPC One"
+        self.assertEqual(self.errs(d), [])
+        s["models"].append("MPC Sample")
+        self.assertTrue(any("models must list" in x for x in self.errs(d)))
+        d = self.doc(); d["systems"][0]["models"] = ["MPC One"]
+        self.assertTrue(any("only for device" in x for x in self.errs(d)))
+
+    def test_card_shows_flags_report_and_download(self):
+        import catalog_site
+        html = catalog_site.alt_os_cards(self.doc())
+        for needle in ("Runs as root", "port 80 (no auth)", "1.0.0 by tester on stock 1.3.0.12, 2026-11-20", "Answer No at the stock autorun prompt.",
+                       "test-os-sd.zip", self.SHA, "a-maintainer, 2026-11-21"):
+            self.assertIn(needle, html)
+        self.assertIn('data-device="mpc-sample"', html)
+
+    def test_site_tab(self):
+        root = os.path.dirname(HERE)
+        with tempfile.TemporaryDirectory() as t:
+            json.dump(self.doc(), open(os.path.join(t, "os.json"), "w"))
+            subprocess.run([sys.executable, os.path.join(HERE, "catalog_site.py"), "--catalog", os.path.join(HERE, "catalog_site", "fixture-catalog.json"),
+                            "--alt-os", os.path.join(t, "os.json"), "--out", os.path.join(t, "site")], cwd=root, check=True, capture_output=True)
+            html = open(os.path.join(t, "site", "index.html"), encoding="utf-8").read()
+            self.assertTrue(os.path.isfile(os.path.join(t, "site", "alt_os.json")))
+        self.assertIn('id="tab-altos"', html)
+        self.assertIn("<h2>Test OS</h2>", html)
+        self.assertNotIn("/*ALT_OS_HTML*/", html)
 
 
 class MirrorTest(unittest.TestCase):

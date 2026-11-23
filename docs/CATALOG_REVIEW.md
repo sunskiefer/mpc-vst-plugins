@@ -132,6 +132,8 @@ mention `@open-mpc/maintainers` with one line on why. Hand over when:
   name, skin or screenshot that may carry a brand.
 - **Risky calls:** the plugin opens network sockets or runs programs, or the entry adds or changes `flags_reviewed`.
   Only a maintainer sets `flags_reviewed`.
+- **Alternative OS entries** (`catalog/alt_os.json`): always. Check the zip against the entry (stock binary hash check, no rootfs
+  writes, `boot_skip`, `content` claims, bundled plugins) and that the device report is real, then hand over; a maintainer sets `flags_reviewed`.
 - **Trust fields:** `featured`, `tier`, `depends`, `conflicts`, `devices`, `retire`, or a new collection. (`min_os` is not one: it is an author opt-out, checked in item 11.)
 - **Ownership doubt:** the PR author isn't clearly the repo owner, or an entry changes `repo` or `author`.
 - **A yank or a delisting request**, a security report, or a complaint from another author or company.

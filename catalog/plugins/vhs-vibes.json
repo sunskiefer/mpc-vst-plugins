@@ -13,7 +13,7 @@
     "noise"
   ],
   "license": "MIT",
-  "summary": "A worn video-tape effect: pitch wobble, tape saturation, the Hi-Fi track, generation loss, B-type noise reduction, hum, hiss and crackle, plus deck faults (level control, drift, tracking dropouts, a tilted head) and a dry/wet mix. 46 programs, on a hot pink cassette with reels that turn and a picture that shows the sound.",
-  "screenshot": "https://raw.githubusercontent.com/anthonytheinventor/vhs-vibes/v1.7.0/docs/page_1_tape_hifi.png",
+  "summary": "A worn video-tape effect: pitch wobble, tape saturation with tape hysteresis, the Hi-Fi track, generation loss, B-type noise reduction, hum, hiss and crackle, plus deck faults (level control, drift, tracking dropouts, a tilted head) and a dry/wet mix. 54 programs, on a hot pink cassette with reels that turn and a picture that shows the sound.",
+  "screenshot": "https://raw.githubusercontent.com/anthonytheinventor/vhs-vibes/v1.8.0/docs/page_1_tape_hifi.png",
   "tip": "https://ko-fi.com/anthonytheinventor"
 }
