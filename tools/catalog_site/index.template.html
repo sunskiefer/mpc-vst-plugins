@@ -67,6 +67,7 @@
 
   <div role="tabpanel" id="panel-plugins" aria-labelledby="tab-plugins">
   <div class="secbar">
+  <p class="tabintro" id="addin-intro" hidden>Addins are libraries MPC loads when it starts, which change how it behaves. They are not plugins, but Plugin Manager and the installer install them the same way.</p>
   <div class="kinds" role="tablist" aria-label="Plugin kinds" id="kinds">
     <button type="button" role="tab" id="tab-all" aria-controls="panel-plugins" aria-selected="true" data-tab="all">All <span class="n" id="n-all"></span></button>
     <button type="button" role="tab" id="tab-instrument" aria-controls="panel-plugins" aria-selected="false" data-tab="instrument" tabindex="-1">Instruments <span class="n" id="n-instrument"></span></button>
@@ -74,7 +75,6 @@
     <button type="button" role="tab" id="tab-effect" aria-controls="panel-plugins" aria-selected="false" data-tab="effect" tabindex="-1">Effects <span class="n" id="n-effect"></span></button>
   </div>
   </div>
-  <p class="tabintro" id="addin-intro" hidden>Addins are libraries MPC loads when it starts, which change how it behaves. They are not plugins; Plugin Manager and the installer install them like plugins.</p>
   <div class="chips" id="stylechips" role="group" aria-label="Style" hidden></div>
   <div class="chips" id="tagchips" role="group" aria-label="Tags" hidden></div>
   <div class="tools main">
@@ -139,7 +139,7 @@
   </div>
 
   <div role="tabpanel" id="panel-patches" aria-labelledby="tab-patches" hidden>
-    <p class="tabintro">Advanced and optional. These change the device itself, so they are never part of the plugin install. Run each by hand with its script; the installer app only lists them. <a href="patches.html">Open as its own page</a></p>
+    <p class="tabintro"><strong>Not for most people.</strong> Device patches change the device itself (for example Akai's own MPC program). They are not plugins and never part of a plugin install. Read each guide first and back up your projects. The installer app only lists them: you run one by hand over SSH with the script shown, whose checksum you can check. <a href="patches.html">Open as its own page</a></p>
     /*PATCHES_HTML*/
   </div>
 
@@ -154,8 +154,7 @@
   </div>
 
   <div role="tabpanel" id="panel-altos" aria-labelledby="tab-altos" hidden>
-    <div class="secbar"></div>
-    <p class="tabintro"><span id="os-title">Alternative OS</span>: standalone apps that run on the device's own system and take the place of the stock <span id="os-dev">MPC</span> app while they run. They don't replace the firmware. Not plugins, and the catalog installs none of them. Each one listed has a device report, starts only on the stock firmware it lists, writes nothing to the system, and gives you the stock device back when you boot without its card or drive. Read its flags before you install.</p>
+    <div class="secbar"><p class="tabintro"><span id="os-title">Alternative OS</span>: standalone apps that run on the device's own system and take the place of the stock <span id="os-dev">MPC</span> app while they run. They don't replace the firmware. Not plugins, and the catalog installs none of them. Each one listed has a device report, starts only on the stock firmware it lists, writes nothing to the system, and gives you the stock device back when you boot without its card or drive. Read its flags before you install.</p></div>
     <div class="grid" id="altos">/*ALT_OS_HTML*/</div>
     <p class="empty" id="os-empty" hidden></p>
   </div>
