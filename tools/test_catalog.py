@@ -804,7 +804,15 @@ class AddinTest(Base):
 
     def test_installer_shell_tests(self):
         """tools/test_addin.sh: the LD_PRELOAD installer against scratch systemd trees."""
-        r = subprocess.run(["bash", os.path.join(HERE, "test_addin.sh")], capture_output=True, text=True)
+        # It fakes a read-only root with file permissions, which root ignores: as root, run it as an unprivileged user (as CI does).
+        drop = []
+        if hasattr(os, "geteuid") and os.geteuid() == 0 and shutil.which("setpriv"):
+            import pwd
+            try:
+                pwd.getpwnam("nobody"); drop = ["setpriv", "--reuid=nobody", "--regid=nogroup", "--clear-groups"]
+            except KeyError:
+                pass
+        r = subprocess.run(drop + ["bash", os.path.join(HERE, "test_addin.sh")], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-2000:])
 
 
@@ -1827,6 +1835,38 @@ class ListingsTest(unittest.TestCase):
 
 
 
+class ChangedEntriesTest(unittest.TestCase):
+    """tools/changed_entries.py: which entries the PR check re-checks for the portable layout."""
+
+    def test_needs_check(self):
+        import changed_entries as ce
+        e = {"id": "x", "repo": "a/b", "kind": "effect", "style": "reverb", "tags": ["a"], "summary": "s", "license": "MIT"}
+        self.assertTrue(ce.needs_check(None, e))                                         # new entry
+        self.assertFalse(ce.needs_check(e, dict(e, style="delay", tags=["b"], summary="t")))   # site-only edits
+        self.assertTrue(ce.needs_check(e, dict(e, repo="a/c")))                          # what releases are read from
+        self.assertTrue(ce.needs_check(e, dict(e, asset_pattern="*-x.zip")))             # a field added
+        self.assertTrue(ce.needs_check(e, {k: v for k, v in e.items() if k != "license"}))   # a field removed
+        self.assertTrue(ce.needs_check(e, None))                                         # not valid JSON
+
+    def test_against_git(self):
+        import changed_entries as ce
+        with tempfile.TemporaryDirectory() as t:
+            g = lambda *a: subprocess.run(["git", "-C", t] + list(a), check=True, capture_output=True)
+            g("init", "-q"); g("config", "user.email", "t@t"); g("config", "user.name", "t")
+            os.makedirs(os.path.join(t, "catalog", "plugins"))
+            w = lambda n, e: json.dump(e, open(os.path.join(t, "catalog", "plugins", n + ".json"), "w"))
+            base = {"id": "a", "repo": "o/a", "kind": "effect", "style": "eq"}
+            w("a", base); w("b", dict(base, id="b", repo="o/b"))
+            g("add", "-A"); g("commit", "-qm", "base")
+            w("a", dict(base, style="filter-eq")); w("b", dict(base, id="b", repo="o/b2")); w("c", dict(base, id="c", repo="o/c"))
+            g("add", "-A"); g("commit", "-qm", "head")
+            cwd = os.getcwd(); os.chdir(t)
+            try:
+                self.assertEqual(sorted(ce.changed("HEAD^1", "HEAD")), ["b", "c"])   # a: style only, skipped
+            finally:
+                os.chdir(cwd)
+
+
 class StyleMapTest(unittest.TestCase):
     """tools/style_map.py and catalog/styles.json: the fixed styles per kind."""
 
@@ -2758,13 +2798,15 @@ class InstallerTest(Base):
                    MPC_TEST_LOG=os.path.join(self.tmp, "mpc_ctl.log"), MPC_MOUNTS=self.mounts)
         return subprocess.run(["sh", os.path.join(self.top, script), "-y", *args], cwd=self.top, env=env, capture_output=True, text=True)
 
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "as root the install really writes into /media/<card>/Synths on this "
+                     "machine (card paths must be under /media); CI runs as a normal user, where the copy is refused after the folder is chosen")
     def test_on_an_mpc_sample_no_t_means_the_sd_card(self):
         """The MPC Sample has a read-only root: without -t the installer takes its card's Synths folder (the one MPC lists, on a card
         that is mounted), never /sdcard/Synths, and says when no card is in."""
         self.sample_device(["/usr/share/x/Synths", "/media/OLD CARD/Synths", "/media/MY CARD/Synths"], ["/media/MY CARD", "/media/az01-internal"])
         r = self.run_default("install.sh")
         self.assertIn("using /media/MY CARD/Synths (the MPC Sample's SD card)", r.stdout)
-        self.assertNotIn("/sdcard", r.stdout + r.stderr)
+        self.assertNotIn("/sdcard/Synths", r.stdout + r.stderr)   # never the internal Synths folder (removing an old /sdcard/vst copy is fine)
         self.sample_device([], ["/media/SD2"])           # MPC has not listed it yet: the mounted card
         self.assertIn("using /media/SD2/Synths", self.run_default("install.sh").stdout)
         self.sample_device(["/media/MPCSD/Synths"], [])  # no card in

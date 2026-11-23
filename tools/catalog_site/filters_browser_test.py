@@ -73,7 +73,7 @@ with sync_playwright() as p:
     bar = card.locator(".sig.stat")
     check("the downloads count is in a bar under the title, even with the details folded, and there are no community buttons while the service is down", bar.count() == 1 and "6" in bar.inner_text() and "downloads" in bar.inner_text() and card.locator(".sig-btn").count() == 0, bar.inner_text() if bar.count() else "")
     order = card.evaluate("el => [...el.children].map(c => c.className.split(' ')[0] || c.tagName.toLowerCase())")
-    check("the bar sits between the title bar and the tags", order.index("sig") == order.index("header") + 1 and order[order.index("sig") + 1] == "tags", order)
+    check("the bar sits between the title bar and its badge row (#941) and the tags", order.index("sig") == (order.index("metarow") if "metarow" in order else order.index("header")) + 1 and order[order.index("sig") + 1] == "tags", order)
     coll = pg.locator("article.card.coll").first
     check("a collection card shows its most downloaded member's downloads in the same place", "40" in coll.locator(".sig.stat").inner_text(), coll.locator(".sig.stat").inner_text() if coll.locator(".sig.stat").count() else "none")
     # 2c. the device switch (MPC / Force | MPC Sample) at the top of the filters

@@ -43,7 +43,8 @@ jobs:
         run: |
           # Compare with the base this merge commit was built on, not the base branch's tip: a listing merged
           # after the run was queued would otherwise look changed by this PR (#1094, #1096, #1099).
-          ids=$(git diff --name-only --diff-filter=AM HEAD^1 HEAD -- catalog/plugins | xargs -r -n1 basename | sed 's/\.json$//')
+          # Only new entries and entries changed beyond site-only metadata (style, tags, summary): tools/changed_entries.py.
+          ids=$(python3 tools/changed_entries.py HEAD^1 HEAD)
           [ -z "$ids" ] || python3 tools/catalog_build.py --require-portable $ids
       - name: Validate the companion apps
         run: python3 tools/app_check.py
