@@ -1,0 +1,50 @@
+{
+ "listings_version": 1,
+ "listings": [
+  {
+   "id": "pro-synth",
+   "name": "Pro Synth",
+   "author": "Acme",
+   "kind": "instrument",
+   "source": "closed",
+   "price": "from $29",
+   "shop_url": "https://acme.example/pro-synth",
+   "demo_url": "https://acme.example/demo",
+   "summary": "A wavetable synth, sold by its developer.",
+   "tags": [
+    "wavetable"
+   ],
+   "devices": [
+    "mpc-sample"
+   ],
+   "support": {
+    "contact": "https://acme.example/help",
+    "response_days": 7
+   }
+  },
+  {
+   "id": "free-fx",
+   "name": "Free FX",
+   "author": "Bo",
+   "kind": "effect",
+   "source": "source-available",
+   "price": "Free",
+   "shop_url": "https://bo.example/free-fx",
+   "summary": "A free reverb, closed binary."
+  },
+  {
+   "id": "drum-box",
+   "name": "Drum Box",
+   "author": "Cy",
+   "kind": "instrument",
+   "source": "closed",
+   "price": "$15",
+   "shop_url": "https://cy.example/drum-box",
+   "summary": "Drums.",
+   "support": {
+    "contact": "https://cy.example/help",
+    "response_days": 14
+   }
+  }
+ ]
+}

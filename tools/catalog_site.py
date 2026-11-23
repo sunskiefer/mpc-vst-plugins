@@ -21,7 +21,9 @@ from xml.sax.saxutils import escape
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import catalog_listings  # noqa: E402
 import catalog_md  # noqa: E402
+import site_listings  # noqa: E402
 
 
 SHARE_ID = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -393,6 +395,7 @@ def main():
     ap.add_argument("--apps", default="catalog/apps.json", help="companion apps (desktop tools) for the catalog page's Companion apps tab; <out>/../apps.json (app_resolve.py output) is used instead when it exists")
     ap.add_argument("--alt-os", default="catalog/alt_os.json", help="alternative OS for the MPC Sample and the standalone MPCs, for the Alt OS tab; published as alt_os.json if it exists")
     ap.add_argument("--patches", default="catalog/patches.json", help="device patches the installer app may offer (docs/PATCHES.md); published as patches.json if it exists")
+    ap.add_argument("--other-sources", action="store_true", help="add the Other sources page (closed-source and paid listings, from listings.json next to --catalog); off by default")
     ap.add_argument("--base-url", default="", help="public site URL, for the feed's self link")
     a = ap.parse_args()
     catalog = json.load(open(a.catalog, encoding="utf-8"))
@@ -428,6 +431,14 @@ def main():
         errors, _ = alt_os_check.check(fw_doc)
         if errors:
             raise SystemExit("catalog/alt_os.json is not valid:\n  " + "\n  ".join(errors))
+    listings_doc = None
+    lpath = os.path.join(os.path.dirname(os.path.abspath(a.catalog)), "listings.json")
+    if a.other_sources and os.path.isfile(lpath):
+        listings_doc = json.load(open(lpath, encoding="utf-8"))
+        errors = [m for l in listings_doc["listings"] for m in catalog_listings.check_listing(l)]   # checked again: the file is only ever written by catalog_listings.py
+        if errors:
+            raise SystemExit("listings.json is not valid:\n  " + "\n  ".join(errors))
+        pages = sorted(pages + [site_listings.page(listings_doc)], key=lambda p: (p["order"], p["slug"]))
     patches_html = next((p["html"] for p in pages if p["slug"] == "patches"), "")
     helpers = [("mpc-store.sh", os.path.join(HERE, "mpc-store.sh")), ("sync.sh", os.path.join(HERE, "release", "sync.sh")),
                ("plugin_list.awk", os.path.join(HERE, "release", "plugin_list.awk"))]
@@ -445,6 +456,8 @@ def main():
         shutil.copy(a.alt_os, os.path.join(a.out, "alt_os.json"))
     if patches_doc is not None:
         shutil.copy(a.patches, os.path.join(a.out, "patches.json"))
+    if listings_doc is not None:
+        shutil.copy(lpath, os.path.join(a.out, "listings.json"))
     for name, path in helpers:   # the files a device downloads next to catalog.tsv, checked against the hashes listed in it
         shutil.copy(path, os.path.join(a.out, name))
     open(os.path.join(a.out, "catalog.tsv"), "w", encoding="utf-8", newline="\n").write(tsv(catalog, helpers))

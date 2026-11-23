@@ -1767,6 +1767,32 @@ class ListingsTest(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("shop_url", r.stderr)
 
+    def test_the_site_page_is_off_by_default_and_listings_never_reach_installer_files(self):
+        dist = os.path.join(self.tmp, "dist")
+        os.makedirs(dist)
+        shutil.copy(os.path.join(HERE, "catalog_site", "fixture-catalog.json"), os.path.join(dist, "catalog.json"))
+        catalog_listings.write_listings([self.L], dist)
+        site = lambda *extra: subprocess.run([sys.executable, os.path.join(HERE, "catalog_site.py"), "--catalog", os.path.join(dist, "catalog.json"),
+                                              "--out", os.path.join(self.tmp, "site"), "--patches", os.path.join(self.tmp, "none"),
+                                              "--apps", os.path.join(self.tmp, "none"), *extra], capture_output=True, text=True)
+        out = os.path.join(self.tmp, "site")
+        r = site()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(out, "other-sources.html")))
+        self.assertFalse(os.path.exists(os.path.join(out, "listings.json")))
+        shutil.rmtree(out)
+        r = site("--other-sources")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        page = open(os.path.join(out, "other-sources.html"), encoding="utf-8").read()
+        self.assertIn("Pro Synth", page)
+        self.assertIn("Visit developer", page)
+        for f in ("catalog.json", "catalog.tsv", "index.html"):
+            self.assertNotIn("pro-synth", open(os.path.join(out, f), encoding="utf-8").read(), f)
+        json.dump({"listings_version": 1, "listings": [dict(self.L, shop_url="javascript:alert(1)")]}, open(os.path.join(dist, "listings.json"), "w"))
+        r = site("--other-sources")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("listings.json is not valid", r.stderr)
+
 
 class IssuesTest(unittest.TestCase):
     T = "Catalog: a %s failed validation"
