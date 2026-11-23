@@ -327,7 +327,7 @@ function genTag(v) {
   if (v.gen2_only) return '<span class="tag gen" title="' + esc("Built for Gen2 (aarch64) MPC devices only: MPC Live III, One G2, Key G2, XL. " + (tested2(v) ? "Tested on a Gen2 unit." : "Not yet tested on a Gen2 unit.")) + '">Gen2 only</span>';
   return '<span class="tag gen" title="' + esc("Also built for Gen2 (aarch64) MPC devices. " + (tested2(v) ? "Tested on a Gen2 unit." : "Not yet tested on a Gen2 unit.")) + '">Gen2 build</span>';
 }
-/* Compatibility badges, always the same three in the same order: lit (blue) when the newest release ships a build for it, faded when not. */
+/* Compatibility badges (not on a device-limited entry, whose tags say "MPC Sample only" instead: docs/CATALOG.md), always the same three in the same order: lit (blue) when the newest release ships a build for it, faded when not. */
 function compatRow(v, addin) {
   var has = { g1: !v.gen2_only, g2: !!(v.gen2 || v.gen2_only), n: !!(v.vst2 && v.assets && v.assets.sdk) };
   function b(on, label, yes, no) { return '<span class="tag compat' + (on ? " on" : "") + '" title="' + esc(on ? yes : no) + '">' + label + '</span>'; }
@@ -567,7 +567,7 @@ function card(p, big) {
   var crumb = col ? '<nav class="crumb" aria-label="Breadcrumb">Part of <a href="p/c/' + encodeURIComponent(col.id) + '.html" data-coll="' + esc(col.id) + '">' + esc(col.title) + '</a></nav>' : '';
   var head = '<article class="card' + (by ? " by" : "") + (big ? " big" : "") + '" data-tier="' + tierOf(p) + '">' + shot + crumb + '<header><div><h2' + (big ? ' id="modal-title">' + esc(p.name)
     : '><a class="open" href="p/' + encodeURIComponent(p.id) + '.html" data-open="' + esc(p.id) + '">' + esc(p.name) + '</a>') + '</h2><div class="by">by ' + esc(p.author) + '</div></div></header>' +
-    '<div class="metarow">' + (!by && v ? compatRow(v, p.kind === "addin") : "") + (v ? '<span class="ver" title="Latest ' + (by ? "tag" : esc(v.channel) + " release") + '">v' + esc(v.version) + (v.channel === "beta" ? " beta" : "") + '</span>' : '<span class="ver">' + (by ? "no tag" : "no release") + '</span>') + '</div>' +
+    '<div class="metarow">' + (!by && v && !deviceTag(p) ? compatRow(v, p.kind === "addin") : "") + (v ? '<span class="ver" title="Latest ' + (by ? "tag" : esc(v.channel) + " release") + '">v' + esc(v.version) + (v.channel === "beta" ? " beta" : "") + '</span>' : '<span class="ver">' + (by ? "no tag" : "no release") + '</span>') + '</div>' +
     plugBar(p, big) +
     '<div class="tags">' + tags.join("") + '</div><p>' + esc(p.summary) + '</p>' + hooksLine(p) + (big && window.signalsDetail ? signalsDetail(p) : '');
   if (by) {
