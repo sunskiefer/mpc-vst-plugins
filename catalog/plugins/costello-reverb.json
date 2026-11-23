@@ -1,0 +1,17 @@
+{
+  "id": "costello-reverb",
+  "name": "Costello Reverb",
+  "author": "ikloX",
+  "repo": "biloo77-cell/mpc-vst-costello-reverb",
+  "kind": "effect",
+  "style": "reverb",
+  "tags": [
+    "reverb",
+    "fdn",
+    "stereo",
+    "soundpipe"
+  ],
+  "license": "LGPL-2.1-or-later",
+  "summary": "Sean Costello's 8-line FDN reverb (Soundpipe revsc, as in AudioKit's CostelloReverb), bit-identical to the original, with low cut, high cut, verb size, mix and output.",
+  "screenshot": "https://raw.githubusercontent.com/biloo77-cell/mpc-vst-costello-reverb/d7ed7c4da2f092a25fe248ff71ad27defb066c5b/docs/img/costello-reverb.png"
+}
