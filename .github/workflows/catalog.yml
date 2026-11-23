@@ -22,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # a PR checks out its merge commit; HEAD^1 is the base it was merged with
       - name: Tests
         run: python3 tools/test_catalog.py
       - name: Install page drive writer tests
@@ -39,8 +41,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git fetch --depth=1 origin "${{ github.base_ref }}"
-          ids=$(git diff --name-only --diff-filter=AM "origin/${{ github.base_ref }}" -- catalog/plugins | xargs -r -n1 basename | sed 's/\.json$//')
+          # Compare with the base this merge commit was built on, not the base branch's tip: a listing merged
+          # after the run was queued would otherwise look changed by this PR (#1094, #1096, #1099).
+          ids=$(git diff --name-only --diff-filter=AM HEAD^1 HEAD -- catalog/plugins | xargs -r -n1 basename | sed 's/\.json$//')
           [ -z "$ids" ] || python3 tools/catalog_build.py --require-portable $ids
       - name: Validate the companion apps
         run: python3 tools/app_check.py
