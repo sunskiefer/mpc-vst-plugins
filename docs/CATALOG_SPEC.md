@@ -22,7 +22,8 @@ content folder and register it from a file inside it (Locrian's builds; verified
   Plugin Skins/        the skin
   <extras>             any engine data, next to the .so (relative paths like `engine/` for MODULE_SUBDIR)
 ```
-`install.sh` / `uninstall.sh` (`sh install.sh [-y] [-t <synths-dir>]`, default target `/sdcard/Synths`) copy the folder in,
+`install.sh` / `uninstall.sh` (`sh install.sh [-y] [-t <synths-dir>]`; without `-t` they pick the folder this MPC OS loads
+from: `<drive>/VST2 Plugins` on MPC OS 3.10.1 and later, `/sdcard/Synths` before it) copy the folder in,
 register it with `%payload-path%` replaced by the Synths folder, and replace an older entry of the same `uid` (an old
 `/sdcard/vst/...` install is not duplicated). Files the user adds inside the folder are kept across upgrades and
 uninstalls: the paths in the manifest's `user_data` (folders where the user puts ROMs, kits or banks, given to `release.py`

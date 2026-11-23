@@ -221,14 +221,19 @@ user_md = ("\nYour own files go in %s inside the plugin folder (`%s/%s/`); the i
            % (", ".join("`%s/`" % d for d in a.user_data), SYNTHS, skin_name)) if a.user_data else ""
 REQ_GEN1 = """- A first-generation MPC OS standalone device (32-bit ARM, like the Force, MPC Live / Live II, One, X and Key 61).
   The installer refuses anything else. Newer models are untested.
-- **Root shell access** (SSH) to the device. Stock MPC OS doesn't offer this; you need a modded unit.
-- Tested on MPC OS with a Force. Installing plugins this way is unofficial: back up first, use at your own risk."""
+- **Root shell access** (SSH) to the device, for the scripted install below. Stock MPC OS doesn't offer this; you need a
+  modded unit. On MPC OS 3.10.1 and later you can skip it entirely: copy the plugin folder into `VST2 Plugins` (next section).
+- Installing plugins this way is unofficial: back up first, use at your own risk."""
 REQ_GEN2 = """- A Gen2 MPC OS standalone device (64-bit ARM, aarch64: MPC Live III and the other 64-bit models) on MPC OS 3.x.
   The installer refuses anything else (the 32-bit Force, MPC Live / Live II, One, X and Key 61 need the `-mpc-armv7.zip` build).
-- **Root shell access** (SSH) to the device. Stock MPC OS doesn't offer this; you need a modded unit.
-- Gen2 devices keep plugins in the internal drive's Synths folder, and the folder differs: **`/nvme/Synths`** on a Live III, **`/storage/Synths`**
-  on an MPC One. It must be one of the folders listed under `SynthContentLocations` in `/data/Settings/MPC/MPC.settings` (MPC draws a plugin's
-  skin only from a listed folder): `grep -A6 SynthContentLocations /data/Settings/MPC/MPC.settings`. Use that folder wherever this guide says
+- **Root shell access** (SSH) to the device, for the scripted install below. Stock MPC OS doesn't offer this; you need a
+  modded unit. On MPC OS 3.10.1 and later you can skip it entirely: copy the plugin folder into `VST2 Plugins` (next section).
+- On MPC OS 3.10.1 and later, plugins go in `VST2 Plugins/` at the root of a drive (**`/nvme/VST2 Plugins`** on a Live III),
+  which is not a content location: no `MPC.settings` entry and no `SynthContentLocations` check apply to it.
+- Before MPC OS 3.10.1, Gen2 devices keep plugins in the internal drive's Synths folder, and the folder differs:
+  **`/nvme/Synths`** on a Live III, **`/storage/Synths`** on an MPC One. It must be one of the folders listed under
+  `SynthContentLocations` in `/data/Settings/MPC/MPC.settings` (MPC draws a plugin's skin only from a listed folder):
+  `grep -A6 SynthContentLocations /data/Settings/MPC/MPC.settings`. Use that folder wherever this guide says
   `<your Synths folder>`.
   Tested on an MPC Live III. Installing plugins this way is unofficial: back up first, use at your own risk."""
 install_md = """# {name} {ver}
@@ -241,9 +246,10 @@ install_md = """# {name} {ver}
 
 ## MPC OS 3.10.1 and later
 
-With Preferences, Enhancements, **VST2 Support** on, MPC lists the plugin folders in `VST2 Plugins/` at the root of a drive
-(`/sdcard/VST2 Plugins/` on a Gen1 internal drive, `/nvme/VST2 Plugins/` on a Live III). Copy `portable/{skin}/` there and
-restart MPC: no root shell and no settings edit needed. The scripted install below uses that folder too.
+With Preferences, Enhancements, **External Plugin Support** on, MPC lists the plugin folders in `VST2 Plugins/` at the root
+of a drive (`/sdcard/VST2 Plugins/` on a Gen1 internal drive, `/nvme/VST2 Plugins/` on a Live III). Copy `portable/{skin}/`
+there and restart MPC: no root shell and no settings edit needed. Create the folder first if the drive hasn't got one yet.
+The scripted install below uses that folder too, and finds it once it exists.
 
 ## Install (scripted)
 
