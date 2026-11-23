@@ -367,8 +367,6 @@ footer { margin-top: 36px; color: var(--muted); font-size: 12px; border-top: 1px
 
 button.tag { appearance: none; cursor: pointer; }
 button.tag:hover, button.tag:focus-visible { border-color: var(--accent); color: var(--accent); }
-.tagbar { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 8px 0 0; font-size: 13px; color: var(--muted); }
-.tagx { font: 600 12px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; padding: 7px 10px; border: 1px solid var(--accent); border-radius: 999px; background: none; color: var(--accent); cursor: pointer; }
 .modal-share[aria-pressed="true"] { border-color: #fff; background: rgba(255, 255, 255, .2); opacity: 1; }
 .sig-dialog input[readonly] { width: 100%; box-sizing: border-box; font: 13px/1.3 monospace; }
 .sig-dialog h3 { font: 700 13px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
@@ -458,3 +456,5 @@ details.more > dl.meta { margin-top: 4px; }
 .tabs .tab-ext { margin-left: auto; }
 .elsewhere { margin: 0 0 12px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: var(--radius); font-size: 14px; }
 .elsewhere a { color: var(--accent); font-weight: 600; }
+.chip.tagchip { text-transform: none; letter-spacing: 0; font: 500 13px/1 var(--text); }
+#tagchips .linkbtn { margin-left: 4px; }

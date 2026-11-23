@@ -229,6 +229,9 @@ screen (the draw handler, the rack) loads and does nothing on a Live III. A regi
   and Tier (it opens by itself when a link carries one of them, and shows how many are set). Inside a kind (and in Addins) the
   styles that kind has on the chosen device show as chips; styles with one entry fold behind "+N more". The Style dropdown stays
   in step with the chips.
+  Tags are chips too (no Tag dropdown): the tags present in what the section, kind, device and style leave, used by two or more of
+  them, ten at a time ("+N more"), counted without the tag filter itself so you can move from one tag to another; chosen tags show
+  pressed, several must all match, "Clear tags" drops them (2026-11-23, offline: `filters_browser_test.py`).
 - `mpc-store.sh` lists it as `[only for: mpc-sample]` and skips it (not an error) on other devices; the desktop app refuses it there
   (`CatPlugin.ForDevice`) and marks it. Both tell the Sample by its settings file (`MPC Sample.settings`); `MPC_STORE_DEVICE` overrides.
 - The quality bar asks for a Sample test (`tested-sample`) instead of Gen1 and Gen2 ones.

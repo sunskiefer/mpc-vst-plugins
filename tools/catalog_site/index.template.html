@@ -76,9 +76,9 @@
   </div>
   <p class="tabintro" id="addin-intro" hidden>Addins are libraries MPC loads when it starts, which change how it behaves. They are not plugins; Plugin Manager and the installer install them like plugins.</p>
   <div class="chips" id="stylechips" role="group" aria-label="Style" hidden></div>
+  <div class="chips" id="tagchips" role="group" aria-label="Tags" hidden></div>
   <div class="tools main">
     <label class="search">Search<input id="q" type="search" placeholder="Name, developer, style or tag"></label>
-    <label>Tag<select id="f-tag"></select></label>
     <label>Sort by<select id="sort"></select></label>
     <button type="button" class="morebtn" id="more-btn" aria-expanded="false" aria-controls="morebox">More filters<span class="n" id="more-n"></span></button>
   </div>
@@ -89,7 +89,6 @@
     <label id="l-gen">Device<select id="f-gen"></select></label>
     <label>Tier<select id="f-tier"></select></label>
   </div>
-  <div class="tagbar" id="tagbar" hidden></div>
   <div class="status">
     <span id="count" aria-live="polite"></span>
     <span>
@@ -260,12 +259,25 @@ function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function 
 /* Tags: pick one or several (a plugin must carry all of them); the Search box still finds any tag by typing. Tags on 2+ plugins are listed in the
    dropdown; a tag on one plugin is reachable by clicking it on its card. The choice is part of the URL hash (tags=a,b). */
 var TAGN = {}; P.forEach(function (p) { (p.tags || []).forEach(function (t) { TAGN[t] = (TAGN[t] || 0) + 1; }); });
+/* Tag chips (2026-11-23, after Schwung's catalog): the tags present in what the section, kind, device and style leave, used by two or
+   more of them, most used first; the chosen ones always show, pressed. Counted WITHOUT the tag filter itself, so you can move from one
+   tag to another without clearing first. Several tags: a plugin must carry all of them. */
+var moreTags = false, TAG_SHOW = 10;
 function fillTags() {
-  var names = Object.keys(TAGN).filter(function (t) { return TAGN[t] >= 2 && state.tags.indexOf(t) < 0; }).sort(function (a, b) { return TAGN[b] - TAGN[a] || a.localeCompare(b); });
-  $("f-tag").innerHTML = '<option value="">' + (state.tags.length ? "Add another tag" : "Any tag") + '</option>' + names.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + ' (' + TAGN[t] + ')</option>'; }).join("");
-  $("f-tag").value = "";
-  $("tagbar").hidden = !state.tags.length;
-  $("tagbar").innerHTML = state.tags.length ? '<span>Tags:</span> ' + state.tags.map(function (t) { return '<button type="button" class="tagx" data-untag="' + esc(t) + '" aria-label="Remove tag ' + esc(t) + '">' + esc(t) + ' &times;</button>'; }).join(" ") + ' <button type="button" class="linkbtn" data-untag="*">Clear tags</button>' : "";
+  var box = $("tagchips"), sec = secOf(state.tab), n = {};
+  if (!box) return;
+  if (sec !== "plugins" && sec !== "addin") { box.hidden = true; return; }
+  P.forEach(function (p) {
+    if (!(sec === "addin" ? p.kind === "addin" : inTabKind(p, state.tab)) || !platOk(p) || (state.style && p.style !== state.style)) return;
+    (p.tags || []).forEach(function (t) { n[t] = (n[t] || 0) + 1; });
+  });
+  var names = Object.keys(n).filter(function (t) { return n[t] >= 2 && state.tags.indexOf(t) < 0; }).sort(function (a, b) { return n[b] - n[a] || a.localeCompare(b); });
+  var shown = moreTags ? names : names.slice(0, TAG_SHOW), rest = names.length - shown.length;
+  var chip = function (t, on) { return '<button type="button" class="chip tagchip" data-tagchip="' + esc(t) + '" aria-pressed="' + on + '">' + esc(t) + (n[t] ? ' <span class="n">' + n[t] + '</span>' : "") + '</button>'; };
+  box.hidden = !names.length && !state.tags.length;
+  box.innerHTML = '<span class="chips-l">Tags</span>' + state.tags.map(function (t) { return chip(t, true); }).join("") + shown.map(function (t) { return chip(t, false); }).join("") +
+    (rest || moreTags && names.length > TAG_SHOW ? '<button type="button" class="chip more" data-moretags="1">' + (moreTags ? "Fewer" : "+" + rest + " more") + '</button>' : "") +
+    (state.tags.length ? '<button type="button" class="linkbtn" data-untag="*">Clear tags</button>' : "");
 }
 function uniq(f) { var o = {}; P.forEach(function (p) { var v = f(p); if (v) o[v] = 1; }); return Object.keys(o).sort(); }
 function fillSelect(id, all, values, label) {
@@ -615,7 +627,7 @@ function render() {
   PLUGIN_KINDS.forEach(function (k) { $("n-" + k).textContent = P.filter(function (p) { return inTabKind(p, k) && platOk(p); }).length; });   /* tab counts follow the device switch */
   var inTab = P.filter(function (p) { return (PLUGIN_TABS.indexOf(state.tab) < 0 || inTabKind(p, state.tab)) && platOk(p); }).length;
   $("count").textContent = nOut + " of " + inTab + " " + (state.tab === "midi" ? "MIDI plugins" : state.tab === "all" ? "plugins" : (KINDS[state.tab] || "plugins").toLowerCase());
-  styleChips(); elsewhere(); renderOther();
+  styleChips(); fillTags(); elsewhere(); renderOther();
   var osOther = $("panel-other") && secOf(state.tab) === "other";
   if (osOther) { $("n-plat").textContent = LISTINGS.filter(function (l) { return listingDevOk(l, ""); }).length; $("n-plat-sample").textContent = LISTINGS.filter(function (l) { return listingDevOk(l, "sample"); }).length; }
   var adv = ["style", "dev", "os", "gen", "tier"].filter(function (k) { return state[k] && !(k === "style" && !$("stylechips").hidden); }).length;   /* a style picked on the chips is in view already */
@@ -864,8 +876,13 @@ function filterApps() {
 $("a-q").addEventListener("input", filterApps); $("a-plat").addEventListener("change", filterApps);
 var map = { "q": "q", "f-style": "style", "f-dev": "dev", "f-os": "os", "f-gen": "gen", "f-tier": "tier", "sort": "sort" };
 Object.keys(map).forEach(function (id) { $(id).addEventListener(id === "q" ? "input" : "change", function () { state[map[id]] = $(id).value; if (id === "sort") state.rev = false; render(); }); });
-$("f-tag").addEventListener("change", function () { var t = $("f-tag").value; if (t && state.tags.indexOf(t) < 0) state.tags.push(t); fillTags(); render(); });
-$("tagbar").addEventListener("click", function (e) { var b = e.target.closest("[data-untag]"); if (!b) return; var t = b.getAttribute("data-untag"); state.tags = t === "*" ? [] : state.tags.filter(function (x) { return x !== t; }); fillTags(); render(); });
+$("tagchips").addEventListener("click", function (e) {
+  var b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-moretags")) moreTags = !moreTags;
+  else if (b.hasAttribute("data-untag")) state.tags = [];
+  else { var t = b.getAttribute("data-tagchip"), i = state.tags.indexOf(t); if (i < 0) state.tags.push(t); else state.tags.splice(i, 1); }
+  render();
+});
 $("grid").addEventListener("click", function (e) { var b = e.target.closest("[data-tag]"); if (!b) return; var t = b.getAttribute("data-tag"); if (TAGN[t] && state.tags.indexOf(t) < 0) state.tags.push(t); fillTags(); render(); });
 $("show-exp").addEventListener("click", function () { state.tier = "all"; sync(); render(); });
 var PLAT_KEY = "openmpc.device";
