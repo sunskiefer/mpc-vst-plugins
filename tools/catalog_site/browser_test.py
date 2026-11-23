@@ -129,13 +129,15 @@ with sync_playwright() as p:
           and smp.locator(".tag:has-text('Gen2')").count() == 0, smp.inner_text()[:200])
     dl = smp.locator("details.dlmenu .dlpop a").all_text_contents()
     check("a plugin for the MPC Sample only has one download (a one-item menu), named for the Sample", len(dl) == 1 and dl[0].startswith("MPC Sample"), str(dl))
-    pg.click('[data-plat=""]'); pg.click("#tab-all")
+    pg.click('[data-plat=""]'); pg.click("#tab-plugins"); pg.click("#tab-all")
     for val, gen in (("verified-gen1", "gen1"), ("verified-gen2", "gen2"), ("verified-sample", "sample")):
-        pg.click('[data-plat="%s"]' % ("sample" if gen == "sample" else "")); pg.select_option("#f-tier", val)
+        pg.click('[data-plat="%s"]' % ("sample" if gen == "sample" else ""))
+        pg.click("#tab-addin" if gen == "sample" else "#tab-plugins")   # the fixture's only Verified Sample entry is an addin, which has its own section
+        pg.select_option("#f-tier", val)
         cards = pg.locator("#grid article.card")
         wrong = [i for i in range(cards.count()) if cards.nth(i).locator(".tag.tier-verified[data-gen=%s]" % gen).count() != 1]
         check("Tier filter %s shows only cards with that badge" % val, cards.count() >= 1 and not wrong, "%d cards, wrong %s" % (cards.count(), wrong))
-    pg.select_option("#f-tier", ""); pg.click('[data-plat=""]')
+    pg.select_option("#f-tier", ""); pg.click('[data-plat=""]'); pg.click("#tab-plugins")
     check("experimental plugins are hidden by default", pg.locator(".tag.tier-experimental").count() == 0)
     check("the hidden-experimental note offers them", pg.locator("#exp").is_visible())
     pg.click("#show-exp")
@@ -225,7 +227,7 @@ with sync_playwright() as p:
               and sorted(chips()) == names, "%s %s" % (coll.locator(".counts").all_text_contents(), chips()))
     pg.click("#tab-addin")
     check("not under a kind it does not cover", coll.count() == 0)
-    pg.click("#tab-all")
+    pg.click("#tab-plugins"); pg.click("#tab-all")
     check("tab counts count the members", pg.locator("#n-effect").text_content() == "3" and pg.locator("#n-midi").text_content() == "1", pg.locator("#n-effect").text_content())
     pg.fill("#q", "shimmer")
     check("a search that matches a member surfaces the card with that member", coll.count() == 1 and chips() == ["Pack Verb"]

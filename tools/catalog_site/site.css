@@ -404,14 +404,23 @@ details.more > dl.meta { margin-top: 4px; }
 .card .folds > details.fold > dl.meta { margin: 0; padding-top: 0; border-top: 0; }
 
 /* Device switch at the top of the filters: MPC / Force or MPC Sample, as two big buttons with counts like the tabs. */
-.plat { margin: 24px 0 0; display: flex; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: max-content; max-width: 100%; }
+.plat { margin: 14px 0 0; display: flex; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: max-content; max-width: 100%; }
 .plat button { font: 700 14px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--panel);
   border: 0; padding: 12px 20px; cursor: pointer; white-space: nowrap; }
 .plat button + button { border-left: 1px solid var(--line); }
 .plat button:hover { color: var(--fg); }
 .plat button[aria-pressed=true] { color: #fff; background: var(--accent); }
 .plat .n { font: 500 12px var(--text); letter-spacing: 0; margin-left: 6px; opacity: .8; }
-@media (max-width: 520px) { .plat { width: 100%; } .plat button { flex: 1; padding: 12px 10px; } }
+.plat .plat-l { font: 600 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--panel-2);
+  border-right: 1px solid var(--line); padding: 0 12px; display: flex; align-items: center; }
+@media (max-width: 520px) { .plat { width: 100%; } .plat button { flex: 1; padding: 12px 10px; } .plat .plat-l { padding: 0 8px; } }
+/* Plugin kinds: a second, lighter row of tabs inside the Plugins section */
+.kinds { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+.kinds [role=tab] { font: 700 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 13px; cursor: pointer; }
+.kinds [role=tab]:hover { border-color: var(--fg); }
+.kinds [role=tab][aria-selected=true] { color: var(--lcd-fg); background: var(--lcd-bg); border-color: var(--lcd-bg); }
+.kinds .n { font: 500 12px var(--text); letter-spacing: 0; margin-left: 4px; opacity: .7; }
 .notice310 { margin-top: .6em; padding: 8px 12px; font-size: 14px; line-height: 1.45; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 4px; }
 .notice310 ul { margin: .25em 0 .25em 1.1em; padding: 0; }
 .notice310 li { margin: .05em 0; }

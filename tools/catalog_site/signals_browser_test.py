@@ -87,7 +87,10 @@ with sync_playwright() as p:
     pg.click('[data-plat="sample"]'); pg.wait_for_timeout(200)
     sv = pg.locator("#grid article.card h2").all_inner_texts()
     check("MPC Sample view: a plugin someone reported working on a Sample is listed, Gen2 plugins without such evidence are not",
-          "TESTED TWO" in sv and "TEST SYNTH" not in sv and "SAMPLE ONLY" in sv, sv)
+          "TESTED TWO" in sv and "TEST SYNTH" not in sv, sv)
+    pg.click("#tab-addin"); pg.wait_for_timeout(100)
+    check("MPC Sample view: the addin made for the Sample is under Addins", "SAMPLE ONLY" in pg.locator("#grid article.card h2").all_inner_texts())
+    pg.click("#tab-plugins"); pg.wait_for_timeout(100)
     pg.click('[data-plat=""]'); pg.wait_for_timeout(100)
     ctx.close()
     # 2. signed out: header button, strip placement, counts, sorts
