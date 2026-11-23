@@ -404,18 +404,21 @@ details.more > dl.meta { margin-top: 4px; }
 .card .folds > details.fold > dl.meta { margin: 0; padding-top: 0; border-top: 0; }
 
 /* Device switch at the top of the filters: MPC / Force or MPC Sample, as two big buttons with counts like the tabs. */
-.plat { margin: 14px 0 0; display: flex; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: max-content; max-width: 100%; }
-.plat button { font: 700 14px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--panel);
-  border: 0; padding: 12px 20px; cursor: pointer; white-space: nowrap; }
+.plat { margin: 0 0 0 auto; display: flex; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: max-content; max-width: 100%; }
+.plat button { font: 700 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--panel);
+  border: 0; padding: 9px 14px; cursor: pointer; white-space: nowrap; }
 .plat button + button { border-left: 1px solid var(--line); }
 .plat button:hover { color: var(--fg); }
 .plat button[aria-pressed=true] { color: #fff; background: var(--accent); }
 .plat .n { font: 500 12px var(--text); letter-spacing: 0; margin-left: 6px; opacity: .8; }
 .plat .plat-l { font: 600 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--panel-2);
   border-right: 1px solid var(--line); padding: 0 12px; display: flex; align-items: center; }
-@media (max-width: 520px) { .plat { width: 100%; } .plat button { flex: 1; padding: 12px 10px; } .plat .plat-l { padding: 0 8px; } }
+@media (max-width: 520px) { .plat { width: 100%; margin: 0; } .plat button { flex: 1; padding: 10px 8px; } .plat .plat-l { padding: 0 8px; } }
 /* Plugin kinds: a second, lighter row of tabs inside the Plugins section */
-.kinds { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+/* A section's first row: kinds on the left (Plugins, Other sources), the device switch on the right */
+.secbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 12px 0 10px; }
+.secbar:empty { display: none; }
+.kinds { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .kinds [role=tab] { font: 700 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); background: var(--panel);
   border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 13px; cursor: pointer; }
 .kinds [role=tab]:hover { border-color: var(--fg); }
@@ -424,3 +427,34 @@ details.more > dl.meta { margin-top: 4px; }
 .notice310 { margin-top: .6em; padding: 8px 12px; font-size: 14px; line-height: 1.45; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 4px; }
 .notice310 ul { margin: .25em 0 .25em 1.1em; padding: 0; }
 .notice310 li { margin: .05em 0; }
+
+/* Style chips (inside a kind), the short filter row and the More filters fold (2026-11-23) */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 10px; }
+.chips-l { font: 600 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.chip { font: 600 12px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px; padding: 7px 11px; cursor: pointer; }
+.chip:hover { border-color: var(--fg); }
+.chip[aria-pressed=true] { color: var(--bg); background: var(--fg); border-color: var(--fg); }
+.chip .n { font: 500 11px var(--text); letter-spacing: 0; opacity: .65; }
+.chip.more { border-style: dashed; color: var(--muted); }
+.tools.main { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.tools.main .search { grid-column: auto; flex: 0 1 320px; }
+.tools.main label { flex: 0 1 190px; }
+.morebtn { font: 600 12px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--fg); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 11px 14px; cursor: pointer; }
+.morebtn[aria-expanded=true] { border-color: var(--fg); }
+.morebtn .n { font: 500 11px var(--text); margin-left: 6px; background: var(--accent); color: var(--accent-fg); border-radius: 9px; padding: 1px 6px; }
+.morebtn .n:empty { display: none; }
+.morebox { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; }
+@media (max-width: 640px) {
+  .tools.main .search { flex: 1 1 100%; }
+  .tools.main label { flex: 1 1 40%; }
+  .morebtn { flex: 1 1 100%; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { white-space: nowrap; }
+}
+/* Other sources: its tab sits apart at the right end of the section row; the line on Plugins that points to it */
+.tabs .tab-ext { margin-left: auto; }
+.elsewhere { margin: 0 0 12px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: var(--radius); font-size: 14px; }
+.elsewhere a { color: var(--accent); font-weight: 600; }

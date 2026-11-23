@@ -180,7 +180,7 @@ def render_page(page, pages):
     return tpl
 
 
-def render(catalog, pages=(), helper_hashes=None, patches_html="", apps_html="", n_patches=0, n_apps=0, fw_html="", n_fw=0):
+def render(catalog, pages=(), helper_hashes=None, patches_html="", apps_html="", n_patches=0, n_apps=0, fw_html="", n_fw=0, listings_doc=None):
     """The catalog page HTML for a catalog dict. The JSON is embedded in a <script type=application/json>, so '<' is escaped."""
     data = json.dumps(catalog, separators=(",", ":"), ensure_ascii=False).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     store = json.dumps({k: v for k, v in (helper_hashes or {}).items() if isinstance(v, str) and len(v) == 64 and all(c in "0123456789abcdef" for c in v)})
@@ -192,7 +192,10 @@ def render(catalog, pages=(), helper_hashes=None, patches_html="", apps_html="",
     return tpl.replace("/*GUIDES*/", guides).replace("/*NAV*/", nav_html(list(pages), "index")).replace("/*SITE_CSS*/", read("site.css")) \
         .replace("/*PATCHES_HTML*/", patches_html).replace("/*APPS_HTML*/", apps_html) \
         .replace("/*N_PATCHES*/", str(n_patches)).replace("/*N_APPS*/", str(n_apps)) \
-        .replace("/*ALT_OS_HTML*/", fw_html).replace(marker, data)
+        .replace("/*ALT_OS_HTML*/", fw_html) \
+        .replace("<!--OTHER_TAB-->", site_listings.tab_html() if listings_doc else "") \
+        .replace("<!--OTHER_PANEL-->", site_listings.panel_html(listings_doc) if listings_doc else "") \
+        .replace("/*LISTINGS_JSON*/", site_listings.data_json(listings_doc) if listings_doc else "[]").replace(marker, data)
 
 
 def atom(catalog, base="", title="Open MPC - Plugin Catalog: new releases", ident="releases", path="feed.xml"):
@@ -395,7 +398,7 @@ def main():
     ap.add_argument("--apps", default="catalog/apps.json", help="companion apps (desktop tools) for the catalog page's Companion apps tab; <out>/../apps.json (app_resolve.py output) is used instead when it exists")
     ap.add_argument("--alt-os", default="catalog/alt_os.json", help="alternative OS for the MPC Sample and the standalone MPCs, for the Alt OS tab; published as alt_os.json if it exists")
     ap.add_argument("--patches", default="catalog/patches.json", help="device patches the installer app may offer (docs/PATCHES.md); published as patches.json if it exists")
-    ap.add_argument("--other-sources", action="store_true", help="add the Other sources page (closed-source and paid listings, from listings.json next to --catalog); off by default")
+    ap.add_argument("--other-sources", action="store_true", help="add the Other sources section to the Catalog page (closed-source and paid listings, from listings.json next to --catalog); off by default")
     ap.add_argument("--base-url", default="", help="public site URL, for the feed's self link")
     a = ap.parse_args()
     catalog = json.load(open(a.catalog, encoding="utf-8"))
@@ -438,14 +441,14 @@ def main():
         errors = [m for l in listings_doc["listings"] for m in catalog_listings.check_listing(l)]   # checked again: the file is only ever written by catalog_listings.py
         if errors:
             raise SystemExit("listings.json is not valid:\n  " + "\n  ".join(errors))
-        pages = sorted(pages + [site_listings.page(listings_doc)], key=lambda p: (p["order"], p["slug"]))
     patches_html = next((p["html"] for p in pages if p["slug"] == "patches"), "")
     helpers = [("mpc-store.sh", os.path.join(HERE, "mpc-store.sh")), ("sync.sh", os.path.join(HERE, "release", "sync.sh")),
                ("plugin_list.awk", os.path.join(HERE, "release", "plugin_list.awk"))]
     hashes = {name: hashlib.sha256(open(path, "rb").read()).hexdigest() for name, path in helpers}
     open(os.path.join(a.out, "index.html"), "w", encoding="utf-8").write(render(catalog, pages, hashes, patches_html, app_cards(apps_doc) if apps_doc else "",
                                                                                     len(patches_doc["patches"]) if patches_doc else 0, len(apps_doc["apps"]) if apps_doc else 0,
-                                                                                    alt_os_cards(fw_doc) if fw_doc else "", len(fw_doc["systems"]) if fw_doc else 0))
+                                                                                    alt_os_cards(fw_doc) if fw_doc else "", len(fw_doc["systems"]) if fw_doc else 0,
+                                                                                    listings_doc))
     for pg in pages:
         open(os.path.join(a.out, pg["slug"] + ".html"), "w", encoding="utf-8").write(render_page(pg, pages))
     open(os.path.join(a.out, "feed.xml"), "w", encoding="utf-8").write(atom(catalog, a.base_url))

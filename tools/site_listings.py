@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The "Other sources" page: cards for closed-source or paid plugins that their developers host and sell themselves
 (tools/catalog_listings.py). Advertisement only: every card links out; there is no Download, no Install and no checksum.
-Static HTML plus a few lines of filter script, built into other-sources.html by tools/catalog_site.py --other-sources."""
+A section of the Catalog page (index.html), built only with tools/catalog_site.py --other-sources."""
 from html import escape as html_escape
 
 import catalog_listings
@@ -37,7 +37,8 @@ def card(l):
     dl = "".join("<dt>%s</dt><dd>%s</dd>" % r for r in rows)
     shot = ('<a class="shot" href="%s" rel="noopener noreferrer"><img src="%s" alt="%s screenshot" loading="lazy" referrerpolicy="no-referrer"></a>'
             % (_e(l["shop_url"]), _e(l["screenshot"]), _e(l["name"]))) if l.get("screenshot") else ""
-    btns = '<a class="btn-l primary" href="%s" rel="sponsored noopener noreferrer">Visit developer\'s site</a>' % _e(l["shop_url"])
+    # grey, not red: red stays for things the catalog installs
+    btns = '<a class="btn-l" href="%s" rel="sponsored noopener noreferrer">Visit developer\'s site &#8599;</a>' % _e(l["shop_url"])
     if l.get("demo_url"):
         btns += '<a class="btn-l" href="%s" rel="noopener noreferrer">Demo (developer\'s site)</a>' % _e(l["demo_url"])
     text = " ".join([l["name"], l["author"], l["summary"], l.get("style", "")] + l.get("tags", [])).lower()
@@ -48,45 +49,31 @@ def card(l):
                "".join(tags), _e(l["summary"]), dl, btns))
 
 
-SCRIPT = """<script>
-(function () {
-  var q = document.getElementById("o-q"), kind = document.getElementById("o-kind"), price = document.getElementById("o-price"),
-      dev = document.getElementById("o-dev"), cards = [].slice.call(document.querySelectorAll("#others .card")),
-      empty = document.getElementById("o-empty");
-  function fromHash() { if (/(^|[#&])plat=sample(&|$)/.test(location.hash)) dev.value = "mpc-sample"; }
-  fromHash();
-  function apply() {
-    var t = q.value.trim().toLowerCase(), n = 0;
-    cards.forEach(function (c) {
-      var ok = (!t || c.dataset.text.indexOf(t) >= 0) && (!kind.value || c.dataset.kind === kind.value) &&
-               (!price.value || c.dataset.price === price.value) &&
-               (!dev.value || (" " + c.dataset.devices + " ").indexOf(" " + dev.value + " ") >= 0);
-      c.hidden = !ok; if (ok) n++;
-    });
-    empty.hidden = n > 0;
-  }
-  [q, kind, price, dev].forEach(function (el) { el.addEventListener("input", apply); });
-  addEventListener("hashchange", function () { fromHash(); apply(); });
-  apply();
-})();
-</script>"""
+def tab_html():
+    """The section tab, at the right end of the Catalog page's section row (only when the build has listings)."""
+    return ('<button type="button" role="tab" id="tab-other" class="tab-ext" aria-controls="panel-other" aria-selected="false" '
+            'data-tab="other" tabindex="-1">%s</button>' % TITLE)
 
 
-def page_body(doc):
-    """HTML for the page body (inside the guide-page template, which supplies the h1 and the lede)."""
+def panel_html(doc):
+    """The section panel: intro, kinds and the device switch (moved in by the page script), search, grid. No install controls."""
     cards = "".join(card(l) for l in doc["listings"])
-    dev_opts = "".join('<option value="%s">%s</option>' % (_e(k), _e(v)) for k, v in sorted(DEVICE_NAMES.items()))
-    return ('<style>.ofilters{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}.ofilters label{display:flex;flex-direction:column;gap:4px;'
-            'font-size:13px;color:var(--muted)}.ofilters input,.ofilters select{font:inherit;padding:6px 8px;min-width:150px}.ofilters .search{flex:1 1 220px}</style>'
-            '<p class="note"><strong>%s</strong></p>'
-            '<div class="ofilters"><label class="search">Search<input id="o-q" type="search" placeholder="Name, developer or description"></label>'
-            '<label>Kind<select id="o-kind"><option value="">All</option><option value="instrument">Instruments</option><option value="effect">Effects</option></select></label>'
-            '<label>Price<select id="o-price"><option value="">Free and paid</option><option value="free">Free</option><option value="paid">Paid</option></select></label>'
-            '<label>Device<select id="o-dev"><option value="">MPC / Force</option>%s</select></label></div>'
-            '<div class="grid" id="others">%s</div><p class="empty" id="o-empty" hidden>No listings match.</p>%s'
-            % (_e(BANNER), dev_opts, cards, SCRIPT))
+    kinds = "".join('<button type="button" role="tab" aria-selected="%s" data-okind="%s">%s <span class="n" id="n-o-%s"></span></button>'
+                    % ("true" if k == "" else "false", k, label, k or "all")
+                    for k, label in (("", "All"), ("instrument", "Instruments"), ("effect", "Effects")))
+    return ('<div role="tabpanel" id="panel-other" aria-labelledby="tab-other" hidden>'
+            '<p class="tabintro"><strong>%s</strong> %s</p>'
+            '<div class="secbar"><div class="kinds" role="tablist" aria-label="Kinds" id="o-kinds">%s</div></div>'
+            '<div class="tools main"><label class="search">Search<input id="o-q" type="search" placeholder="Name, developer or description"></label>'
+            '<label>Price<select id="o-price"><option value="">Free and paid</option><option value="free">Free</option><option value="paid">Paid</option></select></label></div>'
+            '<div class="status"><span id="o-count" aria-live="polite"></span></div>'
+            '<div class="grid" id="others">%s</div><p class="empty" id="o-empty" hidden>No listings match.</p></div>'
+            % (_e(SUMMARY), _e(BANNER), kinds, cards))
 
 
-def page(doc):
-    """The guide-page dict catalog_site.render_page takes; order 45 puts it after Device patches (40)."""
-    return {"slug": SLUG, "title": TITLE, "nav": TITLE, "order": 45, "summary": SUMMARY, "html": page_body(doc)}
+def data_json(doc):
+    """What the Catalog page's script needs for the "N more matches in Other sources" line: no URLs, just what search and filters match."""
+    import json
+    rows = [{"id": l["id"], "kind": l["kind"], "style": l.get("style", ""), "tags": l.get("tags", []), "devices": l.get("devices", []),
+             "text": " ".join([l["name"], l["author"], l["summary"], l.get("style", "")] + l.get("tags", [])).lower()} for l in doc["listings"]]
+    return json.dumps(rows, separators=(",", ":")).replace("<", "\\u003c")

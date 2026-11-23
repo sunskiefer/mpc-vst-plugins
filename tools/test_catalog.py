@@ -1778,15 +1778,17 @@ class ListingsTest(unittest.TestCase):
         out = os.path.join(self.tmp, "site")
         r = site()
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertFalse(os.path.exists(os.path.join(out, "other-sources.html")))
         self.assertFalse(os.path.exists(os.path.join(out, "listings.json")))
+        self.assertNotIn('id="tab-other"', open(os.path.join(out, "index.html"), encoding="utf-8").read())
         shutil.rmtree(out)
         r = site("--other-sources")
         self.assertEqual(r.returncode, 0, r.stderr)
-        page = open(os.path.join(out, "other-sources.html"), encoding="utf-8").read()
+        page = open(os.path.join(out, "index.html"), encoding="utf-8").read()   # a section of the Catalog page, not a page of its own
+        self.assertIn('id="tab-other"', page)
         self.assertIn("Pro Synth", page)
         self.assertIn("Visit developer", page)
-        for f in ("catalog.json", "catalog.tsv", "index.html"):
+        self.assertFalse(os.path.exists(os.path.join(out, "other-sources.html")))
+        for f in ("catalog.json", "catalog.tsv"):
             self.assertNotIn("pro-synth", open(os.path.join(out, f), encoding="utf-8").read(), f)
         json.dump({"listings_version": 1, "listings": [dict(self.L, shop_url="javascript:alert(1)")]}, open(os.path.join(dist, "listings.json"), "w"))
         r = site("--other-sources")

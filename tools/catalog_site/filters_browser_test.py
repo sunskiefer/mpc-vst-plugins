@@ -12,13 +12,17 @@ def check(name, cond, extra=""):
     if not cond: fails.append(name)
 def names(pg): return pg.locator("#grid article.card h2").all_inner_texts()
 
+def open_more(pg):
+    """Developer, MPC OS, Device and Tier sit under "More filters" (2026-11-23): open it before using them."""
+    if pg.locator("#morebox").is_hidden(): pg.click("#more-btn")
+
 with sync_playwright() as p:
     b = p.chromium.launch(); ctx = b.new_context(viewport={"width": 1280, "height": 900}); pg = ctx.new_page(); errs = []
     pg.route("https://*.workers.dev/**", lambda r: r.abort())   # the community service is down: cards show only downloads, no buttons
     pg.on("pageerror", lambda e: errs.append(str(e))); pg.route("https://shots.invalid/**", lambda r: r.fulfill(status=404))
     pg.goto(URL); pg.wait_for_timeout(300)
     # 1. License and Distribution are gone
-    check("no License or Distribution filter", pg.locator("#f-lic").count() == 0 and pg.locator("#f-dist").count() == 0 and "License" not in pg.locator("#panel-plugins .tools").inner_text() and "Distribution" not in pg.locator("#panel-plugins .tools").inner_text())
+    check("no License or Distribution filter", pg.locator("#f-lic").count() == 0 and pg.locator("#f-dist").count() == 0 and "License" not in " ".join(pg.locator("#panel-plugins .tools").all_inner_texts()) and "Distribution" not in " ".join(pg.locator("#panel-plugins .tools").all_inner_texts()))
     pg.goto(URL + "#lic=open&dist=release&q=synth"); pg.wait_for_timeout(300)
     check("old links that carry lic= and dist= still load, and are ignored", not errs and "TEST SYNTH" in names(pg), (errs, names(pg)))
     pg.goto(URL); pg.wait_for_timeout(300)
@@ -59,7 +63,7 @@ with sync_playwright() as p:
     mpc, smp = pg.locator('[data-plat=""]'), pg.locator('[data-plat="sample"]')
     check("default: MPC / Force is pressed, the Sample-only addin is hidden, and each button has a count",
           mpc.get_attribute("aria-pressed") == "true" and "SAMPLE ONLY" not in names(pg) and pg.locator("#n-plat").inner_text().isdigit() and pg.locator("#n-plat-sample").inner_text().isdigit())
-    pg.select_option("#f-gen", "gen2"); pg.wait_for_timeout(100)
+    open_more(pg); pg.select_option("#f-gen", "gen2"); pg.wait_for_timeout(100)
     check("the Gen2 filter does not show Sample-only entries", "SAMPLE ONLY" not in names(pg))
     smp.click(); pg.wait_for_timeout(100)
     sv = names(pg)

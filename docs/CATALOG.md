@@ -224,6 +224,11 @@ screen (the draw handler, the rack) loads and does nothing on a Live III. A regi
   Alt OS tab keeps its name; its intro says "MPC Sample OS" under the Sample. The choice is remembered in the browser (`localStorage`
   key `openmpc.device`); a link's own `plat=` wins. Old links keep working: `#tab=` values are unchanged (`all`, `instrument`, `midi`,
   `effect`, `addin`, `patches`, `apps`, `altos`).
+  Later the same day (offline, same tests): the device switch sits at the right end of the section's first row (beside the kinds in
+  Plugins); the filter row is Search (short), Tag, Sort by and a "More filters" button that opens Style, Developer, MPC OS, Device
+  and Tier (it opens by itself when a link carries one of them, and shows how many are set). Inside a kind (and in Addins) the
+  styles that kind has on the chosen device show as chips; styles with one entry fold behind "+N more". The Style dropdown stays
+  in step with the chips.
 - `mpc-store.sh` lists it as `[only for: mpc-sample]` and skips it (not an error) on other devices; the desktop app refuses it there
   (`CatPlugin.ForDevice`) and marks it. Both tell the Sample by its settings file (`MPC Sample.settings`); `MPC_STORE_DEVICE` overrides.
 - The quality bar asks for a Sample test (`tested-sample`) instead of Gen1 and Gen2 ones.
