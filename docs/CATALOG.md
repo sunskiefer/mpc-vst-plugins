@@ -277,6 +277,15 @@ writes and a stock Sample without the card, a way to skip it at boot, stock user
 maintainer (`flags_reviewed`, as for plugins), all shown on the card. The catalog installs nothing from this tab. Open: whether entries need
 an Experimental tier, and whether bundled plugin hashes should be checked against the plugins' releases at build time (today only the id is).
 
+### Fixed styles (2026-11-23, offline: unit tests, the registry check and the site browser tests)
+The site's style chips only help if styles split the catalog: before this, 89 of 153 instruments said `synth` and effects used 28
+free-form styles, half of them on one or two entries. `catalog/styles.json` holds one fixed list per kind (instrument 13, MIDI 4, effect
+13, addin 3, after Schwung's taxonomy), each with a label and the old styles it replaced; `check_entry` refuses a style that is not on
+the list for the entry's kind (MIDI means an instrument with `role: "midi"`). All 319 entries were moved over with `tools/style_map.py
+--apply` (old style, else tags, else a short reviewed override list; `--summary` gives the counts: instruments Polysynth 25, Drum
+machine 21, Sampler & rompler 17, Macro & hybrid 16, Mono & bass 14, Wavetable 14, ...). The site shows the labels. A new style is a
+PR to `styles.json`.
+
 ### Site
 Generated static HTML (`tools/catalog_site.py`, no JS framework): searchable/filterable grid, a page per plugin
 (screenshot, description, version history, install steps, source link, checksum, tested-on), a "recently updated"

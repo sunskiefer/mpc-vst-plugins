@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "8-band EQ you edit two ways over a live spectrum: drag colour-coded band nodes, or paint the curve with a finger and it becomes real bands. Bell, shelves, 6 to 48 dB/oct cuts and notch, with zero-latency filters that keep their analog shape near 20 kHz, undo/redo, and a pre/post analyser.",
-  "style": "eq",
+  "style": "filter-eq",
   "tags": ["eq", "parametric-eq", "analyzer", "mixing", "touch"],
   "asset_pattern": "EQ-Artist-[0-9]*-mpc-armv7.zip",
   "min_os": "3.10.1",

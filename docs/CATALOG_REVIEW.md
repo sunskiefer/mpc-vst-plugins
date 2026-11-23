@@ -95,7 +95,7 @@ Run it in order: the first items are mechanical and catch most problems.
     `id` nor the `name` may take another author's plugin. A second port of the same plugin gets a distinct name and `id`
     (e.g. "OB-Xd by 3dthc"), or the existing author agrees to hand over their entry (#448, #453, #463). The `name` doesn't
     include "OpenMPC", because that reads as published by this project (#845).
-11. **`kind`, `style`, `tags`** match what the plugin is. If `min_os` is set it is `"3.10.1"` (CI enforces the value) and
+11. **`kind`, `style`, `tags`** match what the plugin is (CI checks `style` is on the kind's list in `catalog/styles.json`; you check it is the right one, and that a PR adding a style to that file is needed). If `min_os` is set it is `"3.10.1"` (CI enforces the value) and
     the plugin really needs MPC OS 3.10.1 or later: its README or `tested.json` says so. It only hides the card on older
     OS versions (`docs/CATALOG.md`), so a reviewer may approve it; ask the author if nothing supports it.
 

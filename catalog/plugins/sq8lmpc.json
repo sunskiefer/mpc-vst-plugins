@@ -4,7 +4,7 @@
   "author": "L'Cronx",
   "repo": "sunskiefer/SQ8LMPC",
   "kind": "instrument",
-  "style": "synth",
+  "style": "wavetable",
   "tags": [
     "ensoniq",
     "sq-80",

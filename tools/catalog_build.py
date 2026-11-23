@@ -52,6 +52,9 @@ DISTRIBUTIONS = ("release", "build-yourself")
 # devices an entry can be limited to ("devices": [...]): only those get it offered. The MPC Sample (AC50) runs MPC OS on aarch64,
 # so it takes the Gen2 zip, but it is not a Gen2 MPC: addins written for its screen do nothing on a Live III (docs/CATALOG.md).
 DEVICES = {"mpc-sample": "MPC Sample"}
+# the fixed styles per kind (catalog/styles.json; "midi" is an instrument with role "midi"), 2026-11-23
+STYLES_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "catalog", "styles.json")
+STYLES = {k: [s["id"] for s in v] for k, v in json.load(open(STYLES_FILE))["styles"].items()} if os.path.isfile(STYLES_FILE) else {}
 BUILD_YOURSELF_FIELDS = ("requires_user_files", "build", "components")
 TAG_VERSION = re.compile(r"v?(\d+)\.(\d+)\.(\d+)")
 ZIP_PATTERN = "*-mpc-armv7.zip"
@@ -63,7 +66,7 @@ MAX_SUMMARY = 350   # characters; longer detail belongs in the repo README (docs
 MAX_TAGS = 8
 MAX_UNCOLLECTED = 5   # entries one repo may list per author without a collection (docs/CATALOG.md, "Collections")
 COLLECTION_FIELDS = ("id", "title", "author", "repo", "summary")
-CATALOG_FILES = {"added.json", "apps.json", "confirmed.json", "downloads.json", "patches.json", "alt_os.json", "yanked.json"}   # the only JSON directly in catalog/; plugin entries live in plugins/
+CATALOG_FILES = {"added.json", "apps.json", "confirmed.json", "downloads.json", "patches.json", "alt_os.json", "styles.json", "yanked.json"}   # the only JSON directly in catalog/; plugin entries live in plugins/
 OPEN_LICENSES = {"MIT", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Apache-2.0", "GPL-2.0-only", "GPL-2.0-or-later",
                  "GPL-3.0-only", "GPL-3.0-or-later", "LGPL-2.1-only", "LGPL-2.1-or-later", "LGPL-3.0-only",
                  "LGPL-3.0-or-later", "AGPL-3.0-only", "AGPL-3.0-or-later", "MPL-2.0", "Unlicense", "CC0-1.0", "Zlib"}
@@ -105,7 +108,11 @@ def check_entry(e, fname=None):
     if "source_available" in e and not isinstance(e["source_available"], bool):
         p.append("source_available must be true or false")
     if "style" in e and not (isinstance(e["style"], str) and ID.fullmatch(e["style"])):
-        p.append("style must be a lowercase slug, e.g. sampler, synth, reverb")
+        p.append("style must be a lowercase slug, e.g. polysynth, drum-machine, reverb")
+    elif "style" in e and STYLES:
+        sk = "midi" if e.get("role") == "midi" else e.get("kind")
+        if sk in STYLES and e["style"] not in STYLES[sk]:
+            p.append("style %r is not one of the %s styles in catalog/styles.json: %s" % (e["style"], sk, ", ".join(STYLES[sk])))
     if "role" in e and not (e["role"] == "midi" and e.get("kind") == "instrument"):
         p.append("role must be \"midi\" and only on an instrument (a plugin that sends MIDI to other tracks instead of making sound)")
     if "tier" in e and e["tier"] != "experimental":

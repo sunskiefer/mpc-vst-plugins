@@ -4,7 +4,7 @@
   "author": "jacob-sabella",
   "repo": "jacob-sabella/mpc-addin-usb-audio",
   "kind": "addin",
-  "style": "audio-interface",
+  "style": "audio",
   "tags": [
     "usb",
     "audio-interface",

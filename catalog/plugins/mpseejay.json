@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "MIT",
   "summary": "Two DJ decks for an external DJ mixer: one plugin per deck, each on its own output. Waveforms, tempo and beat-grid detection, sync, pitch fader (MIDI-learnable), cue, hot cues, loops and rolls, a browser with rekordbox playlists, sorting and star ratings, and the 16 pads lit on the MPC. WAV and MP3. Tested on an MPC Live II, MPC OS 3.10.1.",
-  "style": "dj",
+  "style": "dj-players",
   "tags": ["dj", "player", "decks", "sync", "rekordbox"],
   "min_os": "3.10.1",
   "screenshot": "https://raw.githubusercontent.com/noahsoconnor/mpseejay/v1.1.0/docs/screenshot.png",

@@ -5,7 +5,7 @@
   "repo": "jamiefaye/mpc-deluge",
   "kind": "instrument",
   "license": "GPL-3.0-or-later",
-  "style": "synth",
+  "style": "polysynth",
   "tags": [
     "fm",
     "polyphonic",

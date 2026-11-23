@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "GPL-3.0-only AND AGPL-3.0-or-later",
   "summary": "303-style synth for Gen2 MPCs: eight filters, 64-step touch sequencer, modulation matrix, 37 neural drive models and native MPC presets. Hardware tested on Live III.",
-  "style": "synth",
+  "style": "mono-bass",
   "tags": [
     "acid",
     "bass",

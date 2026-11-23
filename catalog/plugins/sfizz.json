@@ -4,7 +4,7 @@
   "author": "gmorb (MPC port); sfizz by sfztools",
   "repo": "gmorb/mpc-vst-sfizz",
   "kind": "instrument",
-  "style": "sampler",
+  "style": "sampler-rompler",
   "tags": ["sfz", "sf2", "soundfont", "sampler", "piano", "keyswitch", "streaming", "scala"],
   "license": "BSD-2-Clause",
   "asset_pattern": "sfizz-*-mpc-armv7.zip",

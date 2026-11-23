@@ -1,5 +1,5 @@
 { "id": "voxboy", "name": "Voxboy", "author": "Stampman3000", "repo": "stampman3000-jpg/voxman",
-  "kind": "effect", "style": "utility", "tags": ["vocoder"], "license": "MIT",
+  "kind": "effect", "style": "pitch-vocal", "tags": ["vocoder"], "license": "MIT",
   "summary": "Carrier send for Voxman: put it on a bass or synth track to make it the vocoder's carrier.",
   "screenshot": "https://raw.githubusercontent.com/stampman3000-jpg/voxman/v1.0.0/screenshots/voxboy.png",
   "asset_pattern": "Voxboy-*-mpc-armv7.zip" }

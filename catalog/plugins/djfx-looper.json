@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "Apache-2.0",
   "summary": "Three Q-Link knobs for short loops, speed bends and reverse playback, with FX bypass and an on-device quick guide.",
-  "style": "glitch",
+  "style": "glitch-performance",
   "tags": [
     "looper",
     "reverse",

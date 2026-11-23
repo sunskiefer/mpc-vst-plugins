@@ -1,5 +1,5 @@
 { "id": "op3000", "name": "OP3000", "author": "Stampman3000", "repo": "stampman3000-jpg/op3000",
-  "kind": "instrument", "style": "synth", "tags": ["synth", "fm"], "license": "MIT",
+  "kind": "instrument", "style": "fm", "tags": ["synth", "fm"], "license": "MIT",
   "summary": "Dual-chip FM synth in the style of the YM2151 and YM2612, with a PSG sub-chip, filter, chorus and delay.",
   "screenshot": "https://raw.githubusercontent.com/stampman3000-jpg/op3000/v1.0.0/screenshots/op3000.png",
   "asset_pattern": "OP3000-*-mpc-armv7.zip" }

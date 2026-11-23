@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "Six-barrel rotary gate and stutter: the barrels spool up from rest, rates in real gun rounds per minute (2,500 / 4,000 / 6,000 / 7,200).",
-  "style": "glitch",
+  "style": "glitch-performance",
   "tags": [
     "gate",
     "stutter",

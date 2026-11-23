@@ -1,5 +1,5 @@
 { "id": "binaural-echo", "name": "Binaural Echo", "author": "Lightlike", "repo": "lightlikemusic/binaural-echo",
-  "kind": "effect", "style": "mixing", "tags": ["echo", "delay", "binaural", "spatial", "tempo-sync", "headphones", "ambisonics", "panner"],
+  "kind": "effect", "style": "delay", "tags": ["echo", "delay", "binaural", "spatial", "tempo-sync", "headphones", "ambisonics", "panner"],
   "license": "MIT",
   "screenshot": "https://raw.githubusercontent.com/lightlikemusic/binaural-echo/v1.0.0/docs/screenshot.png",
   "summary": "Binaural echoes and 3D panning. Every repeat turns and tilts through the sound field, so delays circle you, bounce from front to back or trail behind a moving source, free or tempo-synced. Place the sound with Q-Links for azimuth, elevation and distance, or let it orbit, swing or fly by. Made for headphones." }

@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "Live Akai S-series style time stretch and pitch shift with an S950 filter, a CD-deck cue/scrub and a looper with adjustable sample rate.",
-  "style": "multi-fx",
+  "style": "lofi-tape",
   "tags": [
     "time-stretch",
     "sampler",

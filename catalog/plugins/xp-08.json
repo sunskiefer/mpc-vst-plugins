@@ -1,4 +1,4 @@
 { "id": "xp-08", "name": "XP-08", "author": "Stephane Schmitz", "repo": "eldontyrellcorp/mpc-plugin-xp08",
-  "kind": "instrument", "style": "rompler", "tags": ["rompler", "polyphonic", "mod-matrix", "multi-fx"], "license": "MIT",
+  "kind": "instrument", "style": "sampler-rompler", "tags": ["rompler", "polyphonic", "mod-matrix", "multi-fx"], "license": "MIT",
   "summary": "An XP-80-style PCM synth that plays Roland SR-JV80 boards from your own dumps: four board slots, their patches, four tones with pitch, filter and amp envelopes, LFOs, mod matrix, 12/24 dB and ladder filters, all 40 EFX types, chorus, reverb. Needs your own board (and optional JV-1080/JV-880) dumps. Akai MPC Plugin SDK; Gen1 and Gen2.",
   "screenshot": "https://raw.githubusercontent.com/eldontyrellcorp/mpc-plugin-xp08/v1.0.0/preview/01_PLAY.png" }

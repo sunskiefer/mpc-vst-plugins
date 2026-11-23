@@ -7,7 +7,7 @@
   "role": "midi",
   "license": "MIT",
   "summary": "Sixteen-lane hybrid MIDI sequencer with Euclidean patterns, per-step expression, scales, selective randomization and dual-LFO modulation.",
-  "style": "sequencer",
+  "style": "generative",
   "tags": [
     "midi",
     "sequencer",

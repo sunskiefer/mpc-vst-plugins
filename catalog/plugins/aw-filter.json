@@ -5,7 +5,7 @@
   "repo": "sd88me/mpc-vst-airwindows",
   "collection": "airwindows-collection",
   "kind": "effect",
-  "style": "filter",
+  "style": "filter-eq",
   "tags": [
     "airwindows",
     "eq",

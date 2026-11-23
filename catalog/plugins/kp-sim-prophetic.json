@@ -1,5 +1,5 @@
 { "id": "kp-sim-prophetic", "name": "Prophetic", "author": "ratbuddy", "repo": "ratbuddy/prophetic",
-  "kind": "instrument", "style": "synth", "tags": ["emulation", "firmware-derived", "physical-modelling", "arpeggiator", "polyphonic", "gen2", "korg"],
+  "kind": "instrument", "style": "physical-modeling", "tags": ["emulation", "firmware-derived", "physical-modelling", "arpeggiator", "polyphonic", "gen2", "korg"],
   "license": "GPL-3.0-or-later",
   "summary": "The Korg Prophecy's synthesis, built on your computer from your own Prophecy v2.0 ROMs: their DSP programs and sound-engine firmware, translated to C++. 128 programs, every parameter, Performance Editor, arpeggiator, 1-8 voices. Gen2; tested on an MPC Live III.",
   "distribution": "build-yourself",
