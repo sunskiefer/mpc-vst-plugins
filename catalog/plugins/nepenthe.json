@@ -1,0 +1,17 @@
+{
+  "id": "nepenthe",
+  "name": "Nepenthe",
+  "author": "ikloX",
+  "repo": "biloo77-cell/mpc-vst-nepenthe",
+  "kind": "effect",
+  "style": "reverb",
+  "tags": [
+    "reverb",
+    "velvet-noise",
+    "stereo",
+    "algorithmic"
+  ],
+  "license": "GPL-3.0-only",
+  "summary": "Amalgamated Signals' smooth velvet-noise reverb, bit-identical to the original, with time, pre-delay, bass, treble, width and mix on upstream's sliders.",
+  "screenshot": "https://raw.githubusercontent.com/biloo77-cell/mpc-vst-nepenthe/67bccc8467bc12bdc57bfab1b66bf5a6563de8ae/docs/img/nepenthe.png"
+}
