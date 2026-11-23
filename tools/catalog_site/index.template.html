@@ -50,33 +50,45 @@
 
   <div class="pagelist">/*GUIDES*/</div>
 
-  <div class="plat" role="group" aria-label="Device">
-    <button type="button" data-plat="" aria-pressed="true">MPC / Force <span class="n" id="n-plat"></span></button>
-    <button type="button" data-plat="sample" aria-pressed="false" title="Plugins made for the MPC Sample, tested on one by their author, or reported working on one">MPC Sample <span class="n" id="n-plat-sample"></span></button>
-  </div>
   <div class="tabs" role="tablist" aria-label="Catalog sections">
+    <button type="button" role="tab" id="tab-plugins" aria-controls="panel-plugins" aria-selected="true" data-sec="plugins">Plugins</button>
+    <button type="button" role="tab" id="tab-addin" aria-controls="panel-plugins" aria-selected="false" data-tab="addin" tabindex="-1">Addins</button>
+    <button type="button" role="tab" id="tab-altos" aria-controls="panel-altos" aria-selected="false" data-tab="altos" tabindex="-1">Alt OS</button>
+    <button type="button" role="tab" id="tab-patches" aria-controls="panel-patches" aria-selected="false" data-tab="patches" tabindex="-1">Device patches</button>
+    <button type="button" role="tab" id="tab-apps" aria-controls="panel-apps" aria-selected="false" data-tab="apps" tabindex="-1">Companion apps</button>
+    <!--OTHER_TAB-->
+  </div>
+  <!-- the device switch: one shared choice, moved into the open section's panel (not Device patches or Companion apps), remembered in this browser -->
+  <div class="plat" role="group" aria-label="Device" id="plat">
+    <span class="plat-l">Device</span>
+    <button type="button" data-plat="" aria-pressed="true">MPC / Force <span class="n" id="n-plat"></span></button>
+    <button type="button" data-plat="sample" aria-pressed="false" title="Made for the MPC Sample, tested on one by their author, or reported working on one">MPC Sample <span class="n" id="n-plat-sample"></span></button>
+  </div>
+
+  <div role="tabpanel" id="panel-plugins" aria-labelledby="tab-plugins">
+  <div class="secbar">
+  <div class="kinds" role="tablist" aria-label="Plugin kinds" id="kinds">
     <button type="button" role="tab" id="tab-all" aria-controls="panel-plugins" aria-selected="true" data-tab="all">All <span class="n" id="n-all"></span></button>
     <button type="button" role="tab" id="tab-instrument" aria-controls="panel-plugins" aria-selected="false" data-tab="instrument" tabindex="-1">Instruments <span class="n" id="n-instrument"></span></button>
     <button type="button" role="tab" id="tab-midi" aria-controls="panel-plugins" aria-selected="false" data-tab="midi" tabindex="-1">MIDI <span class="n" id="n-midi"></span></button>
     <button type="button" role="tab" id="tab-effect" aria-controls="panel-plugins" aria-selected="false" data-tab="effect" tabindex="-1">Effects <span class="n" id="n-effect"></span></button>
-    <button type="button" role="tab" id="tab-addin" aria-controls="panel-plugins" aria-selected="false" data-tab="addin" tabindex="-1">Addins <span class="n" id="n-addin"></span></button>
-    <button type="button" role="tab" id="tab-patches" aria-controls="panel-patches" aria-selected="false" data-tab="patches" tabindex="-1">Device patches <span class="n">/*N_PATCHES*/</span></button>
-    <button type="button" role="tab" id="tab-apps" aria-controls="panel-apps" aria-selected="false" data-tab="apps" tabindex="-1">Companion apps <span class="n">/*N_APPS*/</span></button>
-    <button type="button" role="tab" id="tab-altos" aria-controls="panel-altos" aria-selected="false" data-tab="altos" tabindex="-1"><span id="l-altos">Alt OS</span> <span class="n" id="n-altos"></span></button>
   </div>
-
-  <div role="tabpanel" id="panel-plugins" aria-labelledby="tab-all">
-  <div class="tools">
+  </div>
+  <p class="tabintro" id="addin-intro" hidden>Addins are libraries MPC loads when it starts, which change how it behaves. They are not plugins; Plugin Manager and the installer install them like plugins.</p>
+  <div class="chips" id="stylechips" role="group" aria-label="Style" hidden></div>
+  <div class="chips" id="tagchips" role="group" aria-label="Tags" hidden></div>
+  <div class="tools main">
     <label class="search">Search<input id="q" type="search" placeholder="Name, developer, style or tag"></label>
+    <label>Sort by<select id="sort"></select></label>
+    <button type="button" class="morebtn" id="more-btn" aria-expanded="false" aria-controls="morebox">More filters<span class="n" id="more-n"></span></button>
+  </div>
+  <div class="tools morebox" id="morebox" hidden>
     <label>Style<select id="f-style"></select></label>
     <label>Developer<select id="f-dev"></select></label>
-    <label>Tag<select id="f-tag"></select></label>
     <label>MPC OS<select id="f-os"></select></label>
     <label id="l-gen">Device<select id="f-gen"></select></label>
     <label>Tier<select id="f-tier"></select></label>
-    <label>Sort by<select id="sort"></select></label>
   </div>
-  <div class="tagbar" id="tagbar" hidden></div>
   <div class="status">
     <span id="count" aria-live="polite"></span>
     <span>
@@ -86,6 +98,7 @@
     </span>
   </div>
 
+  <p class="elsewhere" id="elsewhere" hidden></p>
   <div class="grid" id="grid"></div>
   <p class="empty" id="empty" hidden>No plugins match these filters.</p>
   <div class="modal" id="modal" hidden>
@@ -141,10 +154,13 @@
   </div>
 
   <div role="tabpanel" id="panel-altos" aria-labelledby="tab-altos" hidden>
-    <p class="tabintro">Alternative OS: standalone apps that run on the device's own system and take the place of the stock <span id="os-dev">MPC</span> app while they run. They don't replace the firmware. Not plugins, and the catalog installs none of them. Each one listed has a device report, starts only on the stock firmware it lists, writes nothing to the system, and gives you the stock device back when you boot without its card or drive. Read its flags before you install.</p>
+    <div class="secbar"></div>
+    <p class="tabintro"><span id="os-title">Alternative OS</span>: standalone apps that run on the device's own system and take the place of the stock <span id="os-dev">MPC</span> app while they run. They don't replace the firmware. Not plugins, and the catalog installs none of them. Each one listed has a device report, starts only on the stock firmware it lists, writes nothing to the system, and gives you the stock device back when you boot without its card or drive. Read its flags before you install.</p>
     <div class="grid" id="altos">/*ALT_OS_HTML*/</div>
     <p class="empty" id="os-empty" hidden></p>
   </div>
+
+  <!--OTHER_PANEL-->
 
   <footer>Community-provided software. Installing runs a script as root on your device: check the source and the checksum first. Not affiliated with or endorsed by Akai Professional. Use at your own risk, with no warranty: a plugin or patch can crash MPC, lose unsaved work or, at worst, leave the device needing a reinstall of its OS. Back up first.<br>
     Questions, testing and release news: <a href="https://discord.gg/sRRysZSgu3">Open MPC on Discord</a>.<br>
@@ -243,12 +259,25 @@ function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function 
 /* Tags: pick one or several (a plugin must carry all of them); the Search box still finds any tag by typing. Tags on 2+ plugins are listed in the
    dropdown; a tag on one plugin is reachable by clicking it on its card. The choice is part of the URL hash (tags=a,b). */
 var TAGN = {}; P.forEach(function (p) { (p.tags || []).forEach(function (t) { TAGN[t] = (TAGN[t] || 0) + 1; }); });
+/* Tag chips (2026-11-23, after Schwung's catalog): the tags present in what the section, kind, device and style leave, used by two or
+   more of them, most used first; the chosen ones always show, pressed. Counted WITHOUT the tag filter itself, so you can move from one
+   tag to another without clearing first. Several tags: a plugin must carry all of them. */
+var moreTags = false, TAG_SHOW = 10;
 function fillTags() {
-  var names = Object.keys(TAGN).filter(function (t) { return TAGN[t] >= 2 && state.tags.indexOf(t) < 0; }).sort(function (a, b) { return TAGN[b] - TAGN[a] || a.localeCompare(b); });
-  $("f-tag").innerHTML = '<option value="">' + (state.tags.length ? "Add another tag" : "Any tag") + '</option>' + names.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + ' (' + TAGN[t] + ')</option>'; }).join("");
-  $("f-tag").value = "";
-  $("tagbar").hidden = !state.tags.length;
-  $("tagbar").innerHTML = state.tags.length ? '<span>Tags:</span> ' + state.tags.map(function (t) { return '<button type="button" class="tagx" data-untag="' + esc(t) + '" aria-label="Remove tag ' + esc(t) + '">' + esc(t) + ' &times;</button>'; }).join(" ") + ' <button type="button" class="linkbtn" data-untag="*">Clear tags</button>' : "";
+  var box = $("tagchips"), sec = secOf(state.tab), n = {};
+  if (!box) return;
+  if (sec !== "plugins" && sec !== "addin") { box.hidden = true; return; }
+  P.forEach(function (p) {
+    if (!(sec === "addin" ? p.kind === "addin" : inTabKind(p, state.tab)) || !platOk(p) || (state.style && p.style !== state.style)) return;
+    (p.tags || []).forEach(function (t) { n[t] = (n[t] || 0) + 1; });
+  });
+  var names = Object.keys(n).filter(function (t) { return n[t] >= 2 && state.tags.indexOf(t) < 0; }).sort(function (a, b) { return n[b] - n[a] || a.localeCompare(b); });
+  var shown = moreTags ? names : names.slice(0, TAG_SHOW), rest = names.length - shown.length;
+  var chip = function (t, on) { return '<button type="button" class="chip tagchip" data-tagchip="' + esc(t) + '" aria-pressed="' + on + '">' + esc(t) + (n[t] ? ' <span class="n">' + n[t] + '</span>' : "") + '</button>'; };
+  box.hidden = !names.length && !state.tags.length;
+  box.innerHTML = '<span class="chips-l">Tags</span>' + state.tags.map(function (t) { return chip(t, true); }).join("") + shown.map(function (t) { return chip(t, false); }).join("") +
+    (rest || moreTags && names.length > TAG_SHOW ? '<button type="button" class="chip more" data-moretags="1">' + (moreTags ? "Fewer" : "+" + rest + " more") + '</button>' : "") +
+    (state.tags.length ? '<button type="button" class="linkbtn" data-untag="*">Clear tags</button>' : "");
 }
 function uniq(f) { var o = {}; P.forEach(function (p) { var v = f(p); if (v) o[v] = 1; }); return Object.keys(o).sort(); }
 function fillSelect(id, all, values, label) {
@@ -256,8 +285,10 @@ function fillSelect(id, all, values, label) {
 }
 var PLUGIN_TABS = ["all", "instrument", "midi", "effect", "addin"];
 var KINDS = { instrument: "Instruments", midi: "MIDI", effect: "Effects", addin: "Addins", all: "Plugins" };
+var PLUGIN_KINDS = ["all", "instrument", "midi", "effect"];   /* the kind row inside the Plugins section; "addin" is its own section on the same grid */
+function secOf(t) { return PLUGIN_KINDS.indexOf(t) >= 0 ? "plugins" : t; }
 /* a plugin with role "midi" is listed under the MIDI tab, not Instruments */
-function inTabKind(p, k) { if (k === "all") return true; return kindsOf(p).some(function (c) { return (c === "instrument" && p.role === "midi" && c === p.kind ? "midi" : c) === k; }); }
+function inTabKind(p, k) { if (k === "all") return p.kind !== "addin"; return kindsOf(p).some(function (c) { return (c === "instrument" && p.role === "midi" && c === p.kind ? "midi" : c) === k; }); }
 var title = function (s) { return s.replace(/-/g, " ").replace(/^./, function (c) { return c.toUpperCase(); }); };
 fillSelect("f-tier", "Verified and unverified", TIER_FILTERS, function (v) { return v === "all" ? "All tiers" : v === "verified" ? "Verified only" : v === "verified-gen1" ? "Verified on Gen1" : v === "verified-gen2" ? "Verified on Gen2" : v === "verified-sample" ? "Verified on MPC Sample" : v === "listed" ? "Not yet verified" : "Experimental only"; });
 fillSelect("f-os", "Any MPC OS", ["2x", "3x"], function (v) { return v === "2x" ? "Works on MPC OS 2.x" : "MPC OS 3.x only"; });
@@ -579,21 +610,28 @@ function render() {
   var nOut = out.reduce(function (n, p) { return n + (p.coll ? p.hit.length : 1); }, 0);   /* plugins, counting each collection member */
   var hid = !state.tier ? P.filter(function (p) { return tierOf(p) === "experimental" && (PLUGIN_TABS.indexOf(state.tab) < 0 || inTabKind(p, state.tab)); }).length : 0;
   $("exp").hidden = !hid; $("exp-n").textContent = hid;
-  $("n-plat").textContent = P.filter(function (p) { return platOk(p, ""); }).length;   /* whole catalog: the switch sits above the tabs */
-  $("n-plat-sample").textContent = P.filter(function (p) { return platOk(p, "sample"); }).length;
+  var sec = secOf(state.tab), inSec = function (p) { return sec === "addin" ? p.kind === "addin" : p.kind !== "addin"; };
+  var osOn = function (d) { return document.querySelectorAll('#altos [data-device="' + d + '"]').length; };
+  /* the switch's counts are for the open section: plugins, addins or alternative OS */
+  $("n-plat").textContent = sec === "altos" ? osOn("mpc") : P.filter(function (p) { return inSec(p) && platOk(p, ""); }).length;
+  $("n-plat-sample").textContent = sec === "altos" ? osOn("mpc-sample") : P.filter(function (p) { return inSec(p) && platOk(p, "sample"); }).length;
   document.querySelectorAll("[data-plat]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-plat") === state.plat)); });
   $("l-gen").hidden = state.plat === "sample";
   /* the Alt OS tab follows the device switch: MPC Sample OS under MPC Sample, Alt OS (standalone MPCs and Force) otherwise */
   var fwDev = state.plat === "sample" ? "mpc-sample" : "mpc", fwN = 0;
   document.querySelectorAll("#altos [data-device]").forEach(function (c) { var on = c.getAttribute("data-device") === fwDev; c.hidden = !on; fwN += on ? 1 : 0; });
-  $("l-altos").textContent = state.plat === "sample" ? "MPC Sample OS" : "Alt OS";
+  $("os-title").textContent = state.plat === "sample" ? "MPC Sample OS" : "Alternative OS";
   $("os-dev").textContent = state.plat === "sample" ? "MPC Sample" : "MPC";
-  $("n-altos").textContent = fwN;
   $("os-empty").hidden = fwN > 0;
   $("os-empty").textContent = state.plat === "sample" ? "No MPC Sample operating systems are listed yet." : "No alternative OS for the standalone MPCs is listed yet.";
-  PLUGIN_TABS.forEach(function (k) { $("n-" + k).textContent = P.filter(function (p) { return inTabKind(p, k) && platOk(p); }).length; });   /* tab counts follow the device switch */
+  PLUGIN_KINDS.forEach(function (k) { $("n-" + k).textContent = P.filter(function (p) { return inTabKind(p, k) && platOk(p); }).length; });   /* tab counts follow the device switch */
   var inTab = P.filter(function (p) { return (PLUGIN_TABS.indexOf(state.tab) < 0 || inTabKind(p, state.tab)) && platOk(p); }).length;
   $("count").textContent = nOut + " of " + inTab + " " + (state.tab === "midi" ? "MIDI plugins" : state.tab === "all" ? "plugins" : (KINDS[state.tab] || "plugins").toLowerCase());
+  styleChips(); fillTags(); elsewhere(); renderOther();
+  var osOther = $("panel-other") && secOf(state.tab) === "other";
+  if (osOther) { $("n-plat").textContent = LISTINGS.filter(function (l) { return listingDevOk(l, ""); }).length; $("n-plat-sample").textContent = LISTINGS.filter(function (l) { return listingDevOk(l, "sample"); }).length; }
+  var adv = ["style", "dev", "os", "gen", "tier"].filter(function (k) { return state[k] && !(k === "style" && !$("stylechips").hidden); }).length;   /* a style picked on the chips is in view already */
+  $("more-n").textContent = adv ? adv : "";
   var down = so.desc !== state.rev;
   $("dir").textContent = down ? "Z-A / high-low" : "A-Z / low-high";
   $("dir").title = "Sorted " + (down ? "descending" : "ascending");
@@ -629,27 +667,128 @@ function load() {
     state.tab = PLUGIN_TABS.filter(function (k) { return inTabKind(o, k); })[0] || state.tab;
   }
 }
-/* Tabs: Instruments, Effects and Addins share the filter bar and grid (the tab is the kind); Device patches and Companion apps are their own panels. The tab is part of the URL hash. */
-var TABS = ["all", "instrument", "midi", "effect", "addin", "patches", "apps", "altos"];
-function showTab(t, focus) {
-  state.tab = t;
-  TABS.forEach(function (n) {
-    var on = n === t;
-    $("tab-" + n).setAttribute("aria-selected", on ? "true" : "false"); $("tab-" + n).tabIndex = on ? 0 : -1;
-    if (n === "patches" || n === "apps" || n === "altos") $("panel-" + n).hidden = !on;
-    if (on && focus) $("tab-" + n).focus();
+/* Other sources (closed-source and paid listings, linked to the developer's site; built only with catalog_site.py --other-sources).
+   Same device rule as plugins: MPC / Force leaves out listings the developer says are for the MPC Sample only. */
+var LISTINGS = /*LISTINGS_JSON*/, okind = "";
+function listingDevOk(l, plat) { var d = l.devices || []; return (plat === undefined ? state.plat : plat) === "sample" ? d.indexOf("mpc-sample") >= 0 : !(d.length === 1 && d[0] === "mpc-sample"); }
+function renderOther() {
+  if (!$("panel-other")) return;
+  var q = $("o-q").value.trim().toLowerCase(), price = $("o-price").value, n = 0, byKind = { "": 0, instrument: 0, effect: 0 };
+  document.querySelectorAll("#others .card").forEach(function (c) {
+    var devs = (c.getAttribute("data-devices") || "").split(" ").filter(Boolean), dev = state.plat === "sample" ? devs.indexOf("mpc-sample") >= 0 : !(devs.length === 1 && devs[0] === "mpc-sample");
+    if (dev) { byKind[""]++; byKind[c.getAttribute("data-kind")]++; }
+    var ok = dev && (!okind || c.getAttribute("data-kind") === okind) && (!price || c.getAttribute("data-price") === price) && (!q || c.getAttribute("data-text").indexOf(q) >= 0);
+    c.hidden = !ok; if (ok) n++;
   });
-  $("panel-plugins").hidden = PLUGIN_TABS.indexOf(t) < 0;
-  $("panel-plugins").setAttribute("aria-labelledby", "tab-" + (PLUGIN_TABS.indexOf(t) < 0 ? "all" : t));
+  ["", "instrument", "effect"].forEach(function (k) { $("n-o-" + (k || "all")).textContent = byKind[k]; });
+  document.querySelectorAll("[data-okind]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-okind") === okind)); });
+  $("o-count").textContent = n + " of " + byKind[""] + " listings";
+  $("o-empty").hidden = n > 0;
+}
+if ($("panel-other")) {
+  $("o-kinds").addEventListener("click", function (e) { var b = e.target.closest("[data-okind]"); if (b) { okind = b.getAttribute("data-okind"); renderOther(); } });
+  $("o-q").addEventListener("input", renderOther); $("o-price").addEventListener("input", renderOther);
+}
+/* While Plugins is filtered, say how many listings in Other sources match the same search, kind, style and tags. */
+function elsewhere() {
+  var box = $("elsewhere"), sec = secOf(state.tab);
+  if (!$("tab-other") || sec !== "plugins" || !(state.q || state.style || state.tags.length)) { box.hidden = true; return; }   /* only while searching or filtering, not for a bare kind */
+  var q = state.q.toLowerCase(), n = LISTINGS.filter(function (l) {
+    return listingDevOk(l) && (state.tab === "all" || l.kind === state.tab) && (!state.style || l.style === state.style) &&
+      state.tags.every(function (t) { return l.tags.indexOf(t) >= 0; }) && (!q || l.text.indexOf(q) >= 0);
+  }).length;
+  box.hidden = !n;
+  box.innerHTML = n + (n === 1 ? " more match" : " more matches") + ' in <a href="#tab=other" data-go-other="1">Other sources</a>: closed-source or paid plugins, sold by their developers.';
+}
+$("elsewhere").addEventListener("click", function (e) {
+  if (!e.target.closest("[data-go-other]")) return;
+  e.preventDefault(); if ($("o-q")) $("o-q").value = state.q; showTab("other");
+});
+
+/* Style chips: only inside a kind (or Addins), only the styles that kind has on this device; styles with one entry fold behind "+N more".
+   The Style dropdown under More filters stays in step with them. */
+var moreStyles = false;
+function styleChips() {
+  var box = $("stylechips"), sec = secOf(state.tab);
+  if (!box) return;
+  if (sec !== "addin" && (sec !== "plugins" || state.tab === "all")) { box.hidden = true; return; }
+  var n = {};
+  P.forEach(function (p) { if (p.style && inTabKind(p, state.tab) && platOk(p)) n[p.style] = (n[p.style] || 0) + 1; });
+  var all = Object.keys(n).sort(function (a, b) { return n[b] - n[a] || a.localeCompare(b); });
+  if (state.style && !n[state.style]) all.push(state.style), n[state.style] = 0;
+  var main = all.filter(function (k) { return n[k] > 1 || k === state.style; }), rare = all.length - main.length;
+  if (main.length < 3) { main = all; rare = 0; }   /* folding only helps when enough styles stay in view */
+  box.hidden = all.length < 2;
+  var chip = function (v, label, c) { return '<button type="button" class="chip" data-style="' + esc(v) + '" aria-pressed="' + (state.style === v) + '">' + esc(label) + (c != null ? ' <span class="n">' + c + '</span>' : "") + '</button>'; };
+  box.innerHTML = '<span class="chips-l">Style</span>' + chip("", "All styles") + (moreStyles ? all : main).map(function (k) { return chip(k, title(k), n[k]); }).join("") +
+    (rare ? '<button type="button" class="chip more" data-morestyles="1">' + (moreStyles ? "Fewer" : "+" + rare + " more") + '</button>' : "");
+}
+$("stylechips").addEventListener("click", function (e) {
+  var b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-morestyles")) moreStyles = !moreStyles; else { state.style = b.getAttribute("data-style"); sync(); }
+  render();
+});
+$("more-btn").addEventListener("click", function () { var open = $("morebox").hidden; $("morebox").hidden = !open; $("more-btn").setAttribute("aria-expanded", String(open)); });
+
+/* Sections (Plugins, Addins, Alt OS, Device patches, Companion apps) on top; inside Plugins, a row of kinds (All, Instruments, MIDI,
+   Effects). Plugins and Addins share the filter bar and grid. state.tab is one value (a kind, or a section) and is part of the URL hash. */
+var TABS = ["all", "instrument", "midi", "effect", "addin", "patches", "apps", "altos", "other"];
+var SECS = ["plugins", "addin", "altos", "patches", "apps", "other"], lastKind = "all";
+var PLAT_IN = { plugins: "panel-plugins", addin: "panel-plugins", altos: "panel-altos", other: "panel-other" };   /* sections where the device matters: the switch sits at the right of the section's first row */
+/* A section is shown when it has something for either device, so tabs do not come and go with the switch. */
+function secShown(n) {
+  if (n === "altos") return document.querySelectorAll("#altos [data-device]").length > 0;
+  if (n === "patches") return !!document.querySelector("#panel-patches .card, #panel-patches article, #panel-patches tr");
+  if (n === "apps") return document.querySelectorAll("#apps .card").length > 0;
+  if (n === "addin") return P.some(function (p) { return p.kind === "addin"; });
+  if (n === "other") return !!$("tab-other") && LISTINGS.length > 0;
+  return true;
+}
+function showTab(t, focus) {
+  if (!secShown(secOf(t))) t = "all";
+  state.tab = t;
+  var sec = secOf(t);
+  if (sec === "plugins") lastKind = t;
+  if (state.style && !P.some(function (p) { return p.style === state.style && inTabKind(p, t); })) { state.style = ""; sync(); }
+  SECS.forEach(function (n) {
+    var b = $("tab-" + n), on = n === sec;
+    if (!b) return;   /* Other sources exists only in builds with listings */
+    b.hidden = !secShown(n);
+    b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1;
+    if (on && focus && sec !== "plugins") b.focus();
+    if (n === "patches" || n === "apps" || n === "altos" || n === "other") $("panel-" + n).hidden = !on;
+  });
+  PLUGIN_KINDS.forEach(function (n) {
+    var b = $("tab-" + n), on = n === t;
+    b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1;
+    if (on && focus) b.focus();
+  });
+  $("kinds").hidden = sec !== "plugins";
+  $("addin-intro").hidden = sec !== "addin";
+  $("panel-plugins").hidden = sec !== "plugins" && sec !== "addin";
+  $("panel-plugins").setAttribute("aria-labelledby", "tab-" + sec);
+  var plat = $("plat"), into = PLAT_IN[sec];
+  plat.hidden = !into;
+  var bar = into && $(into) && $(into).querySelector(".secbar");
+  if (bar && plat.parentNode !== bar) bar.appendChild(plat);
   render();
 }
-document.querySelector(".tabs").addEventListener("click", function (e) { var b = e.target.closest("[data-tab]"); if (b) showTab(b.getAttribute("data-tab")); });
-document.querySelector(".tabs").addEventListener("keydown", function (e) {
-  var T = TABS, i = T.indexOf(state.tab), d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-  if (e.key === "Home") d = -i; else if (e.key === "End") d = T.length - 1 - i;
-  if (d === undefined) return;
-  e.preventDefault(); showTab(T[(i + d + T.length) % T.length], true);
+document.querySelector(".tabs").addEventListener("click", function (e) {
+  var b = e.target.closest("[data-tab],[data-sec]"); if (!b) return;
+  showTab(b.getAttribute("data-sec") === "plugins" ? lastKind : b.getAttribute("data-tab"));
 });
+$("kinds").addEventListener("click", function (e) { var b = e.target.closest("[data-tab]"); if (b) showTab(b.getAttribute("data-tab")); });
+function arrows(list, cur, go) {
+  return function (e) {
+    var T = list().filter(function (n) { return $("tab-" + n) && !$("tab-" + n).hidden; }), i = T.indexOf(cur()), d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (e.key === "Home") d = -i; else if (e.key === "End") d = T.length - 1 - i;
+    if (d === undefined) return;
+    e.preventDefault(); go(T[(i + d + T.length) % T.length]);
+  };
+}
+document.querySelector(".tabs").addEventListener("keydown", arrows(function () { return SECS; }, function () { return secOf(state.tab); },
+  function (n) { showTab(n === "plugins" ? lastKind : n, true); if (n === "plugins") $("tab-plugins").focus(); }));
+$("kinds").addEventListener("keydown", arrows(function () { return PLUGIN_KINDS; }, function () { return state.tab; }, function (n) { showTab(n, true); }));
 addEventListener("hashchange", function () { load(); sync(); render(); showTab(state.tab); modal(); });
 /* Plugin popup: the screenshot opens the card over a dark backdrop. Its link is the page's hash plus p=<catalog id> (ids never
    change), so it can be shared; Back, Escape, the backdrop and the close button all close it. */
@@ -737,16 +876,26 @@ function filterApps() {
 $("a-q").addEventListener("input", filterApps); $("a-plat").addEventListener("change", filterApps);
 var map = { "q": "q", "f-style": "style", "f-dev": "dev", "f-os": "os", "f-gen": "gen", "f-tier": "tier", "sort": "sort" };
 Object.keys(map).forEach(function (id) { $(id).addEventListener(id === "q" ? "input" : "change", function () { state[map[id]] = $(id).value; if (id === "sort") state.rev = false; render(); }); });
-$("f-tag").addEventListener("change", function () { var t = $("f-tag").value; if (t && state.tags.indexOf(t) < 0) state.tags.push(t); fillTags(); render(); });
-$("tagbar").addEventListener("click", function (e) { var b = e.target.closest("[data-untag]"); if (!b) return; var t = b.getAttribute("data-untag"); state.tags = t === "*" ? [] : state.tags.filter(function (x) { return x !== t; }); fillTags(); render(); });
+$("tagchips").addEventListener("click", function (e) {
+  var b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-moretags")) moreTags = !moreTags;
+  else if (b.hasAttribute("data-untag")) state.tags = [];
+  else { var t = b.getAttribute("data-tagchip"), i = state.tags.indexOf(t); if (i < 0) state.tags.push(t); else state.tags.splice(i, 1); }
+  render();
+});
 $("grid").addEventListener("click", function (e) { var b = e.target.closest("[data-tag]"); if (!b) return; var t = b.getAttribute("data-tag"); if (TAGN[t] && state.tags.indexOf(t) < 0) state.tags.push(t); fillTags(); render(); });
 $("show-exp").addEventListener("click", function () { state.tier = "all"; sync(); render(); });
-document.querySelectorAll("[data-plat]").forEach(function (b) { b.addEventListener("click", function () { state.plat = b.getAttribute("data-plat"); if (state.plat) state.gen = ""; sync(); render(); }); });
+var PLAT_KEY = "openmpc.device";
+function platStore(v) { try { if (v === undefined) return localStorage.getItem(PLAT_KEY); localStorage.setItem(PLAT_KEY, v); } catch (e) {} return null; }
+document.querySelectorAll("[data-plat]").forEach(function (b) { b.addEventListener("click", function () { state.plat = b.getAttribute("data-plat"); platStore(state.plat || "mpc"); if (state.plat) state.gen = ""; sync(); render(); }); });
 $("beta").addEventListener("change", function () { state.beta = $("beta").checked; render(); });
 $("dir").addEventListener("click", function () { state.rev = !state.rev; render(); });
 $("clear").addEventListener("click", function () { state = { tab: state.tab, plat: state.plat, q: "", style: "", dev: "", tags: [], os: "", gen: "", tier: "", sort: "recommended", rev: false, beta: false, sel: state.sel, open: "", coll: "" }; sync(); render(); });
 function sync() { Object.keys(map).forEach(function (id) { $(id).value = state[map[id]]; }); $("beta").checked = state.beta; fillTags(); }
-load(); sync(); render(); showTab(state.tab); filterApps(); modal();
+load();
+if (!/(^#|&)plat=/.test(location.hash) && platStore() === "sample") state.plat = "sample";   /* remembered from an earlier visit */
+if (["dev", "os", "gen", "tier"].some(function (k) { return state[k]; })) { $("morebox").hidden = false; $("more-btn").setAttribute("aria-expanded", "true"); }
+sync(); render(); showTab(state.tab); filterApps(); modal();
 
 /* Install command: ssh into the device, download mpc-store.sh from this site, run it. The plugin ids are validated above and the
    address below, and everything is written with textContent, so nothing typed here can inject markup or shell syntax. */

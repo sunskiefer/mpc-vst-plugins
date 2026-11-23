@@ -42,6 +42,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import catalog_check  # noqa: E402
 import sdk_release  # noqa: E402
 import deps  # noqa: E402
+import catalog_listings  # noqa: E402
 
 ID = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 REPO = re.compile(r"[\w.-]+/[\w.-]+")
@@ -1210,6 +1211,7 @@ def main():
     ap.add_argument("--added", default="catalog/added.json")
     ap.add_argument("--confirmed", default="catalog/confirmed.json", help="{\"<id>@<version>\": \"why\"}: breakage a catalog maintainer reproduced")
     ap.add_argument("--collections", default=None, help="collection files (default: collections/ next to --registry)")
+    ap.add_argument("--listings", default=None, help="Other sources listings (default: listings/ next to --registry); written to listings.json, never to catalog.json")
     ap.add_argument("--keep", type=int, default=10)
     ap.add_argument("--check-registry", action="store_true")
     ap.add_argument("--require-portable", metavar="ID", nargs="+",
@@ -1220,6 +1222,9 @@ def main():
     coll_dir = a.collections or os.path.join(os.path.dirname(os.path.normpath(a.registry)), "collections")
     collections, coll_problems = load_collections(coll_dir, entries, a.registry)
     reg_problems += coll_problems
+    listings, listing_problems = catalog_listings.load_listings(a.listings or os.path.join(os.path.dirname(os.path.normpath(a.registry)), "listings"),
+                                                                {e["id"] for e in entries})
+    reg_problems += listing_problems
     if a.check_registry:
         reg_problems += stray_files(os.path.dirname(os.path.normpath(a.registry))) + added_problems
         reg_problems += [(a.added, "%r is not a registry entry" % k) for k in sorted(added) if k not in {e["id"] for e in entries}]
@@ -1227,7 +1232,7 @@ def main():
     for f, m in reg_problems:
         print("error: %s: %s" % (f, m), file=sys.stderr)
     if a.check_registry:
-        print("%d entries, %d collections, %d problems" % (len(entries), len(collections), len(reg_problems)))
+        print("%d entries, %d collections, %d listings, %d problems" % (len(entries), len(collections), len(listings), len(reg_problems)))
         sys.exit(1 if reg_problems else 0)
     yanked = set(json.load(open(a.yanked))) if os.path.exists(a.yanked) else set()
     if a.require_portable:
@@ -1253,6 +1258,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     json.dump(catalog, open(os.path.join(a.out, "catalog.json"), "w"), indent=1)
     json.dump(problems, open(os.path.join(a.out, "problems.json"), "w"), indent=1)
+    catalog_listings.write_listings(listings, a.out)   # its own file: catalog.json never carries a listing
     # converted SDK zips to upload to <SDK_CONVERTED_REPO> release <SDK_CONVERTED_TAG> before the catalog is published (catalog.yml)
     open(os.path.join(a.out, "sdk-converted.txt"), "w").write("".join(p + "\n" for p in SDK_PENDING))
     flagged = flagged_of(catalog, entries)

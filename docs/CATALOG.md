@@ -216,6 +216,22 @@ screen (the draw handler, the rack) loads and does nothing on a Live III. A regi
   an MPC Sample through the community service (its `sample` count). A Gen2 build alone is not enough. While nothing qualifies, the view says
   how to add a report. The Gen1/Gen2 Device filter is hidden there; the choice is in the page address (`#plat=sample`) and survives Clear
   filters; the plugin tabs' counts and the "N of M" line follow the switch. "MPC Sample" is in the Works for me device list.
+- **Sections and the device switch (2026-11-23, offline: the site browser tests and screenshots, not yet published).** The page's top row is
+  now sections: Plugins, Addins, Alt OS, Device patches, Companion apps. Inside Plugins a second row picks the kind (All, Instruments, MIDI,
+  Effects); All no longer includes addins, which are their own section on the same grid and filters. The device switch sits inside the
+  open section (Plugins, Addins, Alt OS; not Device patches or Companion apps), labelled "Device", with that section's counts. A section
+  with nothing in it for either device is hidden (Alt OS while `alt_os.json` is empty), so tabs do not come and go with the switch. The
+  Alt OS tab keeps its name; its intro says "MPC Sample OS" under the Sample. The choice is remembered in the browser (`localStorage`
+  key `openmpc.device`); a link's own `plat=` wins. Old links keep working: `#tab=` values are unchanged (`all`, `instrument`, `midi`,
+  `effect`, `addin`, `patches`, `apps`, `altos`).
+  Later the same day (offline, same tests): the device switch sits at the right end of the section's first row (beside the kinds in
+  Plugins); the filter row is Search (short), Tag, Sort by and a "More filters" button that opens Style, Developer, MPC OS, Device
+  and Tier (it opens by itself when a link carries one of them, and shows how many are set). Inside a kind (and in Addins) the
+  styles that kind has on the chosen device show as chips; styles with one entry fold behind "+N more". The Style dropdown stays
+  in step with the chips.
+  Tags are chips too (no Tag dropdown): the tags present in what the section, kind, device and style leave, used by two or more of
+  them, ten at a time ("+N more"), counted without the tag filter itself so you can move from one tag to another; chosen tags show
+  pressed, several must all match, "Clear tags" drops them (2026-11-23, offline: `filters_browser_test.py`).
 - `mpc-store.sh` lists it as `[only for: mpc-sample]` and skips it (not an error) on other devices; the desktop app refuses it there
   (`CatPlugin.ForDevice`) and marks it. Both tell the Sample by its settings file (`MPC Sample.settings`); `MPC_STORE_DEVICE` overrides.
 - The quality bar asks for a Sample test (`tested-sample`) instead of Gen1 and Gen2 ones.

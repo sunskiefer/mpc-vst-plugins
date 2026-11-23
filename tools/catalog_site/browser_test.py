@@ -15,6 +15,10 @@ fails = []
 def check(name, cond, extra=""):
     print(("PASS " if cond else "FAIL ") + name + (" " + extra if extra and not cond else ""))
     if not cond: fails.append(name)
+def open_more(pg):
+    """Developer, MPC OS, Device and Tier sit under "More filters" (2026-11-23): open it before using them."""
+    if pg.locator("#morebox").is_hidden(): pg.click("#more-btn")
+
 with sync_playwright() as p:
     b = p.chromium.launch()
     pg = b.new_page(viewport={"width": 1280, "height": 900})
@@ -68,14 +72,14 @@ with sync_playwright() as p:
     # 3.x is the standard, so the only badge is "MPC OS 2.x tested", on a 2.x-capable version with a 2.x device test.
     pg.goto(URL)
     check("MPC OS filter exists", pg.locator("#f-os").count() == 1)
-    pg.select_option("#f-tier", "all")   # the fixture's 3.x-only plugin is experimental, hidden by default
+    open_more(pg); pg.select_option("#f-tier", "all")   # the fixture's 3.x-only plugin is experimental, hidden by default
     for val, row in (("2x", "2.x and 3.x"), ("3x", "3.x only")):
-        pg.select_option("#f-os", val)
+        open_more(pg); pg.select_option("#f-os", val)
         cards = pg.locator("#grid article.card")
         wrong = [i for i in range(cards.count()) if row not in (cards.nth(i).locator("dl.meta").text_content() or "")]
         check("filter %s shows only cards whose MPC OS row matches" % val, cards.count() >= 1 and not wrong, "%d cards, wrong %s" % (cards.count(), wrong))
-    pg.select_option("#f-os", "")
-    pg.select_option("#f-tier", "")
+    open_more(pg); pg.select_option("#f-os", "")
+    open_more(pg); pg.select_option("#f-tier", "")
     os_tags = pg.locator("#grid .tag").filter(has_text="MPC OS")
     check("no 3.x badge; the only MPC OS badge is '2.x tested'", os_tags.count() >= 1 and set(os_tags.all_text_contents()) == {"MPC OS 2.x tested"},
           str(os_tags.all_text_contents()))
@@ -85,7 +89,7 @@ with sync_playwright() as p:
     GEN2_ON = ".compatrow .tag.compat.on:has-text('Gen2')"   # the Gen2 pill is lit when the newest release has a Gen2 build
     gen2_cards = pg.locator("#grid article.card:has(%s)" % GEN2_ON).count()
     for val, want in (("gen2", True), ("gen1", False)):
-        pg.select_option("#f-gen", val)
+        open_more(pg); pg.select_option("#f-gen", val)
         cards = pg.locator("#grid article.card")
         wrong = [i for i in range(cards.count()) if (cards.nth(i).locator(GEN2_ON).count() == 1) != want]
         check("device filter %s shows only the matching cards" % val, not wrong, str(wrong))
@@ -96,10 +100,10 @@ with sync_playwright() as p:
                       cards.first.locator("details.dlmenu").count() == 1 and cards.first.locator(".dlpop a:has-text('Gen1')").count() == 1 and cards.first.locator(".dlpop a:has-text('Gen2')").count() == 1)
                 check("a Gen2 card's compatibility pills light Gen1 and Gen2",
                       cards.first.locator(".compatrow .tag.compat.on:has-text('Gen1')").count() == 1 and cards.first.locator(".compatrow .tag.compat.on:has-text('Gen2')").count() == 1)
-    pg.select_option("#f-gen", "")
+    open_more(pg); pg.select_option("#f-gen", "")
     # Trust tiers: experimental is hidden by default, shown by the Tier filter or "Show them"; Recommended puts featured, then Verified, first.
     pg.goto(URL); pg.reload()
-    pg.select_option("#f-tier", "all")
+    open_more(pg); pg.select_option("#f-tier", "all")
     names = pg.locator("#grid article.card h2").all_inner_texts()
     tiers = pg.locator("#grid article.card").evaluate_all("e => e.map(x => x.getAttribute('data-tier'))")
     rank = {"verified": 0, "listed": 1, "experimental": 2}
@@ -129,18 +133,20 @@ with sync_playwright() as p:
           and smp.locator(".tag:has-text('Gen2')").count() == 0, smp.inner_text()[:200])
     dl = smp.locator("details.dlmenu .dlpop a").all_text_contents()
     check("a plugin for the MPC Sample only has one download (a one-item menu), named for the Sample", len(dl) == 1 and dl[0].startswith("MPC Sample"), str(dl))
-    pg.click('[data-plat=""]'); pg.click("#tab-all")
+    pg.click('[data-plat=""]'); pg.click("#tab-plugins"); pg.click("#tab-all")
     for val, gen in (("verified-gen1", "gen1"), ("verified-gen2", "gen2"), ("verified-sample", "sample")):
-        pg.click('[data-plat="%s"]' % ("sample" if gen == "sample" else "")); pg.select_option("#f-tier", val)
+        pg.click('[data-plat="%s"]' % ("sample" if gen == "sample" else ""))
+        pg.click("#tab-addin" if gen == "sample" else "#tab-plugins")   # the fixture's only Verified Sample entry is an addin, which has its own section
+        open_more(pg); pg.select_option("#f-tier", val)
         cards = pg.locator("#grid article.card")
         wrong = [i for i in range(cards.count()) if cards.nth(i).locator(".tag.tier-verified[data-gen=%s]" % gen).count() != 1]
         check("Tier filter %s shows only cards with that badge" % val, cards.count() >= 1 and not wrong, "%d cards, wrong %s" % (cards.count(), wrong))
-    pg.select_option("#f-tier", ""); pg.click('[data-plat=""]')
+    open_more(pg); pg.select_option("#f-tier", ""); pg.click('[data-plat=""]'); pg.click("#tab-plugins")
     check("experimental plugins are hidden by default", pg.locator(".tag.tier-experimental").count() == 0)
     check("the hidden-experimental note offers them", pg.locator("#exp").is_visible())
     pg.click("#show-exp")
     check("Show them reveals experimental plugins", pg.locator(".tag.tier-experimental").count() >= 1)
-    pg.select_option("#f-tier", "")
+    open_more(pg); pg.select_option("#f-tier", "")
     check("only a plugin missing something shows 'To improve'", pg.locator("#grid details.how:has-text('To improve')").count() == 1)
     # Screenshot popup: the image opens the whole card over a dark backdrop, with its own link (#...&p=<id>)
     pg.goto(URL); pg.reload()
@@ -214,9 +220,9 @@ with sync_playwright() as p:
     check("first members as chips, the experimental one hidden by default, no match line", sorted(chips()) == ["Pack Gate", "Pack Kick", "Pack Seq", "Pack Verb"]
           and coll.locator(".chip.more").count() == 0 and coll.locator(".matchline").count() == 0, str(chips()))
     check("the count line counts plugins, members included", pg.locator("#count").text_content().startswith("7 of 9 "), pg.locator("#count").text_content())
-    pg.select_option("#f-tier", "all")
+    open_more(pg); pg.select_option("#f-tier", "all")
     check("more members than chips: +N", len(chips()) == 4 and coll.locator(".chip.more").text_content() == "+1")
-    pg.select_option("#f-tier", "")
+    open_more(pg); pg.select_option("#f-tier", "")
     check("the card links to the collection page and the repo", coll.locator("a.btn-l", has_text="View all").get_attribute("href") == "p/c/acme-pack.html"
           and coll.locator("a.btn-l", has_text="Source").get_attribute("href") == "https://github.com/acme/pack")
     for tab, counts, names in (("instrument", "1 instrument", ["Pack Kick"]), ("midi", "1 MIDI plugin", ["Pack Seq"]), ("effect", "3 effects", ["Pack Gate", "Pack Verb"])):
@@ -225,7 +231,7 @@ with sync_playwright() as p:
               and sorted(chips()) == names, "%s %s" % (coll.locator(".counts").all_text_contents(), chips()))
     pg.click("#tab-addin")
     check("not under a kind it does not cover", coll.count() == 0)
-    pg.click("#tab-all")
+    pg.click("#tab-plugins"); pg.click("#tab-all")
     check("tab counts count the members", pg.locator("#n-effect").text_content() == "3" and pg.locator("#n-midi").text_content() == "1", pg.locator("#n-effect").text_content())
     pg.fill("#q", "shimmer")
     check("a search that matches a member surfaces the card with that member", coll.count() == 1 and chips() == ["Pack Verb"]
@@ -239,9 +245,9 @@ with sync_playwright() as p:
     check("its summary alone does not surface it", coll.count() == 0)
     pg.fill("#q", "nothing like this")
     check("a search matching no member hides it", coll.count() == 0)
-    pg.fill("#q", ""); pg.select_option("#f-dev", "Acme")
+    pg.fill("#q", ""); open_more(pg); pg.select_option("#f-dev", "Acme")
     check("filters apply to members", coll.count() == 1 and pg.locator("#grid article").count() == 1)
-    pg.select_option("#f-dev", ""); pg.dispatch_event("#f-dev", "change")
+    open_more(pg); pg.select_option("#f-dev", ""); pg.dispatch_event("#f-dev", "change")
     pg.select_option("#sort", "downloads")
     check("sorted by its members' total downloads", pg.locator("#grid article.card").first.get_attribute("class") == "card coll")
     pg.select_option("#sort", "recommended")

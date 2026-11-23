@@ -526,6 +526,7 @@ class CatalogTest(Base):
 
 
 import catalog_build  # noqa: E402
+import catalog_listings  # noqa: E402
 
 
 class TilePresetTest(Base):
@@ -1669,6 +1670,160 @@ class CollectionTest(Base):
 
 
 import catalog_issues  # noqa: E402
+
+
+class ListingsTest(unittest.TestCase):
+    """Other sources (tools/catalog_listings.py): closed or paid plugins the developer hosts; advertisement only."""
+    L = {"id": "pro-synth", "name": "Pro Synth", "author": "Acme", "kind": "instrument", "source": "closed",
+         "price": "from $29", "shop_url": "https://acme.example/pro-synth", "summary": "A synth.",
+         "support": {"contact": "https://acme.example/help", "response_days": 7}}
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp)
+
+    def write(self, *entries):
+        d = os.path.join(self.tmp, "catalog", "listings")
+        os.makedirs(d, exist_ok=True)
+        for e in entries:
+            json.dump(e, open(os.path.join(d, e["id"] + ".json"), "w"))
+        return d
+
+    def test_a_valid_listing_passes_and_extra_fields_are_refused(self):
+        self.assertEqual(catalog_listings.check_listing(self.L), [])
+        full = dict(self.L, demo_url="https://acme.example/demo", homepage="https://acme.example", style="synth",
+                    tags=["wavetable"], devices=["mpc-sample"], screenshot="https://acme.example/s.png")
+        self.assertEqual(catalog_listings.check_listing(full), [])
+        for extra in ({"repo": "acme/pro-synth"}, {"distribution": "release"}, {"sha256": "0" * 64}, {"license": "MIT"}):
+            self.assertTrue(catalog_listings.check_listing(dict(self.L, **extra)), extra)
+
+    def test_open_source_belongs_in_the_catalog_not_here(self):
+        errs = catalog_listings.check_listing(dict(self.L, source="open"))
+        self.assertTrue(any("catalog proper" in x for x in errs), errs)
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, source="free")))
+        self.assertEqual(catalog_listings.check_listing(dict(self.L, source="source-available")), [])
+
+    def test_links_must_be_https_with_no_spaces(self):
+        for k in ("shop_url", "demo_url", "homepage", "screenshot"):
+            for bad in ("http://acme.example/x", "javascript:alert(1)", "https://acme.example/a b", "acme.example", "https://"):
+                self.assertTrue(catalog_listings.check_listing(dict(self.L, **{k: bad})), (k, bad))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, shop_url="https://acme.example/" + "x" * 300)))
+
+    def test_paid_needs_support_within_14_days_and_free_does_not(self):
+        no_support = {k: v for k, v in self.L.items() if k != "support"}
+        self.assertTrue(catalog_listings.check_listing(no_support))
+        self.assertEqual(catalog_listings.check_listing(dict(no_support, price="Free")), [])
+        self.assertEqual(catalog_listings.check_listing(dict(no_support, price=" free ")), [])
+        for days in (0, 15, "7", True, 7.5):
+            sup = {"contact": "https://acme.example/help", "response_days": days}
+            self.assertTrue(catalog_listings.check_listing(dict(self.L, support=sup)), days)
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, support={"contact": "mailto:a@b.c", "response_days": 3})))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, support={"contact": "https://a.example/h", "response_days": 3, "x": 1})))
+
+    def test_devices_tags_and_limits_follow_the_registry_vocabulary(self):
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, devices=["mpc-live"])))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, devices=[])))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, tags=["Bad Tag"])))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, tags=["t%d" % i for i in range(9)])))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, summary="x" * 351)))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, price="x" * 41)))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, kind="addin")))
+        self.assertTrue(catalog_listings.check_listing(dict(self.L, id="Bad_Id")))
+
+    def test_load_catches_duplicates_a_plugin_id_and_a_wrong_file_name(self):
+        d = self.write(self.L, dict(self.L, id="other"))
+        listings, problems = catalog_listings.load_listings(d)
+        self.assertEqual((len(listings), problems), (2, []))
+        _, problems = catalog_listings.load_listings(d, plugin_ids={"pro-synth"})
+        self.assertTrue(any("already a plugin" in m for _, m in problems), problems)
+        json.dump(self.L, open(os.path.join(d, "renamed.json"), "w"))
+        _, problems = catalog_listings.load_listings(d)
+        self.assertTrue(any("<id>.json" in m for _, m in problems), problems)
+        open(os.path.join(d, "broken.json"), "w").write("{")
+        _, problems = catalog_listings.load_listings(d)
+        self.assertTrue(any("invalid JSON" in m for _, m in problems), problems)
+
+    def test_listings_json_is_written_only_when_there_is_something_to_list(self):
+        out = os.path.join(self.tmp, "dist")
+        self.assertIsNone(catalog_listings.write_listings([], out))
+        self.assertFalse(os.path.exists(os.path.join(out, "listings.json")))
+        dest = catalog_listings.write_listings([dict(self.L, id="zeta"), self.L], out)
+        doc = json.load(open(dest))
+        self.assertEqual(doc["listings_version"], 1)
+        self.assertEqual([x["id"] for x in doc["listings"]], ["pro-synth", "zeta"])
+
+    def test_check_registry_covers_listings_and_the_plugin_files_never_carry_one(self):
+        reg = os.path.join(self.tmp, "catalog", "plugins")
+        os.makedirs(reg)
+        self.write(self.L)
+        run = lambda: subprocess.run([sys.executable, os.path.join(HERE, "catalog_build.py"), "--check-registry", "--registry", reg,
+                                      "--added", os.path.join(self.tmp, "none.json")], capture_output=True, text=True)
+        r = run()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("1 listings", r.stdout)
+        self.assertEqual(os.listdir(reg), [])   # the listing is not in the plugin registry
+        self.write(dict(self.L, shop_url="http://acme.example/x"))
+        r = run()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("shop_url", r.stderr)
+
+    def test_the_site_page_is_off_by_default_and_listings_never_reach_installer_files(self):
+        dist = os.path.join(self.tmp, "dist")
+        os.makedirs(dist)
+        shutil.copy(os.path.join(HERE, "catalog_site", "fixture-catalog.json"), os.path.join(dist, "catalog.json"))
+        catalog_listings.write_listings([self.L], dist)
+        site = lambda *extra: subprocess.run([sys.executable, os.path.join(HERE, "catalog_site.py"), "--catalog", os.path.join(dist, "catalog.json"),
+                                              "--out", os.path.join(self.tmp, "site"), "--patches", os.path.join(self.tmp, "none"),
+                                              "--apps", os.path.join(self.tmp, "none"), *extra], capture_output=True, text=True)
+        out = os.path.join(self.tmp, "site")
+        r = site()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(out, "listings.json")))
+        self.assertNotIn('id="tab-other"', open(os.path.join(out, "index.html"), encoding="utf-8").read())
+        shutil.rmtree(out)
+        r = site("--other-sources")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        page = open(os.path.join(out, "index.html"), encoding="utf-8").read()   # a section of the Catalog page, not a page of its own
+        self.assertIn('id="tab-other"', page)
+        self.assertIn("Pro Synth", page)
+        self.assertIn("Visit developer", page)
+        self.assertFalse(os.path.exists(os.path.join(out, "other-sources.html")))
+        for f in ("catalog.json", "catalog.tsv"):
+            self.assertNotIn("pro-synth", open(os.path.join(out, f), encoding="utf-8").read(), f)
+        json.dump({"listings_version": 1, "listings": [dict(self.L, shop_url="javascript:alert(1)")]}, open(os.path.join(dist, "listings.json"), "w"))
+        r = site("--other-sources")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("listings.json is not valid", r.stderr)
+
+    def test_the_build_writes_listings_beside_catalog_json_and_leaves_catalog_json_alone(self):
+        """Offline stand-in for tools/compat/run.sh (needs Docker): catalog.json is byte-identical with and without listings, so the
+        released Plugin Managers and installers, which read only it and catalog.tsv, see the same catalog."""
+        reg = os.path.join(self.tmp, "catalog", "plugins")
+        os.makedirs(reg)
+        build = lambda out: subprocess.run([sys.executable, os.path.join(HERE, "catalog_build.py"), "--registry", reg, "--out", out,
+                                            "--cache", os.path.join(self.tmp, "cache"), "--added", os.path.join(self.tmp, "none.json")],
+                                           capture_output=True, text=True)
+        a, b = os.path.join(self.tmp, "a"), os.path.join(self.tmp, "b")
+        r = build(a)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.write(self.L)
+        r = build(b)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(open(os.path.join(a, "catalog.json"), "rb").read(), open(os.path.join(b, "catalog.json"), "rb").read())
+        self.assertFalse(os.path.exists(os.path.join(a, "listings.json")))
+        self.assertEqual(json.load(open(os.path.join(b, "listings.json")))["listings"][0]["id"], "pro-synth")
+
+    def test_the_old_address_mirror_redirects_the_page_and_does_not_copy_listings_json(self):
+        import catalog_mirror
+        site, out = os.path.join(self.tmp, "site"), os.path.join(self.tmp, "mirror")
+        os.makedirs(site)
+        for f, body in (("catalog.json", "{}"), ("catalog.tsv", ""), ("listings.json", "{}"), ("other-sources.html", "<html></html>"), ("index.html", "<html></html>")):
+            open(os.path.join(site, f), "w").write(body)
+        copied, redirected = catalog_mirror.mirror(site, out, "https://open-mpc.github.io/")
+        self.assertNotIn("listings.json", copied)
+        self.assertFalse(os.path.exists(os.path.join(out, "listings.json")))
+        self.assertIn("other-sources.html", redirected)
+        self.assertIn("https://open-mpc.github.io/other-sources.html", open(os.path.join(out, "other-sources.html")).read())
 
 
 class IssuesTest(unittest.TestCase):
