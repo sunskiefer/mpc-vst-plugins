@@ -292,7 +292,9 @@ var title = function (s) { return s.replace(/-/g, " ").replace(/^./, function (c
 fillSelect("f-tier", "Verified and unverified", TIER_FILTERS, function (v) { return v === "all" ? "All tiers" : v === "verified" ? "Verified only" : v === "verified-gen1" ? "Verified on Gen1" : v === "verified-gen2" ? "Verified on Gen2" : v === "verified-sample" ? "Verified on MPC Sample" : v === "listed" ? "Not yet verified" : "Experimental only"; });
 fillSelect("f-os", "Any MPC OS", ["2x", "3x"], function (v) { return v === "2x" ? "Works on MPC OS 2.x" : "MPC OS 3.x only"; });
 fillSelect("f-gen", "Any device", ["gen2", "gen1"], function (v) { return v === "gen2" ? "Has a Gen2 (aarch64) build" : "Gen1 only"; });
-fillSelect("f-style", "All styles", uniq(function (p) { return p.style; }), title);
+var STYLE_LABELS = /*STYLE_LABELS*/;   /* labels from catalog/styles.json (the proposed fixed styles); any other style is shown from its slug */
+function styleLabel(s) { return STYLE_LABELS[s] || title(s); }
+fillSelect("f-style", "All styles", uniq(function (p) { return p.style; }), styleLabel);
 fillSelect("f-dev", "All developers", uniq(function (p) { return p.author; }));
 $("sort").innerHTML = Object.keys(SORTS).map(function (k) { return '<option value="' + k + '">' + SORTS[k].label + '</option>'; }).join("");
 $("gen").textContent = CAT.generated || "";
@@ -719,7 +721,7 @@ function styleChips() {
   if (main.length < 3) { main = all; rare = 0; }   /* folding only helps when enough styles stay in view */
   box.hidden = all.length < 2;
   var chip = function (v, label, c) { return '<button type="button" class="chip" data-style="' + esc(v) + '" aria-pressed="' + (state.style === v) + '">' + esc(label) + (c != null ? ' <span class="n">' + c + '</span>' : "") + '</button>'; };
-  box.innerHTML = '<span class="chips-l">Style</span>' + chip("", "All styles") + (moreStyles ? all : main).map(function (k) { return chip(k, title(k), n[k]); }).join("") +
+  box.innerHTML = '<span class="chips-l">Style</span>' + chip("", "All styles") + (moreStyles ? all : main).map(function (k) { return chip(k, styleLabel(k), n[k]); }).join("") +
     (rare ? '<button type="button" class="chip more" data-morestyles="1">' + (moreStyles ? "Fewer" : "+" + rare + " more") + '</button>' : "");
 }
 $("stylechips").addEventListener("click", function (e) {
