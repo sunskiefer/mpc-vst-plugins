@@ -1793,6 +1793,36 @@ class ListingsTest(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("listings.json is not valid", r.stderr)
 
+    def test_the_build_writes_listings_beside_catalog_json_and_leaves_catalog_json_alone(self):
+        """Offline stand-in for tools/compat/run.sh (needs Docker): catalog.json is byte-identical with and without listings, so the
+        released Plugin Managers and installers, which read only it and catalog.tsv, see the same catalog."""
+        reg = os.path.join(self.tmp, "catalog", "plugins")
+        os.makedirs(reg)
+        build = lambda out: subprocess.run([sys.executable, os.path.join(HERE, "catalog_build.py"), "--registry", reg, "--out", out,
+                                            "--cache", os.path.join(self.tmp, "cache"), "--added", os.path.join(self.tmp, "none.json")],
+                                           capture_output=True, text=True)
+        a, b = os.path.join(self.tmp, "a"), os.path.join(self.tmp, "b")
+        r = build(a)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.write(self.L)
+        r = build(b)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(open(os.path.join(a, "catalog.json"), "rb").read(), open(os.path.join(b, "catalog.json"), "rb").read())
+        self.assertFalse(os.path.exists(os.path.join(a, "listings.json")))
+        self.assertEqual(json.load(open(os.path.join(b, "listings.json")))["listings"][0]["id"], "pro-synth")
+
+    def test_the_old_address_mirror_redirects_the_page_and_does_not_copy_listings_json(self):
+        import catalog_mirror
+        site, out = os.path.join(self.tmp, "site"), os.path.join(self.tmp, "mirror")
+        os.makedirs(site)
+        for f, body in (("catalog.json", "{}"), ("catalog.tsv", ""), ("listings.json", "{}"), ("other-sources.html", "<html></html>"), ("index.html", "<html></html>")):
+            open(os.path.join(site, f), "w").write(body)
+        copied, redirected = catalog_mirror.mirror(site, out, "https://open-mpc.github.io/")
+        self.assertNotIn("listings.json", copied)
+        self.assertFalse(os.path.exists(os.path.join(out, "listings.json")))
+        self.assertIn("other-sources.html", redirected)
+        self.assertIn("https://open-mpc.github.io/other-sources.html", open(os.path.join(out, "other-sources.html")).read())
+
 
 class IssuesTest(unittest.TestCase):
     T = "Catalog: a %s failed validation"
