@@ -1826,6 +1826,39 @@ class ListingsTest(unittest.TestCase):
         self.assertIn("https://open-mpc.github.io/other-sources.html", open(os.path.join(out, "other-sources.html")).read())
 
 
+
+class ChangedEntriesTest(unittest.TestCase):
+    """tools/changed_entries.py: which entries the PR check re-checks for the portable layout."""
+
+    def test_needs_check(self):
+        import changed_entries as ce
+        e = {"id": "x", "repo": "a/b", "kind": "effect", "style": "reverb", "tags": ["a"], "summary": "s", "license": "MIT"}
+        self.assertTrue(ce.needs_check(None, e))                                         # new entry
+        self.assertFalse(ce.needs_check(e, dict(e, style="delay", tags=["b"], summary="t")))   # site-only edits
+        self.assertTrue(ce.needs_check(e, dict(e, repo="a/c")))                          # what releases are read from
+        self.assertTrue(ce.needs_check(e, dict(e, asset_pattern="*-x.zip")))             # a field added
+        self.assertTrue(ce.needs_check(e, {k: v for k, v in e.items() if k != "license"}))   # a field removed
+        self.assertTrue(ce.needs_check(e, None))                                         # not valid JSON
+
+    def test_against_git(self):
+        import changed_entries as ce
+        with tempfile.TemporaryDirectory() as t:
+            g = lambda *a: subprocess.run(["git", "-C", t] + list(a), check=True, capture_output=True)
+            g("init", "-q"); g("config", "user.email", "t@t"); g("config", "user.name", "t")
+            os.makedirs(os.path.join(t, "catalog", "plugins"))
+            w = lambda n, e: json.dump(e, open(os.path.join(t, "catalog", "plugins", n + ".json"), "w"))
+            base = {"id": "a", "repo": "o/a", "kind": "effect", "style": "eq"}
+            w("a", base); w("b", dict(base, id="b", repo="o/b"))
+            g("add", "-A"); g("commit", "-qm", "base")
+            w("a", dict(base, style="filter-eq")); w("b", dict(base, id="b", repo="o/b2")); w("c", dict(base, id="c", repo="o/c"))
+            g("add", "-A"); g("commit", "-qm", "head")
+            cwd = os.getcwd(); os.chdir(t)
+            try:
+                self.assertEqual(sorted(ce.changed("HEAD^1", "HEAD")), ["b", "c"])   # a: style only, skipped
+            finally:
+                os.chdir(cwd)
+
+
 class IssuesTest(unittest.TestCase):
     T = "Catalog: a %s failed validation"
 
