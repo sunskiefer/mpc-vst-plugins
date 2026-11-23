@@ -2,7 +2,7 @@
   "id": "noxed-mpc-plugins",
   "title": "NOXED MPC Plugins",
   "author": "NOXED",
-  "repo": "molgino/noxed-mpc-plugins",
+  "repo": "molgino/noxend-mpc-plugins",
   "summary": "Two instruments and three hardware bridges: acid bass, wavetable synthesis, Elektron Overbridge receive/send, and class-compliant USB audio capture.",
-  "screenshot": "https://raw.githubusercontent.com/molgino/noxed-mpc-plugins/40832b26596b1c0228eb97e0dc81c257547a2d1a/docs/screenshots/acidline-bassline.png"
+  "screenshot": "https://raw.githubusercontent.com/molgino/noxend-mpc-plugins/40832b26596b1c0228eb97e0dc81c257547a2d1a/docs/screenshots/acidline-bassline.png"
 }
