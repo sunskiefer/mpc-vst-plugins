@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "MIT",
   "summary": "Eight-voice wavetable synthesizer with two oscillators, unison, sub/noise, envelopes, LFOs, a modulation matrix, chorus, delay and WAV wavetable import. Includes eight presets.",
-  "style": "synth",
+  "style": "wavetable",
   "tags": [
     "synth",
     "wavetable"

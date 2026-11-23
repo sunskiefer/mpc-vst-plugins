@@ -1,5 +1,5 @@
 { "id": "lx-800", "name": "LX-800", "author": "Lightlike", "repo": "lightlikemusic/lx-800",
-  "kind": "instrument", "style": "synth", "tags": ["paraphonic", "polysynth", "vintage", "analog-modelling", "chorus", "step-sequencer"],
+  "kind": "instrument", "style": "polysynth", "tags": ["paraphonic", "polysynth", "vintage", "analog-modelling", "chorus", "step-sequencer"],
   "license": "MIT",
   "screenshot": "https://raw.githubusercontent.com/lightlikemusic/lx-800/v1.1.0/docs/screenshot.png",
   "summary": "An 8-voice paraphonic synth in the spirit of early-80s budget polysynths: divide-down staircase oscillators, one shared resonant 24/12 dB filter with its own envelope, six-stage rate envelopes, delayed LFO, stereo chorus and a chord step sequencer synced to the MPC. 63 presets and a programmer-chart screen with live LED readouts." }

@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "MIT",
   "summary": "CMOS-inspired drone synth with four voices, two six-step sequencers, a modulation matrix and Clouds-derived effects.",
-  "style": "synth",
+  "style": "experimental",
   "tags": [
     "drone",
     "sequencer",

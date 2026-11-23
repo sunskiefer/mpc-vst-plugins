@@ -1,5 +1,5 @@
 { "id": "twenty-fx", "name": "Twenty FX", "author": "Stampman3000", "repo": "stampman3000-jpg/twenty",
-  "kind": "effect", "style": "utility", "tags": ["effect"], "license": "AGPL-3.0-or-later",
+  "kind": "effect", "style": "filter-eq", "tags": ["effect"], "license": "AGPL-3.0-or-later",
   "summary": "Twenty's filters, ESP, vocoder and patchbay as an insert effect for any track. DSP by Audio Tools' AT20V.",
   "screenshot": "https://raw.githubusercontent.com/stampman3000-jpg/twenty/v1.0.0/screenshots/twenty-fx.png",
   "asset_pattern": "Twenty-FX-*-mpc-armv7.zip" }

@@ -6,7 +6,7 @@
   "kind": "instrument",
   "license": "GPL-3.0-or-later",
   "summary": "Polyphonic XY wavetable synthesizer with paths, orbit, dual envelopes, HP/LP filters, two LFOs and an eight-slot modulation matrix. Includes 100 presets plus INIT and Custom Wavetable import: mono/stereo PCM16, PCM32 or float32 WAV, 512/1024/2048 samples per waveform.",
-  "style": "synth",
+  "style": "wavetable",
   "tags": [
     "synth",
     "wavetable",

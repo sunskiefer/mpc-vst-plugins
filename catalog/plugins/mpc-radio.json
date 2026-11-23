@@ -3,7 +3,7 @@
     "name": "MPC Radio",
     "author": "Steph",
     "repo": "Forge-Audio/mpc-radio",
-    "kind": "effect",
+    "kind": "effect", "style": "lofi-tape",
     "license": "MIT",
     "summary": "MPC Radio is a radio dial that plays live internet stations, with hiss, crackle, sliding whistles and half-heard ghosts between them and a perfectly clean signal once a station locks in.",
     "screenshot": "https://raw.githubusercontent.com/Forge-Audio/mpc-radio/v1.0.0/docs/screen-1.png"

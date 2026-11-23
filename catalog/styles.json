@@ -1,5 +1,5 @@
 {
- "_comment": "PROPOSAL (2026-11-23, not enforced): one fixed list of styles per kind, so the site's style chips split the catalog usefully. 'from' lists the free-form styles each one replaces; tools/style_map.py proposes a style for every entry (and --apply writes it). Maintainers decide: docs/CATALOG.md, 'Fixed styles (proposal)'.",
+ "_comment": "One fixed list of styles per kind (adopted 2026-11-23): an entry's style must be one of its kind's ids (catalog_build.check_entry; midi = an instrument with role midi). label is what the site shows; from lists the old free-form styles each replaced (tools/style_map.py). Add a style here in a PR.",
  "schema": 1,
  "styles": {
   "instrument": [

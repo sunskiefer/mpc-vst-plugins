@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT AND GPL-3.0-only",
   "summary": "Captures audio grains and weaves them into Euclidean rhythms with Markov-based grain selection.",
-  "style": "sampler",
+  "style": "glitch-performance",
   "tags": [
     "granular",
     "sequencer",

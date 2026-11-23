@@ -1,4 +1,4 @@
 { "id": "vader", "name": "VADER", "author": "L'Cronx", "repo": "sunskiefer/VADER",
-  "kind": "instrument", "style": "synth", "tags": ["synth", "vector", "orbit", "additive", "morphing", "arpeggiator", "svg", "3d"],
+  "kind": "instrument", "style": "macro-hybrid", "tags": ["synth", "vector", "orbit", "additive", "morphing", "arpeggiator", "svg", "3d"],
   "license": "PolyForm-Noncommercial-1.0.0", "source_available": true, "asset_pattern": "*-mpc-armv7.zip", "screenshot": "https://raw.githubusercontent.com/sunskiefer/VADER/v0.10.7/docs/img/main_star.png",
   "summary": "An orbit-based vector synth: an orbiter travels a shape (built-in, maths, or your own SVG or OBJ) or one of 27 modes across four corners; a picture (PNG, JPG) under it plays the sound. Each corner plays overtone generators, one of 14 voices or a WAV sample, with its own envelope. Two timbres, arpeggiator, effects; its screen runs on your phone." }

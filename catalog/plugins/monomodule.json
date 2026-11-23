@@ -1,5 +1,5 @@
 { "id": "monomodule", "name": "Monomodule One + FX", "author": "sd88me", "repo": "sd88me/mpc-vst-monomodule",
-  "kind": "instrument", "style": "synth", "tags": ["elektron", "monomachine", "firmware-derived"], "license": "AGPL-3.0-only",
+  "kind": "instrument", "style": "macro-hybrid", "tags": ["elektron", "monomachine", "firmware-derived"], "license": "AGPL-3.0-only",
   "summary": "The Elektron Monomachine's synth engine (15 machines) as an instrument, plus its 7 effect machines as an audio effect, each with a touchscreen skin and Q-Links.",
   "distribution": "build-yourself",
   "requires_user_files": [

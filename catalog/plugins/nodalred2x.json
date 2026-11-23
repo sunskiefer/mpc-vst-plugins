@@ -1,5 +1,5 @@
 { "id": "nodalred2x", "name": "NodalRed2x", "author": "sd88me", "repo": "sd88me/mpc-vst-nodalred2x",
-  "kind": "instrument", "style": "synth", "tags": ["emulation", "virtual-analog", "rompler-free", "gen2"], "license": "GPL-3.0-only",
+  "kind": "instrument", "style": "polysynth", "tags": ["emulation", "virtual-analog", "rompler-free", "gen2"], "license": "GPL-3.0-only",
   "summary": "An emulation of the Clavia Nord Lead 2x's original firmware (gearmulator) as a native instrument for Gen2 MPC devices: a native MPC screen laid out like the Nord's panel, a starter bank plus your own sound sets, RANDOM, named favourites in the PRESET menu and Q-Link control. Gen2 (aarch64) only; you need your own Nord Lead 2x ROM.",
   "asset_pattern": "*-mpc-aarch64.zip",
   "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-nodalred2x/v0.2.0/docs/screenshots/main.png",

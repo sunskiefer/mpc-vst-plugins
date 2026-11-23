@@ -4,7 +4,7 @@
  "author": "L'Cronx",
  "repo": "sunskiefer/PhyXXL",
  "kind": "effect",
- "style": "filter",
+ "style": "filter-eq",
  "tags": [
   "filter",
   "multi-filter",

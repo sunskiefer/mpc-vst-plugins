@@ -4,7 +4,7 @@
   "author": "jacob-sabella",
   "repo": "jacob-sabella/mpc-addin-remote",
   "kind": "addin",
-  "style": "utility",
+  "style": "control",
   "tags": [
     "remote",
     "screen",

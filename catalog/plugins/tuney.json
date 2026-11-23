@@ -4,7 +4,7 @@
   "author": "3dthc",
   "repo": "3dthc/Tuney-MPC",
   "kind": "effect",
-  "style": "pitch",
+  "style": "pitch-vocal",
   "tags": [
     "pitch-correction",
     "vocal",

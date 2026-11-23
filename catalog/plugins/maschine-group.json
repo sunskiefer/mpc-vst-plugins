@@ -4,7 +4,7 @@
   "author": "mmiroshnikov",
   "repo": "mmiroshnikov/mpc-maschine-group",
   "kind": "instrument",
-  "style": "sampler",
+  "style": "sampler-rompler",
   "tags": ["drums", "maschine", "sampler", "patterns"],
   "license": "MIT",
   "asset_pattern": "Maschine-Group-*-mpc-armv7.zip",

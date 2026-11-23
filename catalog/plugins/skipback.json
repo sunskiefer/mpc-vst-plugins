@@ -4,7 +4,7 @@
   "author": "sd88me",
   "repo": "sd88me/mpc-addin-skipback",
   "kind": "addin",
-  "style": "utility",
+  "style": "audio",
   "tags": [
     "skipback",
     "recording",

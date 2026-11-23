@@ -4,7 +4,7 @@
   "author": "saustin2010",
   "repo": "saustin2010/mpc-vst-fizzik",
   "kind": "instrument",
-  "style": "synth",
+  "style": "physical-modeling",
   "tags": [
     "physical-modelling",
     "resonator",

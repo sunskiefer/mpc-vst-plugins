@@ -5,7 +5,7 @@
   "repo": "saustin2010/mpc-vst-eucalypso",
   "kind": "instrument",
   "role": "midi",
-  "style": "sequencer",
+  "style": "generative",
   "tags": [
     "euclidean",
     "midi",

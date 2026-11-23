@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "Three-bank stereo looper insert. Captures 1, 2, 4 or 8 bars from the track in time with the MPC, with overdub, per-bank and master play/stop on the beat, solo, mute and volume per bank, a metronome with auto standby, and latency compensation.",
-  "style": "looper",
+  "style": "glitch-performance",
   "tags": ["looper", "overdub", "tempo-sync", "metronome", "performance"],
   "min_os": "3.10.1",
   "screenshot": "https://raw.githubusercontent.com/drj-io/SlowOps.MPC.Looper/v1.1.0/docs/images/loops-page.png"

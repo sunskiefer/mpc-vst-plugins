@@ -4,7 +4,7 @@
   "author": "Mac Digi / Rare Data",
   "repo": "macdigi/force-link-audio",
   "kind": "addin",
-  "style": "network-audio",
+  "style": "audio",
   "tags": [
     "link-audio",
     "network-audio",

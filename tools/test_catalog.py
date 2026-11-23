@@ -1828,7 +1828,7 @@ class ListingsTest(unittest.TestCase):
 
 
 class StyleMapTest(unittest.TestCase):
-    """tools/style_map.py and catalog/styles.json: the proposed fixed styles (not enforced)."""
+    """tools/style_map.py and catalog/styles.json: the fixed styles per kind."""
 
     def test_styles_file_is_well_formed(self):
         import style_map
@@ -1853,6 +1853,11 @@ class StyleMapTest(unittest.TestCase):
         self.assertEqual(p(kind="effect", style="saturation"), "distortion")
         self.assertEqual(p(kind="instrument", role="midi", style="sequencer", tags=["euclidean"]), "generative")
         self.assertEqual(p(id="roads", style="synth", tags=["polyphonic"]), "keys-organ")   # a reviewed override wins
+
+    def test_every_live_entry_is_on_the_list(self):
+        import style_map
+        entries, problems = catalog_build.load_registry(os.path.join(os.path.dirname(HERE), "catalog", "plugins"))
+        self.assertEqual([m for _, m in problems if "styles.json" in m], [])
 
     def test_site_shows_labels(self):
         import catalog_site
@@ -2033,7 +2038,10 @@ class SiteTest(unittest.TestCase):
     def test_registry_style_and_source_available(self):
         e = dict(BuildTest.ENTRY, license="MAME license")
         self.assertTrue(catalog_build.check_entry(e))
-        self.assertEqual(catalog_build.check_entry(dict(e, source_available=True, style="rompler", tags=["jv-880"])), [])
+        self.assertEqual(catalog_build.check_entry(dict(e, source_available=True, style="sampler-rompler", tags=["jv-880"])), [])
+        self.assertTrue(any("catalog/styles.json" in x for x in catalog_build.check_entry(dict(BuildTest.ENTRY, style="rompler"))))   # not on the fixed list
+        self.assertEqual(catalog_build.check_entry(dict(BuildTest.ENTRY, kind="effect", style="reverb")), [])
+        self.assertTrue(catalog_build.check_entry(dict(BuildTest.ENTRY, kind="effect", style="polysynth")))   # an instrument style on an effect
         self.assertTrue(catalog_build.check_entry(dict(BuildTest.ENTRY, style="Bad Style")))
 
     def test_registry_license_expression(self):

@@ -6,7 +6,7 @@
   "asset_pattern": "HexChord-73-*-mpc-armv7.zip",
   "kind": "instrument",
   "license": "GPL-3.0-or-later",
-  "style": "synth",
+  "style": "polysynth",
   "tags": [
     "chord",
     "polyphonic",

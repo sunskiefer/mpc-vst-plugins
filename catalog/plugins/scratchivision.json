@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "Digital vinyl system: scratch samples with a turntable using Serato-style timecode vinyl or a Phase-style wireless controller. Plays your sample at the record's speed and direction, with a live waveform and 5 hot cues.",
-  "style": "dj",
+  "style": "glitch-performance",
   "tags": ["dvs", "scratch", "turntable", "timecode", "vinyl", "dj"],
   "min_os": "3.10.1",
   "screenshot": "https://raw.githubusercontent.com/drj-io/SlowOps.Scratchivision/v1.0.0/images/screenshot.png"

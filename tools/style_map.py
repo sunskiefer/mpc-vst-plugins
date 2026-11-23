@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Propose a fixed style (catalog/styles.json) for every registry entry, from its current free-form style, its tags and, for the few that
-neither settles, a reviewed override. PROPOSAL tooling (2026-11-23): nothing is enforced until maintainers adopt the list
-(docs/CATALOG.md, "Fixed styles (proposal)").
+"""Move registry entries onto the fixed styles (catalog/styles.json): from the old free-form style, the tags, or a reviewed override.
+Used once on 2026-11-23 to move all entries over (docs/CATALOG.md, "Fixed styles"); kept for entries that arrive with an old style.
 
   python3 tools/style_map.py              # markdown table: entry, kind, old style, proposed style, why
   python3 tools/style_map.py --summary    # counts per proposed style
-  python3 tools/style_map.py --apply      # write the proposed style into each catalog/plugins/<id>.json (only after the decision)
+  python3 tools/style_map.py --apply      # write the proposed style into each catalog/plugins/<id>.json
 """
 import argparse
 import glob

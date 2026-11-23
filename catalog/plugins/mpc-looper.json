@@ -6,7 +6,7 @@
   "kind": "effect",
   "license": "MIT",
   "summary": "Experimental four-loop stereo insert for MPC OS 3.10.1+. Disk-backed recording up to 32 bars, overdub, undo, tempo sync and Warp, per-loop stop timing, and separate WAV exports. Fixed audio caches; final revision and Gen2 are offline-only.",
-  "style": "looper",
+  "style": "glitch-performance",
   "tags": [
     "looper",
     "overdub",

@@ -1,5 +1,5 @@
 { "id": "voxman", "name": "Voxman", "author": "Stampman3000", "repo": "stampman3000-jpg/voxman",
-  "kind": "effect", "style": "utility", "tags": ["vocoder"], "license": "MIT",
+  "kind": "effect", "style": "pitch-vocal", "tags": ["vocoder"], "license": "MIT",
   "summary": "8 to 20 band vocoder with an internal string carrier, or play it from any track with Voxboy.",
   "screenshot": "https://raw.githubusercontent.com/stampman3000-jpg/voxman/v1.0.0/screenshots/voxman.png",
   "asset_pattern": "Voxman-[0-9]*-mpc-armv7.zip" }

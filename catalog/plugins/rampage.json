@@ -5,7 +5,7 @@
   "repo": "saustin2010/mpc-vst-dual-slope",
   "kind": "instrument",
   "role": "midi",
-  "style": "modulation",
+  "style": "utility",
   "tags": [
     "vcv",
     "envelope",

@@ -4,7 +4,7 @@
   "author": "Timo",
   "repo": "timomacquis/piRemote-Force",
   "kind": "addin",
-  "style": "utility",
+  "style": "control",
   "tags": ["remote", "transport", "navigation", "force", "windows"],
   "license": "MIT",
   "summary": "Compact Windows transport and physical-button navigation companion for the official Remote Screen, on Force OS 3.10.1. Independent addin; localhost only, reached through an SSH tunnel. Windows app requires WSL Ubuntu and SSH key access.",

@@ -1,5 +1,5 @@
 { "id": "vavra", "name": "Vavra", "author": "sd88me", "repo": "sd88me/mpc-vst-vavra",
-  "kind": "instrument", "style": "synth", "tags": ["emulation", "wavetable", "rompler-free", "gen2"], "license": "GPL-3.0-only",
+  "kind": "instrument", "style": "wavetable", "tags": ["emulation", "wavetable", "rompler-free", "gen2"], "license": "GPL-3.0-only",
   "summary": "An emulation of the Waldorf microQ's original OS (gearmulator) as a native instrument for Gen2 MPC devices, with a native screen in the look of its front panel (three skins), 300 ROM sounds plus your own sound sets, RANDOM, named favourites, Q-Link control and MPC tempo sync. Gen2 (aarch64) only; you need your own microQ ROM.",
   "asset_pattern": "*-mpc-aarch64.zip",
   "screenshot": "https://raw.githubusercontent.com/sd88me/mpc-vst-vavra/v1.0.0/docs/screenshots/main.png",
